@@ -1,0 +1,25 @@
+/target/
+/graphify-out/
+
+# Local environment and editor state
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs and transient output
+*.log
+*.tmp
+*.bak
+
+# Rust build artifacts that may escape target/
+*.pdb
+*.profraw

@@ -1,0 +1,29 @@
+[package]
+name = "aif"
+version = "0.1.0"
+authors = ["basbe"]
+edition = "2021"
+rust-version = "1.82"
+description = "Agent Interchange Format CLI for structured, temporal, graph-aware agent memory."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/basbe/aif"
+homepage = "https://github.com/basbe/aif"
+documentation = "https://github.com/basbe/aif/tree/main/docs"
+keywords = ["agent", "memory", "markdown", "graph", "cli"]
+categories = ["command-line-utilities", "parser-implementations", "data-structures"]
+exclude = ["graphify-out/", "target/"]
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde", "clock"] }
+clap = { version = "4", features = ["derive"] }
+nom = "7"
+notify = "8"
+petgraph = { version = "0.6", optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+
+[features]
+default = ["graph"]
+graph = ["dep:petgraph"]
