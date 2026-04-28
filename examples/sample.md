@@ -8,4 +8,4 @@ The reader validates incoming memory and uses Writer before memory is merged.
 
 ## Writer
 
-The writer emits canonical AIF after timestamps are protected by the tool.
+The writer emits canonical RBMEM after timestamps are protected by the tool.

@@ -1,26 +1,26 @@
-# Hermes + AIF
+# Hermes + RBMEM
 
-Use `.aif` as the durable memory and instruction layer for Hermes agents. Humans can keep writing Markdown, then run `aif sync`; agents should read and write AIF through the Hermes commands.
+Use `.rbmem` as the durable memory and instruction layer for Hermes agents. Humans can keep writing Markdown, then run `rbmem sync`; agents should read and write RBMEM through the Hermes commands.
 
 ## Recommended Workflow
 
 ```powershell
-aif hermes init my-project
-aif hermes load my-project.aif --resolve --minified
-aif hermes save my-project.aif --json '{"sections":[{"path":"memory","type":"hermes:memory","content":"- User prefers terse context."}]}'
+rbmem hermes init my-project
+rbmem hermes load my-project.rbmem --resolve --minified
+rbmem hermes save my-project.rbmem --json '{"sections":[{"path":"memory","type":"hermes:memory","content":"- User prefers terse context."}]}'
 ```
 
 For Markdown folders:
 
 ```powershell
-aif sync notes aif-memory --infer-relations --min-confidence 0.7
-aif sync notes aif-memory --watch --infer-relations
+rbmem sync notes RBMEM-memory --infer-relations --min-confidence 0.7
+rbmem sync notes RBMEM-memory --watch --infer-relations
 ```
 
 ## Hermes Agent Instructions
 
 - Load memory before planning:
-  `aif hermes load project.aif --resolve --compact`
+  `rbmem hermes load project.rbmem --resolve --compact`
 - Treat `sections[].path` as the stable memory address.
 - Prefer `hermes:memory` for append-only facts, preferences, and observations.
 - Use `mode: "replace"` only when correcting stale content.
@@ -53,7 +53,7 @@ aif sync notes aif-memory --watch --infer-relations
 ## Injection Block
 
 ```powershell
-aif read project.aif --resolve --hermes-inject --minified
+rbmem read project.rbmem --resolve --hermes-inject --minified
 ```
 
 This prints a ready-to-paste JSON context block for Hermes prompts.

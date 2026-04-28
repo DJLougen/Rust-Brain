@@ -12,7 +12,7 @@ cargo test
 ## Quality Bar
 
 - Keep parser code explicit, small, and well commented.
-- Preserve backward compatibility for existing `.aif` files.
+- Preserve backward compatibility for existing `.rbmem` files.
 - Do not allow LLM-provided timestamps to overwrite protected timestamps.
 - Prefer focused changes with tests that cover the behavior being changed.
 - Keep CLI output stable unless the change is intentional and documented.

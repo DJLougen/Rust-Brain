@@ -6,7 +6,7 @@ All notable changes to this project will be documented here.
 
 ### Added
 
-- AIF v1.3 parser with forgiving repair behavior and protected timestamp policy.
+- RBMEM v1.3 parser with forgiving repair behavior and protected timestamp policy.
 - Hierarchical section paths, smart merge, graph views, tree views, timeline views, pruning, and validation.
 - Markdown conversion with heading hierarchy preservation.
 - Compact and minified resolved output modes for LLM context.

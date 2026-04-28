@@ -1,4 +1,4 @@
-aif# AIF v1.3 - Personal Agent Interchange Format
+rbmem# RBMEM v1.3 - Rust-Brain Memory Format
 
 meta:
   version: 1.3
@@ -45,6 +45,6 @@ temporal:
   updated_at: "2026-04-27T18:06:31.667886800+00:00"
   expires_at: null
 content: |
-  The writer emits canonical AIF after timestamps are protected by the tool.
+  The writer emits canonical RBMEM after timestamps are protected by the tool.
 [END SECTION]
 

@@ -1,11 +1,11 @@
-//! Forgiving Nom parser for AIF v1.3.
+//! Forgiving Nom parser for RBMEM v1.3.
 //!
-//! This parser is deliberately hand-written and small-function oriented. AIF is
+//! This parser is deliberately hand-written and small-function oriented. RBMEM is
 //! meant to survive LLM output, so the parser accepts minor formatting drift,
-//! records warnings, and lets `document.rs` re-emit canonical AIF.
+//! records warnings, and lets `document.rs` re-emit canonical RBMEM.
 
 use crate::document::{
-    AIFDocument, AifError, CompactMode, GraphInfo, GraphRelation, Meta, Section, SectionType,
+    CompactMode, GraphInfo, GraphRelation, Meta, RbmemDocument, RbmemError, Section, SectionType,
     Temporal, TimestampPolicy,
 };
 use chrono::{DateTime, Utc};
@@ -21,11 +21,11 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 pub struct ParsedDocument {
-    pub document: AIFDocument,
+    pub document: RbmemDocument,
     pub warnings: Vec<String>,
 }
 
-pub fn parse_document(input: &str, policy: TimestampPolicy) -> Result<ParsedDocument, AifError> {
+pub fn parse_document(input: &str, policy: TimestampPolicy) -> Result<ParsedDocument, RbmemError> {
     let normalized = input.replace("\r\n", "\n");
     let now = match policy {
         TimestampPolicy::Preserve => Utc::now(),
@@ -58,7 +58,7 @@ pub fn parse_document(input: &str, policy: TimestampPolicy) -> Result<ParsedDocu
         warnings.push("document contains no sections".to_string());
     }
 
-    let document = AIFDocument {
+    let document = RbmemDocument {
         meta,
         sections,
         warnings: warnings.clone(),
@@ -87,7 +87,7 @@ fn parse_meta(
     input: &str,
     policy: TimestampPolicy,
     warnings: &mut Vec<String>,
-) -> Result<Meta, AifError> {
+) -> Result<Meta, RbmemError> {
     let now = match policy {
         TimestampPolicy::Preserve => Utc::now(),
         TimestampPolicy::Protect { now } => now,
@@ -238,7 +238,7 @@ impl RawSection {
 
 fn parse_section(input: &str) -> IResult<&str, RawSection> {
     // `multispace0` makes the parser forgiving about blank lines before a
-    // section. It consumes comments too broadly for a strict language, but AIF
+    // section. It consumes comments too broadly for a strict language, but RBMEM
     // sections are delimiter-based, so this is a practical recovery choice.
     let (input, _) = multispace0(input)?;
 
@@ -526,7 +526,7 @@ mod tests {
     #[test]
     fn parses_canonical_document_round_trip_shape() {
         let parsed = parse_document(
-            r#"aif# AIF v1.3
+            r#"rbmem# RBMEM v1.3
 
 meta:
   version: 1.3

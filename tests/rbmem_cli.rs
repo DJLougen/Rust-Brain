@@ -1,6 +1,6 @@
-use aif::parser::parse_document;
-use aif::{SectionType, TimestampPolicy};
 use chrono::{TimeZone, Utc};
+use rbmem::parser::parse_document;
+use rbmem::{SectionType, TimestampPolicy};
 
 fn fixed_time() -> chrono::DateTime<Utc> {
     Utc.with_ymd_and_hms(2026, 4, 27, 13, 10, 0).unwrap()
@@ -30,7 +30,7 @@ content: |
 "#;
 
     let parsed = parse_document(input, TimestampPolicy::Protect { now }).unwrap();
-    let serialized = parsed.document.to_aif_string();
+    let serialized = parsed.document.to_rbmem_string();
     let reparsed = parse_document(&serialized, TimestampPolicy::Preserve).unwrap();
 
     assert_eq!(reparsed.document.sections.len(), 1);
@@ -100,7 +100,7 @@ fn markdown_comparison_content_survives_as_plain_text() {
 type: text
 content: |
   # Title
-  This should remain markdown, not become AIF structure.
+  This should remain markdown, not become RBMEM structure.
 [END SECTION]
 "#;
 
@@ -109,5 +109,5 @@ content: |
     assert!(parsed.document.sections[0].content.contains("# Title"));
     assert!(parsed.document.sections[0]
         .content
-        .contains("not become AIF structure"));
+        .contains("not become RBMEM structure"));
 }

@@ -1,10 +1,10 @@
-# AIF
+# RBMEM
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-`aif` is a Rust command-line tool for **Agent Interchange Format** (`.aif`) v1.3.
+`rbmem` is a Rust command-line tool for **Rust-Brain Memory Format** (`.rbmem`) v1.3.
 
-AIF is a small, readable file format for agent memory, instructions, research notes, project rules, and long-lived context. It keeps the parts humans like about Markdown, but adds the structure agents need: stable section paths, protected timestamps, hierarchy, graph relationships, timelines, validation, and compact context output.
+RBMEM is a small, readable file format for agent memory, instructions, research notes, project rules, and long-lived context. It keeps the parts humans like about Markdown, but adds the structure agents need: stable section paths, protected timestamps, hierarchy, graph relationships, timelines, validation, and compact context output.
 
 This repository is intended for private agent workflows first. It is useful when you want humans to keep writing notes, while agents consume a cleaner, safer, machine-readable memory layer.
 
@@ -19,7 +19,7 @@ Markdown is easy to write, but it is loose:
 - updating one memory item often means rewriting the whole file
 - agents have to spend tokens guessing what matters
 
-AIF turns the same material into explicit sections such as:
+RBMEM turns the same material into explicit sections such as:
 
 ```text
 agents.reader.capabilities
@@ -30,9 +30,9 @@ architecture.backend.graph
 
 Agents can then read, resolve, update, prune, search, graph, and summarize memory without treating a document as one undifferentiated blob.
 
-## When To Use AIF
+## When To Use RBMEM
 
-Use AIF when:
+Use RBMEM when:
 
 - an agent needs durable memory across sessions
 - instructions need stable section names
@@ -53,40 +53,40 @@ Use plain Markdown when:
 Build the CLI:
 
 ```powershell
-cd C:\Users\basbe\Desktop\aif
+cd C:\Users\basbe\Desktop\Rust-Brain
 cargo build --release
 ```
 
 Create a memory file:
 
 ```powershell
-.\target\release\aif.exe create memory.aif
+.\target\release\rbmem.exe create memory.rbmem
 ```
 
 Add a section:
 
 ```powershell
-.\target\release\aif.exe update memory.aif --section goals --type list --content "- Ship the project"
+.\target\release\rbmem.exe update memory.rbmem --section goals --type list --content "- Ship the project"
 ```
 
 Read it back:
 
 ```powershell
-.\target\release\aif.exe read memory.aif
+.\target\release\rbmem.exe read memory.rbmem
 ```
 
 Feed the smallest useful resolved view to an agent:
 
 ```powershell
-.\target\release\aif.exe read memory.aif --resolve --minified
+.\target\release\rbmem.exe read memory.rbmem --resolve --minified
 ```
 
-## AIF At A Glance
+## RBMEM At A Glance
 
-An AIF file is plain text:
+An RBMEM file is plain text:
 
-```aif
-aif# AIF v1.3 - Personal Agent Interchange Format
+```rbmem
+rbmem# RBMEM v1.3 - Rust-Brain Memory Format
 
 meta:
   version: 1.3
@@ -117,7 +117,7 @@ The CLI protects timestamps during import/update flows, so model-generated times
 Convert one Markdown file:
 
 ```powershell
-.\target\release\aif.exe convert-from-md examples\sample.md examples\from_md.aif --infer-relations
+.\target\release\rbmem.exe convert-from-md examples\sample.md examples\from_md.rbmem --infer-relations
 ```
 
 Markdown headings become dotted paths:
@@ -139,13 +139,13 @@ agents.reader.capabilities
 Sync a whole Markdown folder:
 
 ```powershell
-.\target\release\aif.exe sync C:\notes C:\agent-memory --infer-relations --min-confidence 0.7
+.\target\release\rbmem.exe sync C:\notes C:\agent-memory --infer-relations --min-confidence 0.7
 ```
 
 Watch for changes:
 
 ```powershell
-.\target\release\aif.exe sync C:\notes C:\agent-memory --watch --infer-relations
+.\target\release\rbmem.exe sync C:\notes C:\agent-memory --watch --infer-relations
 ```
 
 ## Hermes Harness Workflow
@@ -153,37 +153,37 @@ Watch for changes:
 Create a Hermes memory file:
 
 ```powershell
-.\target\release\aif.exe hermes init my-agent-memory
+.\target\release\rbmem.exe hermes init my-agent-memory
 ```
 
 Load Hermes-optimized JSON:
 
 ```powershell
-.\target\release\aif.exe hermes load my-agent-memory.aif --resolve --minified
+.\target\release\rbmem.exe hermes load my-agent-memory.rbmem --resolve --minified
 ```
 
 Save agent memory safely:
 
 ```powershell
-.\target\release\aif.exe hermes save my-agent-memory.aif --json '{"sections":[{"path":"memory","type":"hermes:memory","content":"- User prefers concise engineering answers.","mode":"append"}]}'
+.\target\release\rbmem.exe hermes save my-agent-memory.rbmem --json '{"sections":[{"path":"memory","type":"hermes:memory","content":"- User prefers concise engineering answers.","mode":"append"}]}'
 ```
 
 Print a ready-to-paste Hermes context block:
 
 ```powershell
-.\target\release\aif.exe read my-agent-memory.aif --resolve --hermes-inject --minified
+.\target\release\rbmem.exe read my-agent-memory.rbmem --resolve --hermes-inject --minified
 ```
 
 Current local Hermes integration uses:
 
 ```text
-C:\Users\basbe\.hermes\MEMORY.aif
+C:\Users\basbe\.hermes\MEMORY.rbmem
 ```
 
 Hermes Workspace is configured to load that file through:
 
 ```powershell
-C:\Users\basbe\Desktop\aif\target\release\aif.exe hermes load C:\Users\basbe\.hermes\MEMORY.aif --resolve --minified
+C:\Users\basbe\Desktop\Rust-Brain\target\release\rbmem.exe hermes load C:\Users\basbe\.hermes\MEMORY.rbmem --resolve --minified
 ```
 
 See [HERMES.md](HERMES.md) for agent instructions and the save payload shape.
@@ -192,29 +192,29 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape.
 
 | Command | What It Does |
 | --- | --- |
-| `create <file.aif>` | Create a new AIF document. |
-| `read <file.aif>` | Read a document. |
-| `read <file.aif> --resolve` | Apply hierarchy merge rules before rendering. |
-| `read <file.aif> --resolve --compact` | Hide most metadata for shorter context. |
-| `read <file.aif> --resolve --minified` | Smallest agent-oriented text view. |
-| `update <file.aif> --section <path>` | Safely add or update one section. |
-| `convert-from-md <in.md> <out.aif>` | Convert Markdown headings into dotted AIF paths. |
-| `sync <md-folder> <out-folder>` | Convert a Markdown folder into AIF files. |
-| `infer <file.aif>` | Infer graph relations from prose. |
-| `graph <file.aif> --format json` | Export graph nodes and edges. |
-| `graph <file.aif> --format dot` | Export a DOT graph. |
-| `tree <file.aif>` | Show section hierarchy. |
-| `timeline <file.aif>` | Show temporal entries. |
-| `validate <file.aif>` | Validate parser compatibility. |
-| `hermes load <file.aif>` | Output Hermes-friendly JSON. |
-| `hermes save <file.aif> --json <payload>` | Apply Hermes-style memory updates. |
-| `hermes watch <file.aif>` | Watch a file and print Hermes JSON on changes. |
+| `create <file.rbmem>` | Create a new RBMEM document. |
+| `read <file.rbmem>` | Read a document. |
+| `read <file.rbmem> --resolve` | Apply hierarchy merge rules before rendering. |
+| `read <file.rbmem> --resolve --compact` | Hide most metadata for shorter context. |
+| `read <file.rbmem> --resolve --minified` | Smallest agent-oriented text view. |
+| `update <file.rbmem> --section <path>` | Safely add or update one section. |
+| `convert-from-md <in.md> <out.rbmem>` | Convert Markdown headings into dotted RBMEM paths. |
+| `sync <md-folder> <out-folder>` | Convert a Markdown folder into RBMEM files. |
+| `infer <file.rbmem>` | Infer graph relations from prose. |
+| `graph <file.rbmem> --format json` | Export graph nodes and edges. |
+| `graph <file.rbmem> --format dot` | Export a DOT graph. |
+| `tree <file.rbmem>` | Show section hierarchy. |
+| `timeline <file.rbmem>` | Show temporal entries. |
+| `validate <file.rbmem>` | Validate parser compatibility. |
+| `hermes load <file.rbmem>` | Output Hermes-friendly JSON. |
+| `hermes save <file.rbmem> --json <payload>` | Apply Hermes-style memory updates. |
+| `hermes watch <file.rbmem>` | Watch a file and print Hermes JSON on changes. |
 
-## AIF vs Markdown: Real Measurements
+## RBMEM vs Markdown: Real Measurements
 
-Token counts are approximate word counts multiplied by 1.3 from local CLI comparisons. Raw AIF is larger because it stores metadata; compact and minified output are the intended context-window views.
+Token counts are approximate word counts multiplied by 1.3 from local CLI comparisons. Raw RBMEM is larger because it stores metadata; compact and minified output are the intended context-window views.
 
-| Sample | Markdown Raw | AIF Raw | AIF Compact | AIF Minified | Sections | Graph Edges |
+| Sample | Markdown Raw | RBMEM Raw | RBMEM Compact | RBMEM Minified | Sections | Graph Edges |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | `examples/sample.md` | 265 bytes / 52 tokens | 1,289 bytes / 228 tokens | 473 bytes / 87 tokens | 312 bytes | 3 | 3 |
 | Obsidian `index` | 3,339 bytes / 491 tokens | 9,888 bytes / 1,529 tokens | 737 tokens | n/a | 21 | 53 |
@@ -222,7 +222,7 @@ Token counts are approximate word counts multiplied by 1.3 from local CLI compar
 | Obsidian `comparison_ior_facilitation` | 3,261 bytes / 465 tokens | 6,589 bytes / 1,013 tokens | 603 tokens | n/a | 15 | 25 |
 | Obsidian `source_posner_cohen` | 2,547 bytes / 369 tokens | 5,362 bytes / 800 tokens | 458 tokens | n/a | 9 | 15 |
 
-| Capability | Markdown | AIF |
+| Capability | Markdown | RBMEM |
 | --- | --- | --- |
 | Stable section IDs | Heading text only | Dotted paths |
 | Hierarchy | Visual convention | Parent/child paths plus resolved merge |

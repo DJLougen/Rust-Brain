@@ -7,7 +7,7 @@ use std::str::FromStr;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum AifError {
+pub enum RbmemError {
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
@@ -64,7 +64,7 @@ impl Meta {
     pub fn enforce_v13(&mut self, warnings: &mut Vec<String>) {
         if self.version != "1.3" {
             warnings.push(format!(
-                "document version '{}' was normalized to locked AIF v1.3",
+                "document version '{}' was normalized to locked RBMEM v1.3",
                 self.version
             ));
             self.version = "1.3".to_string();
@@ -92,14 +92,14 @@ impl Display for CompactMode {
 }
 
 impl FromStr for CompactMode {
-    type Err = AifError;
+    type Err = RbmemError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value.trim().to_ascii_lowercase().as_str() {
             "full" => Ok(Self::Full),
             "compact" => Ok(Self::Compact),
             "minified" | "tiny" => Ok(Self::Minified),
-            other => Err(AifError::Parse(format!("invalid compact mode: {other}"))),
+            other => Err(RbmemError::Parse(format!("invalid compact mode: {other}"))),
         }
     }
 }
@@ -136,7 +136,7 @@ impl Display for SectionType {
 }
 
 impl FromStr for SectionType {
-    type Err = AifError;
+    type Err = RbmemError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value.trim().to_ascii_lowercase().as_str() {
@@ -146,7 +146,7 @@ impl FromStr for SectionType {
             "timeline" => Ok(Self::Timeline),
             "template" => Ok(Self::Template),
             "hermes:memory" | "hermes_memory" | "hermes-memory" => Ok(Self::HermesMemory),
-            other => Err(AifError::InvalidSectionType(other.to_string())),
+            other => Err(RbmemError::InvalidSectionType(other.to_string())),
         }
     }
 }
@@ -256,14 +256,14 @@ pub struct GraphView {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct AIFDocument {
+pub struct RbmemDocument {
     pub meta: Meta,
     pub sections: Vec<Section>,
     #[serde(skip)]
     pub warnings: Vec<String>,
 }
 
-impl AIFDocument {
+impl RbmemDocument {
     pub fn new(now: DateTime<Utc>, created_by: impl Into<String>) -> Self {
         Self {
             meta: Meta::new(now, created_by),
@@ -277,7 +277,7 @@ impl AIFDocument {
 
         if self.meta.version != "1.3" {
             warnings.push(format!(
-                "expected AIF version 1.3, found {}",
+                "expected RBMEM version 1.3, found {}",
                 self.meta.version
             ));
         }
@@ -488,7 +488,7 @@ impl AIFDocument {
 
     pub fn graph_as_dot(&self) -> String {
         let view = self.graph_view();
-        let mut output = String::from("digraph aif {\n");
+        let mut output = String::from("digraph rbmem {\n");
 
         for node in view.nodes {
             output.push_str(&format!("  \"{}\";\n", escape_dot(&node)));
@@ -528,12 +528,12 @@ impl AIFDocument {
         sections
     }
 
-    pub fn to_aif_string(&self) -> String {
-        self.to_aif_string_with_options(AifWriteOptions::canonical())
+    pub fn to_rbmem_string(&self) -> String {
+        self.to_rbmem_string_with_options(RbmemWriteOptions::canonical())
     }
 
-    pub fn to_human_aif_string(&self) -> String {
-        self.to_aif_string_with_options(AifWriteOptions::human())
+    pub fn to_human_rbmem_string(&self) -> String {
+        self.to_rbmem_string_with_options(RbmemWriteOptions::human())
     }
 
     pub fn to_compact_string(&self, resolve: bool, now: DateTime<Utc>) -> String {
@@ -556,7 +556,7 @@ impl AIFDocument {
                         format_optional_time(section.temporal.expires_at)
                     ));
                 }
-                write_content_block(&mut output, &section.content, AifWriteStyle::Canonical);
+                write_content_block(&mut output, &section.content, RbmemWriteStyle::Canonical);
                 output.push_str("[END SECTION]\n\n");
             }
         } else {
@@ -570,7 +570,7 @@ impl AIFDocument {
                         format_optional_time(section.temporal.expires_at)
                     ));
                 }
-                write_content_block(&mut output, &section.content, AifWriteStyle::Canonical);
+                write_content_block(&mut output, &section.content, RbmemWriteStyle::Canonical);
                 output.push_str("[END SECTION]\n\n");
             }
         }
@@ -609,21 +609,21 @@ impl AIFDocument {
         output
     }
 
-    pub fn to_aif_string_hiding_empty_temporal(&self) -> String {
-        self.to_aif_string_with_options(AifWriteOptions {
-            style: AifWriteStyle::Canonical,
+    pub fn to_rbmem_string_hiding_empty_temporal(&self) -> String {
+        self.to_rbmem_string_with_options(RbmemWriteOptions {
+            style: RbmemWriteStyle::Canonical,
             hide_empty_temporal: true,
         })
     }
 
-    fn to_aif_string_with_options(&self, options: AifWriteOptions) -> String {
+    fn to_rbmem_string_with_options(&self, options: RbmemWriteOptions) -> String {
         let mut output = String::new();
         match options.style {
-            AifWriteStyle::Canonical => {
-                output.push_str("aif# AIF v1.3 - Personal Agent Interchange Format\n\n");
+            RbmemWriteStyle::Canonical => {
+                output.push_str("rbmem# RBMEM v1.3 - Rust-Brain Memory Format\n\n");
             }
-            AifWriteStyle::Human => {
-                output.push_str("# AIF v1.3 human-editable file\n");
+            RbmemWriteStyle::Human => {
+                output.push_str("# RBMEM v1.3 human-editable file\n");
                 output.push_str("# The parser accepts these short section delimiters.\n\n");
             }
         }
@@ -660,10 +660,10 @@ impl AIFDocument {
 
         for section in &self.sections {
             match options.style {
-                AifWriteStyle::Canonical => {
+                RbmemWriteStyle::Canonical => {
                     output.push_str(&format!("[SECTION: {}]\n", section.path));
                 }
-                AifWriteStyle::Human => {
+                RbmemWriteStyle::Human => {
                     output.push_str(&format!("=== SECTION: {}\n", section.path));
                     output
                         .push_str("# Edit type/content freely; timestamps remain tool-managed.\n");
@@ -723,8 +723,8 @@ impl AIFDocument {
 
             write_content_block(&mut output, &section.content, options.style);
             match options.style {
-                AifWriteStyle::Canonical => output.push_str("[END SECTION]\n\n"),
-                AifWriteStyle::Human => output.push_str("=== END SECTION\n\n"),
+                RbmemWriteStyle::Canonical => output.push_str("[END SECTION]\n\n"),
+                RbmemWriteStyle::Human => output.push_str("=== END SECTION\n\n"),
             }
         }
 
@@ -733,28 +733,28 @@ impl AIFDocument {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum AifWriteStyle {
+enum RbmemWriteStyle {
     Canonical,
     Human,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct AifWriteOptions {
-    style: AifWriteStyle,
+struct RbmemWriteOptions {
+    style: RbmemWriteStyle,
     hide_empty_temporal: bool,
 }
 
-impl AifWriteOptions {
+impl RbmemWriteOptions {
     fn canonical() -> Self {
         Self {
-            style: AifWriteStyle::Canonical,
+            style: RbmemWriteStyle::Canonical,
             hide_empty_temporal: false,
         }
     }
 
     fn human() -> Self {
         Self {
-            style: AifWriteStyle::Human,
+            style: RbmemWriteStyle::Human,
             hide_empty_temporal: false,
         }
     }
@@ -1224,9 +1224,9 @@ fn collapse_inline_whitespace(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-fn write_content_block(output: &mut String, content: &str, style: AifWriteStyle) {
+fn write_content_block(output: &mut String, content: &str, style: RbmemWriteStyle) {
     let can_write_single_line =
-        style == AifWriteStyle::Human && !content.contains('\n') && !content.trim().is_empty();
+        style == RbmemWriteStyle::Human && !content.contains('\n') && !content.trim().is_empty();
 
     if can_write_single_line {
         output.push_str("content: ");
@@ -1295,7 +1295,7 @@ mod tests {
     #[test]
     fn list_children_append_parent_items() {
         let now = fixed_time();
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.upsert_section("prefs", SectionType::List, "- coffee".to_string(), now);
         doc.upsert_section("prefs.morning", SectionType::List, "- tea".to_string(), now);
 
@@ -1311,7 +1311,7 @@ mod tests {
     #[test]
     fn json_children_deep_merge_objects_and_append_arrays() {
         let now = fixed_time();
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.upsert_section(
             "agent",
             SectionType::Json,
@@ -1353,7 +1353,7 @@ mod tests {
             }],
         });
 
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.sections.push(section);
 
         let graph = doc.graph_view();
@@ -1370,7 +1370,7 @@ mod tests {
     #[test]
     fn prune_removes_expired_sections() {
         let now = fixed_time();
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         let mut expired = Section::new("old", SectionType::Text, now);
         expired.temporal.expires_at = Some(now - Duration::days(1));
         doc.sections.push(expired);
@@ -1382,7 +1382,7 @@ mod tests {
     #[test]
     fn relation_inference_adds_non_destructive_inferred_edges() {
         let now = fixed_time();
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.upsert_section(
             "agents.reader",
             SectionType::Text,
@@ -1392,7 +1392,7 @@ mod tests {
         doc.upsert_section(
             "agents.writer",
             SectionType::Text,
-            "The writer emits canonical AIF.".to_string(),
+            "The writer emits canonical RBMEM.".to_string(),
             now,
         );
 
@@ -1408,7 +1408,7 @@ mod tests {
     #[test]
     fn relation_inference_detects_multiple_verbs_with_confidence() {
         let now = fixed_time();
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.upsert_section(
             "runtime.loader",
             SectionType::Text,
@@ -1462,7 +1462,7 @@ mod tests {
     #[test]
     fn relation_inference_threshold_filters_weak_mentions() {
         let now = fixed_time();
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.upsert_section(
             "notes.alpha",
             SectionType::Text,
@@ -1498,7 +1498,7 @@ mod tests {
             }],
         });
 
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.sections.push(section);
         doc.upsert_section(
             "agent.writer",
@@ -1540,7 +1540,7 @@ mod tests {
             ],
         });
 
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.sections.push(section);
         let json = graph_view_to_json(&doc.graph_view());
         let edges = json["edges"].as_array().unwrap();
@@ -1562,7 +1562,7 @@ mod tests {
     #[test]
     fn minified_output_is_substantially_smaller_than_compact_output() {
         let now = fixed_time();
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.upsert_section(
             "agent.reader",
             SectionType::Text,
@@ -1572,7 +1572,7 @@ mod tests {
         doc.upsert_section(
             "agent.writer",
             SectionType::Text,
-            "The writer emits canonical AIF.".to_string(),
+            "The writer emits canonical RBMEM.".to_string(),
             now,
         );
 
@@ -1588,10 +1588,10 @@ mod tests {
     #[test]
     fn hide_empty_temporal_omits_default_temporal_blocks() {
         let now = fixed_time();
-        let mut doc = AIFDocument::new(now, "me");
+        let mut doc = RbmemDocument::new(now, "me");
         doc.upsert_section("note", SectionType::Text, "hello".to_string(), now);
 
-        let hidden = doc.to_aif_string_hiding_empty_temporal();
+        let hidden = doc.to_rbmem_string_hiding_empty_temporal();
         assert!(!hidden.contains("temporal:"));
         assert!(hidden.contains("compact_mode: full"));
     }

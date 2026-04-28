@@ -1,9 +1,9 @@
-use aif::document::graph_view_to_json;
-use aif::parser::parse_document;
-use aif::{AIFDocument, AifError, CompactMode, SectionType, TimestampPolicy};
 use chrono::Utc;
 use clap::{Parser, Subcommand, ValueEnum};
 use notify::{Config as NotifyConfig, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use rbmem::document::graph_view_to_json;
+use rbmem::parser::parse_document;
+use rbmem::{CompactMode, RbmemDocument, RbmemError, SectionType, TimestampPolicy};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::fs;
@@ -14,8 +14,8 @@ use std::sync::mpsc;
 use std::time::SystemTime;
 
 #[derive(Debug, Parser)]
-#[command(name = "aif")]
-#[command(about = "Agent Interchange Format (.aif) v1.3 CLI")]
+#[command(name = "rbmem")]
+#[command(about = "Rust-Brain Memory Format (.rbmem) v1.3 CLI")]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -156,7 +156,7 @@ fn main() {
     }
 }
 
-fn run() -> Result<(), AifError> {
+fn run() -> Result<(), RbmemError> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -168,7 +168,7 @@ fn run() -> Result<(), AifError> {
             human,
         } => {
             let now = Utc::now();
-            let mut document = AIFDocument::new(now, created_by);
+            let mut document = RbmemDocument::new(now, created_by);
             document.meta.purpose = purpose;
             document.meta.default_expiry_days = default_expiry_days;
             write_document(&file, &document, human)?;
@@ -244,7 +244,7 @@ fn run() -> Result<(), AifError> {
             let mut document = if file.exists() {
                 read_document(&file, TimestampPolicy::Preserve)?
             } else {
-                AIFDocument::new(now, "me")
+                RbmemDocument::new(now, "me")
             };
             let section_type = SectionType::from_str(&r#type)?;
             let body = read_content_argument(content, content_file)?;
@@ -279,7 +279,7 @@ fn run() -> Result<(), AifError> {
             let mut warnings = parsed.warnings;
             warnings.extend(parsed.document.validate());
             if warnings.is_empty() {
-                println!("valid AIF v1.3");
+                println!("valid RBMEM v1.3");
             } else {
                 for warning in warnings {
                     println!("warning: {warning}");
@@ -294,7 +294,7 @@ fn run() -> Result<(), AifError> {
         } => {
             let now = Utc::now();
             let text = fs::read_to_string(&markdown)?;
-            let mut document = convert_markdown_to_aif(&text, now);
+            let mut document = convert_markdown_to_rbmem(&text, now);
             if infer_relations {
                 document.infer_relations(now, min_confidence);
             }
@@ -350,7 +350,7 @@ fn run() -> Result<(), AifError> {
                 let mut document = if file.exists() {
                     read_document(&file, TimestampPolicy::Preserve)?
                 } else {
-                    AIFDocument::new(now, "hermes")
+                    RbmemDocument::new(now, "hermes")
                 };
                 let payload = read_hermes_payload(&json)?;
                 apply_hermes_payload(&mut document, payload, now)?;
@@ -361,7 +361,7 @@ fn run() -> Result<(), AifError> {
             HermesCommand::Init { project_name } => {
                 let now = Utc::now();
                 let document = hermes_starter_document(&project_name, now);
-                let file = PathBuf::from(format!("{}.aif", title_to_path(&project_name)));
+                let file = PathBuf::from(format!("{}.rbmem", title_to_path(&project_name)));
                 write_document(&file, &document, false)?;
                 println!("created {}", file.display());
             }
@@ -385,45 +385,45 @@ fn run() -> Result<(), AifError> {
     Ok(())
 }
 
-fn read_document(path: &Path, policy: TimestampPolicy) -> Result<AIFDocument, AifError> {
+fn read_document(path: &Path, policy: TimestampPolicy) -> Result<RbmemDocument, RbmemError> {
     let input = fs::read_to_string(path)?;
     Ok(parse_document(&input, policy)?.document)
 }
 
-fn write_document(path: &Path, document: &AIFDocument, human: bool) -> Result<(), AifError> {
+fn write_document(path: &Path, document: &RbmemDocument, human: bool) -> Result<(), RbmemError> {
     let text = if human {
-        document.to_human_aif_string()
+        document.to_human_rbmem_string()
     } else {
-        document.to_aif_string()
+        document.to_rbmem_string()
     };
     fs::write(path, text)?;
     Ok(())
 }
 
-fn print_full_document(document: &AIFDocument, hide_empty_temporal: bool) {
+fn print_full_document(document: &RbmemDocument, hide_empty_temporal: bool) {
     if hide_empty_temporal {
-        print!("{}", document.to_aif_string_hiding_empty_temporal());
+        print!("{}", document.to_rbmem_string_hiding_empty_temporal());
     } else {
-        print!("{}", document.to_aif_string());
+        print!("{}", document.to_rbmem_string());
     }
 }
 
 fn read_content_argument(
     content: Option<String>,
     content_file: Option<PathBuf>,
-) -> Result<String, AifError> {
+) -> Result<String, RbmemError> {
     match (content, content_file) {
         (Some(content), None) => Ok(content),
         (None, Some(path)) => Ok(fs::read_to_string(path)?),
         (None, None) => Ok(String::new()),
-        (Some(_), Some(_)) => Err(AifError::Parse(
+        (Some(_), Some(_)) => Err(RbmemError::Parse(
             "use either --content or --content-file, not both".to_string(),
         )),
     }
 }
 
-fn convert_markdown_to_aif(markdown: &str, now: chrono::DateTime<Utc>) -> AIFDocument {
-    let mut document = AIFDocument::new(now, "me");
+fn convert_markdown_to_rbmem(markdown: &str, now: chrono::DateTime<Utc>) -> RbmemDocument {
+    let mut document = RbmemDocument::new(now, "me");
     let mut heading_stack: Vec<String> = Vec::new();
     let mut current_path = "meta.markdown".to_string();
     let mut current_lines = Vec::new();
@@ -444,7 +444,7 @@ fn convert_markdown_to_aif(markdown: &str, now: chrono::DateTime<Utc>) -> AIFDoc
 }
 
 fn flush_markdown_section(
-    document: &mut AIFDocument,
+    document: &mut RbmemDocument,
     path: &str,
     lines: &mut Vec<String>,
     now: chrono::DateTime<Utc>,
@@ -518,7 +518,7 @@ impl SyncOptions {
         infer_relations: bool,
         min_confidence: f64,
         dry_run: bool,
-    ) -> Result<Self, AifError> {
+    ) -> Result<Self, RbmemError> {
         let mut options = Self {
             infer_relations,
             min_confidence: min_confidence.clamp(0.0, 1.0),
@@ -527,7 +527,7 @@ impl SyncOptions {
             compact_mode: CompactMode::Full,
         };
 
-        let config_path = markdown_folder.join(".aifsync");
+        let config_path = markdown_folder.join(".rbmemsync");
         if config_path.exists() {
             let text = fs::read_to_string(config_path)?;
             apply_sync_config(&text, &mut options)?;
@@ -537,7 +537,7 @@ impl SyncOptions {
     }
 }
 
-fn apply_sync_config(text: &str, options: &mut SyncOptions) -> Result<(), AifError> {
+fn apply_sync_config(text: &str, options: &mut SyncOptions) -> Result<(), RbmemError> {
     for line in text.lines() {
         let trimmed = line.trim();
         if trimmed.is_empty() || trimmed.starts_with('#') {
@@ -564,7 +564,7 @@ fn apply_sync_config(text: &str, options: &mut SyncOptions) -> Result<(), AifErr
                     None
                 } else {
                     Some(value.parse::<i64>().map_err(|_| {
-                        AifError::Parse("invalid default_expiry_days in .aifsync".to_string())
+                        RbmemError::Parse("invalid default_expiry_days in .rbmemsync".to_string())
                     })?)
                 };
             }
@@ -582,7 +582,7 @@ fn sync_markdown_folder(
     markdown_folder: &Path,
     output_folder: &Path,
     options: &SyncOptions,
-) -> Result<(), AifError> {
+) -> Result<(), RbmemError> {
     let markdown_files = find_markdown_files(markdown_folder)?;
     if markdown_files.is_empty() {
         println!(
@@ -611,7 +611,7 @@ fn sync_markdown_file(
     markdown_file: &Path,
     options: &SyncOptions,
     force: bool,
-) -> Result<(), AifError> {
+) -> Result<(), RbmemError> {
     let output_file = output_path_for_markdown(markdown_folder, output_folder, markdown_file)?;
     let action = sync_action(markdown_file, &output_file, force)?;
 
@@ -650,7 +650,7 @@ fn sync_markdown_file(
 
     let now = Utc::now();
     let markdown = fs::read_to_string(markdown_file)?;
-    let mut document = convert_markdown_to_aif(&markdown, now);
+    let mut document = convert_markdown_to_rbmem(&markdown, now);
     document.meta.default_expiry_days = options.default_expiry_days;
     document.meta.compact_mode = options.compact_mode;
     if options.infer_relations {
@@ -675,7 +675,7 @@ fn sync_action(
     markdown_file: &Path,
     output_file: &Path,
     force: bool,
-) -> Result<SyncAction, AifError> {
+) -> Result<SyncAction, RbmemError> {
     if !output_file.exists() {
         return Ok(SyncAction::Create);
     }
@@ -692,7 +692,7 @@ fn sync_action(
     }
 }
 
-fn modified_time(path: &Path) -> Result<SystemTime, AifError> {
+fn modified_time(path: &Path) -> Result<SystemTime, RbmemError> {
     Ok(fs::metadata(path)?.modified()?)
 }
 
@@ -700,25 +700,25 @@ fn output_path_for_markdown(
     markdown_folder: &Path,
     output_folder: &Path,
     markdown_file: &Path,
-) -> Result<PathBuf, AifError> {
+) -> Result<PathBuf, RbmemError> {
     let relative = markdown_file.strip_prefix(markdown_folder).map_err(|_| {
-        AifError::Parse(format!(
+        RbmemError::Parse(format!(
             "{} is not inside {}",
             markdown_file.display(),
             markdown_folder.display()
         ))
     })?;
-    Ok(output_folder.join(relative).with_extension("aif"))
+    Ok(output_folder.join(relative).with_extension("rbmem"))
 }
 
-fn find_markdown_files(folder: &Path) -> Result<Vec<PathBuf>, AifError> {
+fn find_markdown_files(folder: &Path) -> Result<Vec<PathBuf>, RbmemError> {
     let mut files = Vec::new();
     collect_markdown_files(folder, &mut files)?;
     files.sort();
     Ok(files)
 }
 
-fn collect_markdown_files(folder: &Path, files: &mut Vec<PathBuf>) -> Result<(), AifError> {
+fn collect_markdown_files(folder: &Path, files: &mut Vec<PathBuf>) -> Result<(), RbmemError> {
     for entry in fs::read_dir(folder)? {
         let entry = entry?;
         let path = entry.path();
@@ -735,7 +735,7 @@ fn watch_markdown_folder(
     markdown_folder: PathBuf,
     output_folder: PathBuf,
     options: SyncOptions,
-) -> Result<(), AifError> {
+) -> Result<(), RbmemError> {
     println!("watching {}", markdown_folder.display());
     let (tx, rx) = mpsc::channel();
     let mut watcher = RecommendedWatcher::new(
@@ -770,7 +770,7 @@ fn watch_markdown_folder(
                 }
             }
             Ok(Err(error)) => eprintln!("watch error: {error}"),
-            Err(error) => return Err(AifError::Io(io::Error::other(error))),
+            Err(error) => return Err(RbmemError::Io(io::Error::other(error))),
         }
     }
 }
@@ -779,16 +779,16 @@ fn event_is_relevant(kind: &EventKind) -> bool {
     matches!(kind, EventKind::Create(_) | EventKind::Modify(_))
 }
 
-fn notify_error(error: notify::Error) -> AifError {
-    AifError::Io(io::Error::other(error))
+fn notify_error(error: notify::Error) -> RbmemError {
+    RbmemError::Io(io::Error::other(error))
 }
 
 fn hermes_json(
-    document: &AIFDocument,
+    document: &RbmemDocument,
     resolve: bool,
     compact: bool,
     minified: bool,
-) -> Result<Value, AifError> {
+) -> Result<Value, RbmemError> {
     let sections = if resolve {
         document
             .resolved_sections()
@@ -838,11 +838,11 @@ fn hermes_json(
             .collect::<Vec<_>>()
             .join("\n\n")
     } else {
-        document.to_aif_string()
+        document.to_rbmem_string()
     };
 
     Ok(json!({
-        "schema": "hermes.aif.v1",
+        "schema": "hermes.rbmem.v1",
         "meta": {
             "version": document.meta.version,
             "purpose": document.meta.purpose,
@@ -865,14 +865,14 @@ fn hermes_json(
 }
 
 fn hermes_inject_block(
-    document: &AIFDocument,
+    document: &RbmemDocument,
     resolve: bool,
     compact: bool,
     minified: bool,
-) -> Result<String, AifError> {
+) -> Result<String, RbmemError> {
     let payload = hermes_json(document, resolve, compact, minified)?;
     Ok(format!(
-        "### HERMES AIF CONTEXT\n```json\n{}\n```\n### END HERMES AIF CONTEXT\n",
+        "### HERMES RBMEM CONTEXT\n```json\n{}\n```\n### END HERMES RBMEM CONTEXT\n",
         serde_json::to_string_pretty(&payload)?
     ))
 }
@@ -907,7 +907,7 @@ fn default_text_type() -> String {
     "text".to_string()
 }
 
-fn read_hermes_payload(input: &str) -> Result<HermesPayload, AifError> {
+fn read_hermes_payload(input: &str) -> Result<HermesPayload, RbmemError> {
     let text = if Path::new(input).exists() {
         fs::read_to_string(input)?
     } else {
@@ -917,10 +917,10 @@ fn read_hermes_payload(input: &str) -> Result<HermesPayload, AifError> {
 }
 
 fn apply_hermes_payload(
-    document: &mut AIFDocument,
+    document: &mut RbmemDocument,
     payload: HermesPayload,
     now: chrono::DateTime<Utc>,
-) -> Result<(), AifError> {
+) -> Result<(), RbmemError> {
     for patch in payload.sections {
         let section_type = SectionType::from_str(&patch.r#type)?;
         let should_append = patch.mode == HermesWriteMode::Append
@@ -937,7 +937,7 @@ fn apply_hermes_payload(
 }
 
 fn append_or_create_section(
-    document: &mut AIFDocument,
+    document: &mut RbmemDocument,
     path: &str,
     section_type: SectionType,
     content: &str,
@@ -962,17 +962,17 @@ fn append_or_create_section(
     }
 }
 
-fn validate_or_error(document: &AIFDocument) -> Result<(), AifError> {
+fn validate_or_error(document: &RbmemDocument) -> Result<(), RbmemError> {
     let warnings = document.validate();
     if warnings.is_empty() {
         Ok(())
     } else {
-        Err(AifError::Parse(warnings.join("; ")))
+        Err(RbmemError::Parse(warnings.join("; ")))
     }
 }
 
-fn hermes_starter_document(project_name: &str, now: chrono::DateTime<Utc>) -> AIFDocument {
-    let mut document = AIFDocument::new(now, "hermes");
+fn hermes_starter_document(project_name: &str, now: chrono::DateTime<Utc>) -> RbmemDocument {
+    let mut document = RbmemDocument::new(now, "hermes");
     document.meta.purpose = format!("hermes-agent-memory:{project_name}");
     document.meta.compact_mode = CompactMode::Minified;
     document.upsert_section(
@@ -992,7 +992,7 @@ fn hermes_starter_document(project_name: &str, now: chrono::DateTime<Utc>) -> AI
     document.upsert_section(
         "tasks",
         SectionType::List,
-        "- Initialize Hermes AIF memory.".to_string(),
+        "- Initialize Hermes RBMEM memory.".to_string(),
         now,
     );
     document.upsert_section(
@@ -1004,7 +1004,7 @@ fn hermes_starter_document(project_name: &str, now: chrono::DateTime<Utc>) -> AI
     document.upsert_section(
         "timeline",
         SectionType::Timeline,
-        format!("{}: Hermes AIF memory initialized.", now.to_rfc3339()),
+        format!("{}: Hermes RBMEM memory initialized.", now.to_rfc3339()),
         now,
     );
     document.upsert_section(
@@ -1016,7 +1016,7 @@ fn hermes_starter_document(project_name: &str, now: chrono::DateTime<Utc>) -> AI
     document
 }
 
-fn watch_hermes_file(file: PathBuf) -> Result<(), AifError> {
+fn watch_hermes_file(file: PathBuf) -> Result<(), RbmemError> {
     let parent = file
         .parent()
         .map(Path::to_path_buf)
@@ -1050,7 +1050,7 @@ fn watch_hermes_file(file: PathBuf) -> Result<(), AifError> {
                 }
             }
             Ok(Err(error)) => eprintln!("watch error: {error}"),
-            Err(error) => return Err(AifError::Io(io::Error::other(error))),
+            Err(error) => return Err(RbmemError::Io(io::Error::other(error))),
         }
     }
 }
@@ -1066,7 +1066,7 @@ mod tests {
 
     #[test]
     fn markdown_converter_preserves_heading_hierarchy() {
-        let document = convert_markdown_to_aif(
+        let document = convert_markdown_to_rbmem(
             r#"# Agents
 Root body.
 
@@ -1101,7 +1101,7 @@ Writer body.
 
     #[test]
     fn markdown_heading_words_stay_inside_one_path_segment() {
-        let document = convert_markdown_to_aif(
+        let document = convert_markdown_to_rbmem(
             r#"# Inhibition of Return
 
 ## How It Works
@@ -1126,7 +1126,7 @@ Body.
 
     #[test]
     fn markdown_converter_preserves_frontmatter_as_meta_section() {
-        let document = convert_markdown_to_aif(
+        let document = convert_markdown_to_rbmem(
             r#"---
 title: Test
 ---
@@ -1157,12 +1157,12 @@ Body.
             "# Agent\n\nRoot.\n\n## Memory\n\nUses Tools.",
         )
         .unwrap();
-        fs::write(markdown.join(".aifsync"), "compact_mode: minified\n").unwrap();
+        fs::write(markdown.join(".rbmemsync"), "compact_mode: minified\n").unwrap();
 
         let options = SyncOptions::from_folder(&markdown, false, 0.6, false).unwrap();
         sync_markdown_folder(&markdown, &output, &options).unwrap();
 
-        let generated = output.join("concepts").join("agent.aif");
+        let generated = output.join("concepts").join("agent.rbmem");
         assert!(generated.exists());
         let parsed = parse_document(
             &fs::read_to_string(generated).unwrap(),
@@ -1190,7 +1190,7 @@ Body.
         let options = SyncOptions::from_folder(&markdown, false, 0.6, true).unwrap();
         sync_markdown_folder(&markdown, &output, &options).unwrap();
 
-        assert!(!output.join("note.aif").exists());
+        assert!(!output.join("note.rbmem").exists());
         let _ = fs::remove_dir_all(root);
     }
 
@@ -1204,7 +1204,7 @@ Body.
 
         let options = SyncOptions::from_folder(&markdown, false, 0.6, false).unwrap();
         sync_markdown_folder(&markdown, &output, &options).unwrap();
-        let generated = output.join("note.aif");
+        let generated = output.join("note.rbmem");
         let first_modified = fs::metadata(&generated).unwrap().modified().unwrap();
         sync_markdown_folder(&markdown, &output, &options).unwrap();
         let second_modified = fs::metadata(&generated).unwrap().modified().unwrap();
@@ -1240,7 +1240,7 @@ Body.
         let document = hermes_starter_document("Demo Project", fixed_time());
         let payload = hermes_json(&document, true, false, true).unwrap();
 
-        assert_eq!(payload["schema"], "hermes.aif.v1");
+        assert_eq!(payload["schema"], "hermes.rbmem.v1");
         assert!(payload["sections"].as_array().unwrap().len() >= 6);
         assert!(payload["graph"]["nodes"].as_array().is_some());
         assert!(payload["timeline"].as_array().unwrap().len() == 1);
@@ -1296,6 +1296,6 @@ Body.
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        std::env::temp_dir().join(format!("aif-{name}-{suffix}"))
+        std::env::temp_dir().join(format!("rbmem-{name}-{suffix}"))
     }
 }
