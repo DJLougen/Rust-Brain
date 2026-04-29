@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented here.
 
+## Unreleased
+
+### Added
+
+- RBMEM-backed Hermes/GEPA self-evolution workflow documentation and a validating example memory file.
+- Recommended `evolution.*` section schema for candidate skills, diffs, reports, traces, metadata, and skill history.
+
 ## [0.1.0] - 2026-04-27
 
 ### Added

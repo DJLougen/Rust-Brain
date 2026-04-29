@@ -168,6 +168,12 @@ Save agent memory safely:
 .\target\release\rbmem.exe hermes save my-agent-memory.rbmem --json '{"sections":[{"path":"memory","type":"hermes:memory","content":"- User prefers concise engineering answers.","mode":"append"}]}'
 ```
 
+Store GEPA/Hermes self-evolution artifacts in the same `.rbmem` file:
+
+```powershell
+.\target\release\rbmem.exe hermes save my-agent-memory.rbmem --json '{"sections":[{"path":"evolution.skills.github-code-review.history","type":"hermes:memory","content":"- GEPA candidate held for human review.","mode":"append"},{"path":"evolution.skills.github-code-review.candidates.demo-gepa-001.metadata","type":"json","content":"{\"status\":\"needs_human_review\",\"candidate_score\":0.82,\"auto_applied\":false}","mode":"replace"}]}'
+```
+
 Print a ready-to-paste Hermes context block:
 
 ```powershell
@@ -186,7 +192,7 @@ Hermes Workspace is configured to load that file through:
 C:\Users\basbe\Desktop\Rust-Brain\target\release\rbmem.exe hermes load C:\Users\basbe\.hermes\MEMORY.rbmem --resolve --minified
 ```
 
-See [HERMES.md](HERMES.md) for agent instructions and the save payload shape.
+See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. See [docs/HERMES_SELF_EVOLUTION.md](docs/HERMES_SELF_EVOLUTION.md) and [examples/hermes-self-evolution.rbmem](examples/hermes-self-evolution.rbmem) for the RBMEM-backed GEPA self-evolution workflow.
 
 ## Command Cheat Sheet
 

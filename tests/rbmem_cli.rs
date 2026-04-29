@@ -111,3 +111,21 @@ content: |
         .content
         .contains("not become RBMEM structure"));
 }
+
+#[test]
+fn hermes_self_evolution_example_is_valid_rbmem() {
+    let now = fixed_time();
+    let input = include_str!("../examples/hermes-self-evolution.rbmem");
+    let parsed = parse_document(input, TimestampPolicy::Protect { now }).unwrap();
+    let warnings = parsed.document.validate();
+
+    assert!(warnings.is_empty(), "{warnings:?}");
+    assert!(parsed
+        .document
+        .sections
+        .iter()
+        .any(|section| section.path == "evolution.runs.demo-gepa-001.report"));
+    assert!(parsed.document.sections.iter().any(|section| {
+        section.path == "evolution.skills.github-code-review.candidates.demo-gepa-001.metadata"
+    }));
+}

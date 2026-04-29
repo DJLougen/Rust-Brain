@@ -50,6 +50,60 @@ rbmem sync notes RBMEM-memory --watch --infer-relations
 
 `mode` can be `auto`, `append`, or `replace`. For `hermes:memory`, `auto` appends safely and avoids duplicate exact entries.
 
+## Self-Evolution Memory Schema
+
+GEPA/Hermes self-evolution should write candidates and evidence into RBMEM, not
+sidecar Markdown files. Use `evolution.*` paths so every mutation is durable,
+loadable, and reviewable:
+
+```text
+evolution.runs.<run_id>.config
+evolution.runs.<run_id>.report
+evolution.runs.<run_id>.latest_trace
+evolution.runs.<run_id>.traces.<example_id>
+evolution.skills.<skill_name>.history
+evolution.skills.<skill_name>.candidates.<run_id>.skill
+evolution.skills.<skill_name>.candidates.<run_id>.diff
+evolution.skills.<skill_name>.candidates.<run_id>.metadata
+```
+
+Example save payload:
+
+```json
+{
+  "sections": [
+    {
+      "path": "evolution.runs.demo-gepa-001.report",
+      "type": "text",
+      "content": "PR-ready GEPA report with score deltas, safety gates, and review notes.",
+      "mode": "replace"
+    },
+    {
+      "path": "evolution.skills.github-code-review.history",
+      "type": "hermes:memory",
+      "content": "- 2026-04-29: Candidate demo-gepa-001 improved validation score and is waiting for human review.",
+      "mode": "append"
+    },
+    {
+      "path": "evolution.skills.github-code-review.candidates.demo-gepa-001.skill",
+      "type": "text",
+      "content": "Candidate skill text goes here.",
+      "mode": "replace"
+    },
+    {
+      "path": "evolution.skills.github-code-review.candidates.demo-gepa-001.metadata",
+      "type": "json",
+      "content": "{\"status\":\"needs_human_review\",\"baseline_score\":0.71,\"candidate_score\":0.82,\"auto_applied\":false}",
+      "mode": "replace"
+    }
+  ]
+}
+```
+
+Self-evolution must not auto-commit or silently replace live skills. Store the
+candidate, diff, report, traces, and metadata first; apply the candidate only
+after regression tests and human review pass.
+
 ## Injection Block
 
 ```powershell
