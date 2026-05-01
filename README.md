@@ -81,6 +81,13 @@ Feed the smallest useful resolved view to an agent:
 .\target\release\rbmem.exe read memory.rbmem --resolve --minified
 ```
 
+Ask RBMEM for task-specific context:
+
+```powershell
+.\target\release\rbmem.exe query memory.rbmem "github code review" --resolve --minified --graph-depth 1
+.\target\release\rbmem.exe context memory.rbmem --task "review this PR" --resolve --minified
+```
+
 ## RBMEM At A Glance
 
 An RBMEM file is plain text:
@@ -180,6 +187,42 @@ Print a ready-to-paste Hermes context block:
 .\target\release\rbmem.exe read my-agent-memory.rbmem --resolve --hermes-inject --minified
 ```
 
+## Context Packs And Review
+
+Create `.rbmempacks` next to a memory file:
+
+```text
+[pack: code_review]
+include:
+  - rules
+  - memory.user.preferences
+query: "pull request tests"
+graph_depth: 1
+mode: minified
+```
+
+Load that named context pack:
+
+```powershell
+.\target\release\rbmem.exe pack memory.rbmem code_review --resolve
+```
+
+Review and compare memory changes:
+
+```powershell
+.\target\release\rbmem.exe review memory.rbmem
+.\target\release\rbmem.exe diff before.rbmem after.rbmem
+```
+
+Sections can now carry optional provenance:
+
+```rbmem
+source:
+  kind: "markdown"
+  path: "notes/project.md"
+  actor: "sync"
+```
+
 Current local Hermes integration uses:
 
 ```text
@@ -207,6 +250,11 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. Se
 | `convert-from-md <in.md> <out.rbmem>` | Convert Markdown headings into dotted RBMEM paths. |
 | `sync <md-folder> <out-folder>` | Convert a Markdown folder into RBMEM files. |
 | `infer <file.rbmem>` | Infer graph relations from prose. |
+| `query <file.rbmem> <text>` | Return matching task-specific context. |
+| `context <file.rbmem> --task <text>` | Alias for task-oriented context assembly. |
+| `pack <file.rbmem> <name>` | Render a named context pack from `.rbmempacks`. |
+| `diff <before.rbmem> <after.rbmem>` | Report section-level memory changes. |
+| `review <file.rbmem>` | Validate and flag agent-written or inferred memory for human review. |
 | `graph <file.rbmem> --format json` | Export graph nodes and edges. |
 | `graph <file.rbmem> --format dot` | Export a DOT graph. |
 | `tree <file.rbmem>` | Show section hierarchy. |

@@ -195,11 +195,21 @@ pub struct GraphInfo {
     pub relations: Vec<GraphRelation>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SourceInfo {
+    pub kind: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub actor: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Section {
     pub path: String,
     pub section_type: SectionType,
     pub temporal: Temporal,
+    pub source: Option<SourceInfo>,
     pub graph: Option<GraphInfo>,
     pub content: String,
 }
@@ -210,6 +220,7 @@ impl Section {
             path: path.into(),
             section_type,
             temporal: Temporal::new(now, None),
+            source: None,
             graph: None,
             content: String::new(),
         }
@@ -233,6 +244,7 @@ pub struct ResolvedSection {
     pub path: String,
     pub section_type: SectionType,
     pub temporal: Temporal,
+    pub source: Option<SourceInfo>,
     pub graph: Option<GraphInfo>,
     pub content: String,
 }
@@ -686,6 +698,17 @@ impl RbmemDocument {
                 ));
             }
 
+            if let Some(source) = &section.source {
+                output.push_str("source:\n");
+                output.push_str(&format!("  kind: \"{}\"\n", escape_string(&source.kind)));
+                if let Some(path) = &source.path {
+                    output.push_str(&format!("  path: \"{}\"\n", escape_string(path)));
+                }
+                if let Some(actor) = &source.actor {
+                    output.push_str(&format!("  actor: \"{}\"\n", escape_string(actor)));
+                }
+            }
+
             if let Some(graph) = &section.graph {
                 output.push_str("graph:\n");
                 if let Some(node_type) = &graph.node_type {
@@ -769,6 +792,9 @@ fn merge_section_chain(chain: &[&Section]) -> ResolvedSection {
         resolved.path = child.path.clone();
         resolved.section_type = child.section_type;
         resolved.temporal = child.temporal.clone();
+        if child.source.is_some() {
+            resolved.source = child.source.clone();
+        }
         resolved.graph = merge_graph(resolved.graph.as_ref(), child.graph.as_ref());
         resolved.content = merge_content(
             parent_type,
@@ -782,6 +808,7 @@ fn merge_section_chain(chain: &[&Section]) -> ResolvedSection {
         path: resolved.path,
         section_type: resolved.section_type,
         temporal: resolved.temporal,
+        source: resolved.source,
         graph: resolved.graph,
         content: resolved.content,
     }

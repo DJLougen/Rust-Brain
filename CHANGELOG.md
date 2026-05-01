@@ -4,8 +4,15 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## [0.2.0] - 2026-05-01
+
 ### Added
 
+- Task-specific context assembly with `query` and `context` commands.
+- Named context packs through `.rbmempacks` and the `pack` command.
+- Optional per-section provenance with `source.kind`, `source.path`, and `source.actor`.
+- Section-level `diff` and review-oriented `review` commands.
+- Hermes, Markdown sync, and CLI update provenance stamping.
 - RBMEM-backed Hermes/GEPA self-evolution workflow documentation and a validating example memory file.
 - Recommended `evolution.*` section schema for candidate skills, diffs, reports, traces, metadata, and skill history.
 

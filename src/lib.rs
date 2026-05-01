@@ -8,5 +8,5 @@ pub mod parser;
 
 pub use document::{
     CompactMode, GraphEdge, GraphRelation, GraphView, Meta, RbmemDocument, RbmemError,
-    ResolvedSection, Section, SectionType, Temporal, TimestampPolicy,
+    ResolvedSection, Section, SectionType, SourceInfo, Temporal, TimestampPolicy,
 };

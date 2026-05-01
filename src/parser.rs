@@ -6,7 +6,7 @@
 
 use crate::document::{
     CompactMode, GraphInfo, GraphRelation, Meta, RbmemDocument, RbmemError, Section, SectionType,
-    Temporal, TimestampPolicy,
+    SourceInfo, Temporal, TimestampPolicy,
 };
 use chrono::{DateTime, Utc};
 use nom::branch::alt;
@@ -171,6 +171,7 @@ struct RawSection {
     path: String,
     section_type: Option<SectionType>,
     temporal_values: HashMap<String, String>,
+    source: Option<SourceInfo>,
     graph: Option<GraphInfo>,
     content: String,
 }
@@ -230,6 +231,7 @@ impl RawSection {
             path: self.path,
             section_type,
             temporal,
+            source: self.source,
             graph: self.graph,
             content: self.content,
         }
@@ -291,6 +293,7 @@ fn section_prefix(input: &str) -> IResult<&str, &str> {
 fn parse_section_body(path: &str, body: &str) -> RawSection {
     let mut section_type = None;
     let mut temporal_values = HashMap::new();
+    let mut source_values = HashMap::new();
     let mut graph = GraphInfo::default();
     let mut saw_graph = false;
     let mut content_lines = Vec::new();
@@ -301,10 +304,23 @@ fn parse_section_body(path: &str, body: &str) -> RawSection {
         let trimmed = line.trim();
 
         if trimmed == "temporal:" {
+            if let Some(relation) = current_relation.take() {
+                graph.relations.push(relation);
+            }
             mode = BodyMode::Temporal;
             continue;
         }
+        if trimmed == "source:" {
+            if let Some(relation) = current_relation.take() {
+                graph.relations.push(relation);
+            }
+            mode = BodyMode::Source;
+            continue;
+        }
         if trimmed == "graph:" {
+            if let Some(relation) = current_relation.take() {
+                graph.relations.push(relation);
+            }
             mode = BodyMode::Graph;
             saw_graph = true;
             continue;
@@ -330,6 +346,11 @@ fn parse_section_body(path: &str, body: &str) -> RawSection {
             BodyMode::Temporal => {
                 if let Some((key, value)) = trimmed.split_once(':') {
                     temporal_values.insert(key.trim().to_string(), clean_scalar(value));
+                }
+            }
+            BodyMode::Source => {
+                if let Some((key, value)) = trimmed.split_once(':') {
+                    source_values.insert(key.trim().to_string(), clean_scalar(value));
                 }
             }
             BodyMode::Graph => {
@@ -393,6 +414,7 @@ fn parse_section_body(path: &str, body: &str) -> RawSection {
         path: path.to_string(),
         section_type,
         temporal_values,
+        source: source_from_values(source_values),
         graph: saw_graph.then_some(graph),
         content: trim_trailing_blank_lines(content_lines).join("\n"),
     }
@@ -402,8 +424,23 @@ fn parse_section_body(path: &str, body: &str) -> RawSection {
 enum BodyMode {
     Top,
     Temporal,
+    Source,
     Graph,
     Content,
+}
+
+fn source_from_values(values: HashMap<String, String>) -> Option<SourceInfo> {
+    values.get("kind").map(|kind| SourceInfo {
+        kind: kind.clone(),
+        path: values
+            .get("path")
+            .cloned()
+            .filter(|value| !value.is_empty()),
+        actor: values
+            .get("actor")
+            .cloned()
+            .filter(|value| !value.is_empty()),
+    })
 }
 
 fn parse_field_line(line: &str, key: &str) -> Option<String> {
@@ -447,14 +484,18 @@ fn clean_scalar(value: &str) -> String {
     if value.eq_ignore_ascii_case("null") {
         return "null".to_string();
     }
-    value
+    let cleaned = value
         .trim_matches('"')
         .trim_matches('\'')
         .split('#')
         .next()
         .unwrap_or("")
-        .trim()
-        .to_string()
+        .trim();
+    unescape_scalar(cleaned)
+}
+
+fn unescape_scalar(value: &str) -> String {
+    value.replace("\\\"", "\"").replace("\\\\", "\\")
 }
 
 fn clean_inline_content(value: &str) -> String {
@@ -713,5 +754,30 @@ content: |
         .unwrap();
 
         assert_eq!(parsed.document.meta.compact_mode, CompactMode::Minified);
+    }
+
+    #[test]
+    fn parses_section_source_provenance() {
+        let parsed = parse_document(
+            r#"meta:
+  version: 1.3
+[SECTION: note]
+type: text
+source:
+  kind: "markdown"
+  path: "notes/note.md"
+  actor: "sync"
+content: |
+  hello
+[END SECTION]
+"#,
+            TimestampPolicy::Preserve,
+        )
+        .unwrap();
+
+        let source = parsed.document.sections[0].source.as_ref().unwrap();
+        assert_eq!(source.kind, "markdown");
+        assert_eq!(source.path.as_deref(), Some("notes/note.md"));
+        assert_eq!(source.actor.as_deref(), Some("sync"));
     }
 }

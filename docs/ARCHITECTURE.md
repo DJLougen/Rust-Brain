@@ -5,8 +5,8 @@
 | Module | Responsibility |
 | --- | --- |
 | `src/parser.rs` | Forgiving Nom parser for RBMEM v1.3 syntax, including canonical and human-friendly section delimiters. |
-| `src/document.rs` | Core data model, smart merge, timestamp protection, graph view, compact rendering, relation inference, and validation helpers. |
-| `src/main.rs` | CLI command wiring, Markdown conversion, sync workflow, Hermes integration, and file I/O. |
+| `src/document.rs` | Core data model, smart merge, timestamp protection, provenance, graph view, compact rendering, relation inference, and validation helpers. |
+| `src/main.rs` | CLI command wiring, Markdown conversion, sync workflow, context query/pack assembly, review/diff commands, Hermes integration, and file I/O. |
 
 ## Data Flow
 
@@ -20,7 +20,17 @@
    - Compact or minified RBMEM for context windows.
    - JSON for Hermes and automation.
    - DOT or JSON graph output.
+   - Task-specific context selected by query text, named packs, parent paths, and graph neighbors.
 5. Updates write the full durable RBMEM document back to disk.
+
+## Context Assembly
+
+`rbmem query` and `rbmem context` select sections by path/content matches, can include parent sections for resolved inheritance, and can pull graph neighbors by depth. `rbmem pack` makes that repeatable through `.rbmempacks` files with `include`, `query`, `graph_depth`, and `mode` fields.
+
+## Provenance And Review
+
+Sections may include an optional `source` block with `kind`, `path`, and `actor`.
+Markdown sync stamps synced sections with `kind: "markdown"`, CLI updates use `kind: "cli"`, and Hermes saves use `kind: "hermes"` unless a payload supplies a more specific source. `rbmem review` combines parser/validation warnings with provenance and inferred-edge review hints, while `rbmem diff` compares section-level changes between two RBMEM files.
 
 ## Graph Model
 

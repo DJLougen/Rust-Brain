@@ -2,10 +2,17 @@ use chrono::Utc;
 use clap::{Parser, Subcommand, ValueEnum};
 use notify::{Config as NotifyConfig, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use rbmem::document::graph_view_to_json;
+#[cfg(test)]
+use rbmem::document::GraphInfo;
 use rbmem::parser::parse_document;
-use rbmem::{CompactMode, RbmemDocument, RbmemError, SectionType, TimestampPolicy};
+#[cfg(test)]
+use rbmem::GraphRelation;
+use rbmem::{
+    CompactMode, RbmemDocument, RbmemError, Section, SectionType, SourceInfo, TimestampPolicy,
+};
 use serde::Deserialize;
 use serde_json::{json, Value};
+use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -97,6 +104,50 @@ enum Command {
         file: PathBuf,
         #[arg(long, default_value_t = 0.6)]
         min_confidence: f64,
+    },
+    Query {
+        file: PathBuf,
+        text: String,
+        #[arg(long)]
+        resolve: bool,
+        #[arg(long)]
+        compact: bool,
+        #[arg(long, alias = "tiny")]
+        minified: bool,
+        #[arg(long, default_value_t = 0)]
+        graph_depth: usize,
+    },
+    Context {
+        file: PathBuf,
+        #[arg(long)]
+        task: String,
+        #[arg(long)]
+        resolve: bool,
+        #[arg(long)]
+        compact: bool,
+        #[arg(long, alias = "tiny")]
+        minified: bool,
+        #[arg(long, default_value_t = 1)]
+        graph_depth: usize,
+    },
+    Diff {
+        before: PathBuf,
+        after: PathBuf,
+    },
+    Review {
+        file: PathBuf,
+    },
+    Pack {
+        file: PathBuf,
+        name: String,
+        #[arg(long)]
+        pack_file: Option<PathBuf>,
+        #[arg(long)]
+        resolve: bool,
+        #[arg(long)]
+        compact: bool,
+        #[arg(long, alias = "tiny")]
+        minified: bool,
     },
     Sync {
         markdown_folder: PathBuf,
@@ -249,6 +300,15 @@ fn run() -> Result<(), RbmemError> {
             let section_type = SectionType::from_str(&r#type)?;
             let body = read_content_argument(content, content_file)?;
             document.upsert_section(&section, section_type, body, now);
+            set_section_source(
+                &mut document,
+                &section,
+                SourceInfo {
+                    kind: "cli".to_string(),
+                    path: None,
+                    actor: Some("me".to_string()),
+                },
+            );
             document.enforce_protected_timestamps(now);
             write_document(&file, &document, human)?;
             println!("updated {}", file.display());
@@ -295,6 +355,14 @@ fn run() -> Result<(), RbmemError> {
             let now = Utc::now();
             let text = fs::read_to_string(&markdown)?;
             let mut document = convert_markdown_to_rbmem(&text, now);
+            stamp_document_source(
+                &mut document,
+                SourceInfo {
+                    kind: "markdown".to_string(),
+                    path: Some(markdown.display().to_string()),
+                    actor: Some("sync".to_string()),
+                },
+            );
             if infer_relations {
                 document.infer_relations(now, min_confidence);
             }
@@ -310,6 +378,57 @@ fn run() -> Result<(), RbmemError> {
             let added = document.infer_relations(now, min_confidence);
             write_document(&file, &document, false)?;
             println!("added {added} inferred relation(s)");
+        }
+        Command::Query {
+            file,
+            text,
+            resolve,
+            compact,
+            minified,
+            graph_depth,
+        } => {
+            let document = read_document(&file, TimestampPolicy::Preserve)?;
+            let context = query_document(&document, &text, resolve, graph_depth);
+            print_context_document(&context, resolve, compact, minified);
+        }
+        Command::Context {
+            file,
+            task,
+            resolve,
+            compact,
+            minified,
+            graph_depth,
+        } => {
+            let document = read_document(&file, TimestampPolicy::Preserve)?;
+            let context = query_document(&document, &task, resolve, graph_depth);
+            print_context_document(&context, resolve, compact, minified);
+        }
+        Command::Diff { before, after } => {
+            let before = read_document(&before, TimestampPolicy::Preserve)?;
+            let after = read_document(&after, TimestampPolicy::Preserve)?;
+            print!("{}", diff_documents(&before, &after));
+        }
+        Command::Review { file } => {
+            let text = fs::read_to_string(&file)?;
+            let parsed = parse_document(&text, TimestampPolicy::Preserve)?;
+            print!("{}", review_document(&parsed.document, parsed.warnings));
+        }
+        Command::Pack {
+            file,
+            name,
+            pack_file,
+            resolve,
+            compact,
+            minified,
+        } => {
+            let document = read_document(&file, TimestampPolicy::Preserve)?;
+            let config_path = pack_file.unwrap_or_else(|| default_pack_file(&file));
+            let config_text = fs::read_to_string(&config_path)?;
+            let pack = parse_pack_config(&config_text, &name)?;
+            let context = pack_document(&document, &pack, resolve);
+            let compact = compact || (!minified && pack.mode == Some(CompactMode::Compact));
+            let minified = minified || pack.mode == Some(CompactMode::Minified);
+            print_context_document(&context, resolve, compact, minified);
         }
         Command::Sync {
             markdown_folder,
@@ -503,6 +622,379 @@ fn first_line(text: &str) -> &str {
     text.lines().next().unwrap_or("")
 }
 
+fn query_document(
+    document: &RbmemDocument,
+    query: &str,
+    include_parents: bool,
+    graph_depth: usize,
+) -> RbmemDocument {
+    let query_terms = query_terms(query);
+    let phrase = normalize_for_query(query);
+    let mut selected = query_matches(document, &query_terms, &phrase);
+
+    if include_parents {
+        include_parent_sections(document, &mut selected);
+    }
+
+    include_graph_neighbors(document, &mut selected, graph_depth);
+    subset_document(document, selected)
+}
+
+fn query_matches(document: &RbmemDocument, terms: &[String], phrase: &str) -> BTreeSet<String> {
+    let mut scored = document
+        .sections
+        .iter()
+        .filter_map(|section| {
+            let score = query_score(section, terms, phrase);
+            (score > 0).then_some((section.path.clone(), score))
+        })
+        .collect::<Vec<_>>();
+
+    scored.sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
+    scored.into_iter().map(|(path, _)| path).collect()
+}
+
+fn query_score(section: &Section, terms: &[String], phrase: &str) -> usize {
+    let path = normalize_for_query(&section.path);
+    let content = normalize_for_query(&section.content);
+    let mut score = 0;
+
+    if !phrase.is_empty() {
+        if path.contains(phrase) {
+            score += 20;
+        }
+        if content.contains(phrase) {
+            score += 12;
+        }
+    }
+
+    for term in terms {
+        if path.contains(term) {
+            score += 5;
+        }
+        if content.contains(term) {
+            score += 1;
+        }
+    }
+
+    score
+}
+
+fn include_parent_sections(document: &RbmemDocument, selected: &mut BTreeSet<String>) {
+    let known_paths = document
+        .sections
+        .iter()
+        .map(|section| section.path.as_str())
+        .collect::<BTreeSet<_>>();
+    let matched = selected.iter().cloned().collect::<Vec<_>>();
+
+    for path in matched {
+        let parts = path.split('.').collect::<Vec<_>>();
+        for depth in 1..parts.len() {
+            let parent = parts[..depth].join(".");
+            if known_paths.contains(parent.as_str()) {
+                selected.insert(parent);
+            }
+        }
+    }
+}
+
+fn include_graph_neighbors(
+    document: &RbmemDocument,
+    selected: &mut BTreeSet<String>,
+    graph_depth: usize,
+) {
+    if graph_depth == 0 || selected.is_empty() {
+        return;
+    }
+
+    let known_paths = document
+        .sections
+        .iter()
+        .map(|section| section.path.clone())
+        .collect::<BTreeSet<_>>();
+    let graph = document.graph_view();
+    let mut frontier = selected.clone();
+
+    for _ in 0..graph_depth {
+        let mut next = BTreeSet::new();
+        for edge in &graph.edges {
+            if frontier.contains(&edge.from) && known_paths.contains(&edge.to) {
+                next.insert(edge.to.clone());
+            }
+            if frontier.contains(&edge.to) && known_paths.contains(&edge.from) {
+                next.insert(edge.from.clone());
+            }
+        }
+
+        let before = selected.len();
+        selected.extend(next.iter().cloned());
+        if selected.len() == before {
+            break;
+        }
+        frontier = next;
+    }
+}
+
+fn subset_document(document: &RbmemDocument, selected: BTreeSet<String>) -> RbmemDocument {
+    let mut subset = document.clone();
+    subset
+        .sections
+        .retain(|section| selected.contains(&section.path));
+    subset
+}
+
+fn print_context_document(document: &RbmemDocument, resolve: bool, compact: bool, minified: bool) {
+    if minified || (!compact && document.meta.compact_mode == CompactMode::Minified) {
+        print!("{}", document.to_minified_string(resolve));
+    } else if compact || document.meta.compact_mode == CompactMode::Compact {
+        print!("{}", document.to_compact_string(resolve, Utc::now()));
+    } else {
+        print!("{}", document.to_rbmem_string_hiding_empty_temporal());
+    }
+}
+
+fn query_terms(text: &str) -> Vec<String> {
+    normalize_for_query(text)
+        .split_whitespace()
+        .filter(|term| term.len() > 1)
+        .map(ToString::to_string)
+        .collect()
+}
+
+fn normalize_for_query(text: &str) -> String {
+    let mut output = String::new();
+    let mut last_was_space = true;
+
+    for ch in text.chars() {
+        if ch.is_ascii_alphanumeric() {
+            output.push(ch.to_ascii_lowercase());
+            last_was_space = false;
+        } else if !last_was_space {
+            output.push(' ');
+            last_was_space = true;
+        }
+    }
+
+    output.trim().to_string()
+}
+
+fn stamp_document_source(document: &mut RbmemDocument, source: SourceInfo) {
+    for section in &mut document.sections {
+        section.source = Some(source.clone());
+    }
+}
+
+fn set_section_source(document: &mut RbmemDocument, path: &str, source: SourceInfo) {
+    if let Some(section) = document
+        .sections
+        .iter_mut()
+        .find(|section| section.path == path)
+    {
+        section.source = Some(source);
+    }
+}
+
+fn diff_documents(before: &RbmemDocument, after: &RbmemDocument) -> String {
+    let before_by_path = section_map(before);
+    let after_by_path = section_map(after);
+    let mut output = String::new();
+
+    for path in after_by_path.keys() {
+        if !before_by_path.contains_key(path) {
+            output.push_str(&format!("added: {path}\n"));
+        }
+    }
+
+    for path in before_by_path.keys() {
+        if !after_by_path.contains_key(path) {
+            output.push_str(&format!("removed: {path}\n"));
+        }
+    }
+
+    for path in after_by_path.keys() {
+        let Some(before_section) = before_by_path.get(path) else {
+            continue;
+        };
+        let after_section = after_by_path[path];
+        if before_section.section_type != after_section.section_type {
+            output.push_str(&format!(
+                "changed type: {path} {} -> {}\n",
+                before_section.section_type, after_section.section_type
+            ));
+        }
+        if before_section.content != after_section.content {
+            output.push_str(&format!("changed content: {path}\n"));
+        }
+        if before_section.temporal != after_section.temporal {
+            output.push_str(&format!("changed temporal: {path}\n"));
+        }
+        if before_section.source != after_section.source {
+            output.push_str(&format!("changed source: {path}\n"));
+        }
+        if before_section.graph != after_section.graph {
+            output.push_str(&format!("changed graph: {path}\n"));
+        }
+    }
+
+    if output.is_empty() {
+        "no RBMEM differences\n".to_string()
+    } else {
+        output
+    }
+}
+
+fn section_map(document: &RbmemDocument) -> HashMap<String, &Section> {
+    document
+        .sections
+        .iter()
+        .map(|section| (section.path.clone(), section))
+        .collect()
+}
+
+fn review_document(document: &RbmemDocument, mut warnings: Vec<String>) -> String {
+    warnings.extend(document.validate());
+    let mut output = String::new();
+
+    if warnings.is_empty() {
+        output.push_str("valid RBMEM v1.3\n");
+    } else {
+        for warning in warnings {
+            output.push_str(&format!("warning: {warning}\n"));
+        }
+    }
+
+    for section in &document.sections {
+        if let Some(source) = &section.source {
+            if matches!(source.kind.as_str(), "agent" | "hermes") {
+                output.push_str(&format!(
+                    "review source: {} from {}\n",
+                    section.path, source.kind
+                ));
+            }
+        }
+
+        if let Some(graph) = &section.graph {
+            for relation in &graph.relations {
+                if relation.inferred {
+                    output.push_str(&format!(
+                        "review inferred edge: {} -> {} ({})\n",
+                        section.path, relation.to, relation.relation_type
+                    ));
+                }
+            }
+        }
+    }
+
+    output
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct PackConfig {
+    name: String,
+    include: Vec<String>,
+    query: Option<String>,
+    graph_depth: usize,
+    mode: Option<CompactMode>,
+}
+
+fn default_pack_file(file: &Path) -> PathBuf {
+    file.parent()
+        .map(|parent| parent.join(".rbmempacks"))
+        .unwrap_or_else(|| PathBuf::from(".rbmempacks"))
+}
+
+fn parse_pack_config(text: &str, name: &str) -> Result<PackConfig, RbmemError> {
+    let mut current: Option<PackConfig> = None;
+    let mut in_include = false;
+
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        if let Some(pack_name) = trimmed
+            .strip_prefix("[pack:")
+            .and_then(|value| value.strip_suffix(']'))
+        {
+            if current.as_ref().is_some_and(|pack| pack.name == name) {
+                return Ok(current.unwrap());
+            }
+            current = Some(PackConfig {
+                name: pack_name.trim().to_string(),
+                ..PackConfig::default()
+            });
+            in_include = false;
+            continue;
+        }
+
+        let Some(pack) = current.as_mut() else {
+            continue;
+        };
+        if pack.name != name {
+            continue;
+        }
+
+        if trimmed == "include:" {
+            in_include = true;
+            continue;
+        }
+
+        if in_include && trimmed.starts_with("- ") {
+            pack.include.push(trimmed[2..].trim().to_string());
+            continue;
+        }
+        in_include = false;
+
+        let Some((key, value)) = trimmed.split_once(':') else {
+            continue;
+        };
+        let value = value.trim().trim_matches('"').trim_matches('\'');
+        match key.trim() {
+            "query" | "task" => pack.query = Some(value.to_string()),
+            "graph_depth" => pack.graph_depth = value.parse::<usize>().unwrap_or(0),
+            "mode" => pack.mode = Some(CompactMode::from_str(value)?),
+            _ => {}
+        }
+    }
+
+    current
+        .filter(|pack| pack.name == name)
+        .ok_or_else(|| RbmemError::Parse(format!("pack '{name}' not found")))
+}
+
+fn pack_document(
+    document: &RbmemDocument,
+    pack: &PackConfig,
+    include_parents: bool,
+) -> RbmemDocument {
+    let mut selected = BTreeSet::new();
+
+    for include in &pack.include {
+        for section in &document.sections {
+            if section.path == *include || section.path.starts_with(&format!("{include}.")) {
+                selected.insert(section.path.clone());
+            }
+        }
+    }
+
+    if let Some(query) = &pack.query {
+        selected.extend(
+            query_document(document, query, include_parents, pack.graph_depth)
+                .sections
+                .into_iter()
+                .map(|section| section.path),
+        );
+    }
+
+    if include_parents {
+        include_parent_sections(document, &mut selected);
+    }
+    include_graph_neighbors(document, &mut selected, pack.graph_depth);
+    subset_document(document, selected)
+}
+
 #[derive(Debug, Clone)]
 struct SyncOptions {
     infer_relations: bool,
@@ -653,6 +1145,19 @@ fn sync_markdown_file(
     let mut document = convert_markdown_to_rbmem(&markdown, now);
     document.meta.default_expiry_days = options.default_expiry_days;
     document.meta.compact_mode = options.compact_mode;
+    let source_path = markdown_file
+        .strip_prefix(markdown_folder)
+        .unwrap_or(markdown_file)
+        .display()
+        .to_string();
+    stamp_document_source(
+        &mut document,
+        SourceInfo {
+            kind: "markdown".to_string(),
+            path: Some(source_path),
+            actor: Some("sync".to_string()),
+        },
+    );
     if options.infer_relations {
         document.infer_relations(now, options.min_confidence);
     }
@@ -800,6 +1305,7 @@ fn hermes_json(
                     "content": section.content,
                     "resolved": true,
                     "temporal": section.temporal,
+                    "source": section.source,
                     "graph": section.graph,
                 })
             })
@@ -815,6 +1321,7 @@ fn hermes_json(
                     "content": section.content,
                     "resolved": false,
                     "temporal": section.temporal,
+                    "source": section.source.clone(),
                     "graph": section.graph,
                 })
             })
@@ -892,6 +1399,8 @@ struct HermesSectionPatch {
     content: String,
     #[serde(default)]
     mode: HermesWriteMode,
+    #[serde(default)]
+    source: Option<SourceInfo>,
 }
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq, Eq)]
@@ -931,6 +1440,15 @@ fn apply_hermes_payload(
         } else {
             document.upsert_section(&patch.path, section_type, patch.content, now);
         }
+        set_section_source(
+            document,
+            &patch.path,
+            patch.source.unwrap_or_else(|| SourceInfo {
+                kind: "hermes".to_string(),
+                path: None,
+                actor: Some("hermes".to_string()),
+            }),
+        );
     }
     document.enforce_protected_timestamps(now);
     Ok(())
@@ -1175,6 +1693,10 @@ Body.
             .sections
             .iter()
             .any(|section| section.path == "agent.memory"));
+        let source = parsed.document.sections[0].source.as_ref().unwrap();
+        assert_eq!(source.kind, "markdown");
+        let expected_source_path = Path::new("concepts").join("agent.md").display().to_string();
+        assert_eq!(source.path.as_deref(), Some(expected_source_path.as_str()));
 
         let _ = fs::remove_dir_all(root);
     }
@@ -1245,6 +1767,157 @@ Body.
         assert!(payload["graph"]["nodes"].as_array().is_some());
         assert!(payload["timeline"].as_array().unwrap().len() == 1);
         assert!(payload["context"].as_str().unwrap().contains("[goals]"));
+    }
+
+    #[test]
+    fn query_context_includes_matches_parents_and_graph_neighbors() {
+        let now = fixed_time();
+        let mut document = RbmemDocument::new(now, "me");
+        document.upsert_section(
+            "rules",
+            SectionType::List,
+            "- Preserve user intent.".to_string(),
+            now,
+        );
+        document.upsert_section(
+            "rules.review",
+            SectionType::Text,
+            "Review pull requests with tests in mind.".to_string(),
+            now,
+        );
+        document.upsert_section(
+            "memory.testing",
+            SectionType::Text,
+            "Run focused Rust checks before handing work back.".to_string(),
+            now,
+        );
+
+        let review = document
+            .sections
+            .iter_mut()
+            .find(|section| section.path == "rules.review")
+            .unwrap();
+        review.graph = Some(GraphInfo {
+            node_type: None,
+            relations: vec![GraphRelation {
+                to: "memory.testing".to_string(),
+                relation_type: "uses".to_string(),
+                valid_from: Some(now),
+                valid_until: None,
+                inferred: false,
+                confidence: None,
+            }],
+        });
+
+        let context = query_document(&document, "pull requests", true, 1);
+        let paths = context
+            .sections
+            .iter()
+            .map(|section| section.path.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(paths, vec!["memory.testing", "rules", "rules.review"]);
+        assert!(context
+            .to_minified_string(true)
+            .contains("Preserve user intent"));
+    }
+
+    #[test]
+    fn diff_reports_added_and_changed_sections() {
+        let now = fixed_time();
+        let mut before = RbmemDocument::new(now, "me");
+        before.upsert_section("rules", SectionType::Text, "old".to_string(), now);
+
+        let mut after = before.clone();
+        after.upsert_section("rules", SectionType::Text, "new".to_string(), now);
+        after.upsert_section("memory", SectionType::Text, "added".to_string(), now);
+
+        let diff = diff_documents(&before, &after);
+
+        assert!(diff.contains("added: memory"));
+        assert!(diff.contains("changed content: rules"));
+    }
+
+    #[test]
+    fn review_flags_hermes_sources_and_inferred_edges() {
+        let now = fixed_time();
+        let mut document = RbmemDocument::new(now, "me");
+        document.upsert_section(
+            "memory",
+            SectionType::HermesMemory,
+            "- fact".to_string(),
+            now,
+        );
+        let memory = document
+            .sections
+            .iter_mut()
+            .find(|section| section.path == "memory")
+            .unwrap();
+        memory.source = Some(SourceInfo {
+            kind: "hermes".to_string(),
+            path: None,
+            actor: Some("hermes".to_string()),
+        });
+        memory.graph = Some(GraphInfo {
+            node_type: None,
+            relations: vec![GraphRelation {
+                to: "rules".to_string(),
+                relation_type: "references".to_string(),
+                valid_from: Some(now),
+                valid_until: None,
+                inferred: true,
+                confidence: Some(0.72),
+            }],
+        });
+
+        let review = review_document(&document, Vec::new());
+
+        assert!(review.contains("review source: memory from hermes"));
+        assert!(review.contains("review inferred edge: memory -> rules"));
+    }
+
+    #[test]
+    fn pack_config_selects_includes_query_and_mode() {
+        let now = fixed_time();
+        let mut document = RbmemDocument::new(now, "me");
+        document.upsert_section("rules", SectionType::List, "- Base rule".to_string(), now);
+        document.upsert_section(
+            "rules.review",
+            SectionType::Text,
+            "Review pull requests.".to_string(),
+            now,
+        );
+        document.upsert_section(
+            "memory.testing",
+            SectionType::Text,
+            "Run Rust tests.".to_string(),
+            now,
+        );
+
+        let pack = parse_pack_config(
+            r#"[pack: code_review]
+include:
+  - rules
+query: "Rust tests"
+graph_depth: 0
+mode: minified
+
+[pack: other]
+include:
+  - memory
+"#,
+            "code_review",
+        )
+        .unwrap();
+        let context = pack_document(&document, &pack, true);
+        let paths = context
+            .sections
+            .iter()
+            .map(|section| section.path.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(paths, vec!["memory.testing", "rules", "rules.review"]);
+        assert_eq!(pack.mode, Some(CompactMode::Minified));
     }
 
     #[test]
