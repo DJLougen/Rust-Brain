@@ -4,6 +4,12 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## [0.2.1] - 2026-05-01
+
+### Fixed
+
+- Added `rbmem --version` so Hermes and release checks can distinguish the CLI package version from the RBMEM v1.3 document format version.
+
 ## [0.2.0] - 2026-05-01
 
 ### Added

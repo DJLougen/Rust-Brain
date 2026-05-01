@@ -22,6 +22,7 @@ use std::time::SystemTime;
 
 #[derive(Debug, Parser)]
 #[command(name = "rbmem")]
+#[command(version)]
 #[command(about = "Rust-Brain Memory Format (.rbmem) v1.3 CLI")]
 struct Cli {
     #[command(subcommand)]
