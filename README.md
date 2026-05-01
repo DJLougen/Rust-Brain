@@ -221,6 +221,14 @@ Run Phase 2 diagnostics:
 .\target\release\rbmem.exe hermes doctor my-agent-memory.rbmem --rbmem-cli .\target\release\rbmem.exe
 ```
 
+Ask for machine-readable diagnostics and context:
+
+```powershell
+.\target\release\rbmem.exe doctor memory.rbmem --format json
+.\target\release\rbmem.exe query memory.rbmem "github code review" --resolve --minified --graph-depth 1 --format json
+.\target\release\rbmem.exe pack memory.rbmem code_review --resolve --format json
+```
+
 Sections can now carry optional provenance:
 
 ```rbmem
@@ -257,12 +265,12 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. Se
 | `convert-from-md <in.md> <out.rbmem>` | Convert Markdown headings into dotted RBMEM paths. |
 | `sync <md-folder> <out-folder>` | Convert a Markdown folder into RBMEM files. |
 | `infer <file.rbmem>` | Infer graph relations from prose. |
-| `query <file.rbmem> <text>` | Return matching task-specific context. |
-| `context <file.rbmem> --task <text>` | Alias for task-oriented context assembly. |
-| `pack <file.rbmem> <name>` | Render a named context pack from `.rbmempacks`. |
+| `query <file.rbmem> <text>` | Return matching task-specific context; use `--format json` for tool callers. |
+| `context <file.rbmem> --task <text>` | Alias for task-oriented context assembly; use `--format json` for tool callers. |
+| `pack <file.rbmem> <name>` | Render a named context pack from `.rbmempacks`; use `--format json` for tool callers. |
 | `diff <before.rbmem> <after.rbmem>` | Report section-level memory changes. |
 | `review <file.rbmem>` | Validate and flag agent-written or inferred memory for human review. |
-| `doctor [file.rbmem]` | Report CLI version, RBMEM format version, parse status, validation status, section count, and graph edges. |
+| `doctor [file.rbmem]` | Report CLI version, RBMEM format version, parse status, validation status, section count, and graph edges; supports `--format json`. |
 | `graph <file.rbmem> --format json` | Export graph nodes and edges. |
 | `graph <file.rbmem> --format dot` | Export a DOT graph. |
 | `tree <file.rbmem>` | Show section hierarchy. |
@@ -270,7 +278,7 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. Se
 | `validate <file.rbmem>` | Validate parser compatibility. |
 | `hermes load <file.rbmem>` | Output Hermes-friendly JSON. |
 | `hermes save <file.rbmem> --json <payload>` | Apply Hermes-style memory updates. |
-| `hermes doctor <file.rbmem>` | Check RBMEM memory health and verify Hermes JSON/context loading. |
+| `hermes doctor <file.rbmem>` | Check RBMEM memory health and verify Hermes JSON/context loading; supports `--format json`. |
 | `hermes watch <file.rbmem>` | Watch a file and print Hermes JSON on changes. |
 
 ## RBMEM vs Markdown: Real Measurements

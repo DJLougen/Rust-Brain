@@ -118,6 +118,8 @@ enum Command {
         minified: bool,
         #[arg(long, default_value_t = 0)]
         graph_depth: usize,
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
     },
     Context {
         file: PathBuf,
@@ -131,6 +133,8 @@ enum Command {
         minified: bool,
         #[arg(long, default_value_t = 1)]
         graph_depth: usize,
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
     },
     Diff {
         before: PathBuf,
@@ -141,6 +145,8 @@ enum Command {
     },
     Doctor {
         file: Option<PathBuf>,
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
     },
     Pack {
         file: PathBuf,
@@ -153,6 +159,8 @@ enum Command {
         compact: bool,
         #[arg(long, alias = "tiny")]
         minified: bool,
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
     },
     Sync {
         markdown_folder: PathBuf,
@@ -201,6 +209,8 @@ enum HermesCommand {
         file: PathBuf,
         #[arg(long)]
         rbmem_cli: Option<PathBuf>,
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
     },
 }
 
@@ -208,6 +218,12 @@ enum HermesCommand {
 enum GraphFormat {
     Json,
     Dot,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum OutputFormat {
+    Text,
+    Json,
 }
 
 fn main() {
@@ -396,10 +412,25 @@ fn run() -> Result<(), RbmemError> {
             compact,
             minified,
             graph_depth,
+            format,
         } => {
             let document = read_document(&file, TimestampPolicy::Preserve)?;
             let context = query_document(&document, &text, resolve, graph_depth);
-            print_context_document(&context, resolve, compact, minified);
+            print_context_output(
+                ContextOutputRequest {
+                    operation: "query",
+                    file: &file,
+                    selector_name: "text",
+                    selector_value: &text,
+                    resolve,
+                    compact,
+                    minified,
+                    graph_depth,
+                    format,
+                },
+                &document,
+                &context,
+            )?;
         }
         Command::Context {
             file,
@@ -408,10 +439,25 @@ fn run() -> Result<(), RbmemError> {
             compact,
             minified,
             graph_depth,
+            format,
         } => {
             let document = read_document(&file, TimestampPolicy::Preserve)?;
             let context = query_document(&document, &task, resolve, graph_depth);
-            print_context_document(&context, resolve, compact, minified);
+            print_context_output(
+                ContextOutputRequest {
+                    operation: "context",
+                    file: &file,
+                    selector_name: "task",
+                    selector_value: &task,
+                    resolve,
+                    compact,
+                    minified,
+                    graph_depth,
+                    format,
+                },
+                &document,
+                &context,
+            )?;
         }
         Command::Diff { before, after } => {
             let before = read_document(&before, TimestampPolicy::Preserve)?;
@@ -423,8 +469,8 @@ fn run() -> Result<(), RbmemError> {
             let parsed = parse_document(&text, TimestampPolicy::Preserve)?;
             print!("{}", review_document(&parsed.document, parsed.warnings));
         }
-        Command::Doctor { file } => {
-            print!("{}", doctor_report(file.as_deref())?);
+        Command::Doctor { file, format } => {
+            print!("{}", doctor_report(file.as_deref(), format)?);
         }
         Command::Pack {
             file,
@@ -433,6 +479,7 @@ fn run() -> Result<(), RbmemError> {
             resolve,
             compact,
             minified,
+            format,
         } => {
             let document = read_document(&file, TimestampPolicy::Preserve)?;
             let config_path = pack_file.unwrap_or_else(|| default_pack_file(&file));
@@ -441,7 +488,21 @@ fn run() -> Result<(), RbmemError> {
             let context = pack_document(&document, &pack, resolve);
             let compact = compact || (!minified && pack.mode == Some(CompactMode::Compact));
             let minified = minified || pack.mode == Some(CompactMode::Minified);
-            print_context_document(&context, resolve, compact, minified);
+            print_context_output(
+                ContextOutputRequest {
+                    operation: "pack",
+                    file: &file,
+                    selector_name: "name",
+                    selector_value: &name,
+                    resolve,
+                    compact,
+                    minified,
+                    graph_depth: pack.graph_depth,
+                    format,
+                },
+                &document,
+                &context,
+            )?;
         }
         Command::Sync {
             markdown_folder,
@@ -500,8 +561,15 @@ fn run() -> Result<(), RbmemError> {
             HermesCommand::Watch { file } => {
                 watch_hermes_file(file)?;
             }
-            HermesCommand::Doctor { file, rbmem_cli } => {
-                print!("{}", hermes_doctor_report(&file, rbmem_cli.as_deref())?);
+            HermesCommand::Doctor {
+                file,
+                rbmem_cli,
+                format,
+            } => {
+                print!(
+                    "{}",
+                    hermes_doctor_report(&file, rbmem_cli.as_deref(), format)?
+                );
             }
         },
         Command::Timeline { file } => {
@@ -761,13 +829,89 @@ fn subset_document(document: &RbmemDocument, selected: BTreeSet<String>) -> Rbme
 }
 
 fn print_context_document(document: &RbmemDocument, resolve: bool, compact: bool, minified: bool) {
+    print!(
+        "{}",
+        render_context_document(document, resolve, compact, minified)
+    );
+}
+
+fn render_context_document(
+    document: &RbmemDocument,
+    resolve: bool,
+    compact: bool,
+    minified: bool,
+) -> String {
     if minified || (!compact && document.meta.compact_mode == CompactMode::Minified) {
-        print!("{}", document.to_minified_string(resolve));
+        document.to_minified_string(resolve)
     } else if compact || document.meta.compact_mode == CompactMode::Compact {
-        print!("{}", document.to_compact_string(resolve, Utc::now()));
+        document.to_compact_string(resolve, Utc::now())
     } else {
-        print!("{}", document.to_rbmem_string_hiding_empty_temporal());
+        document.to_rbmem_string_hiding_empty_temporal()
     }
+}
+
+struct ContextOutputRequest<'a> {
+    operation: &'a str,
+    file: &'a Path,
+    selector_name: &'a str,
+    selector_value: &'a str,
+    resolve: bool,
+    compact: bool,
+    minified: bool,
+    graph_depth: usize,
+    format: OutputFormat,
+}
+
+fn print_context_output(
+    request: ContextOutputRequest<'_>,
+    source: &RbmemDocument,
+    context: &RbmemDocument,
+) -> Result<(), RbmemError> {
+    match request.format {
+        OutputFormat::Text => {
+            print_context_document(context, request.resolve, request.compact, request.minified)
+        }
+        OutputFormat::Json => println!(
+            "{}",
+            serde_json::to_string_pretty(&context_json(request, source, context))?
+        ),
+    }
+    Ok(())
+}
+
+fn context_json(
+    request: ContextOutputRequest<'_>,
+    source: &RbmemDocument,
+    context: &RbmemDocument,
+) -> Value {
+    json!({
+        "schema": "rbmem.context.v1",
+        "operation": request.operation,
+        "file": request.file.display().to_string(),
+        "selector": {
+            "kind": request.selector_name,
+            "value": request.selector_value,
+        },
+        "options": {
+            "resolve": request.resolve,
+            "compact": request.compact,
+            "minified": request.minified,
+            "graph_depth": request.graph_depth,
+        },
+        "source": {
+            "meta": document_meta_json(source),
+            "section_count": source.sections.len(),
+        },
+        "context": render_context_document(
+            context,
+            request.resolve,
+            request.compact,
+            request.minified,
+        ),
+        "context_meta": document_meta_json(context),
+        "sections": sections_json(context, request.resolve),
+        "graph": graph_view_to_json(&context.graph_view()),
+    })
 }
 
 fn query_terms(text: &str) -> Vec<String> {
@@ -905,7 +1049,17 @@ fn review_document(document: &RbmemDocument, mut warnings: Vec<String>) -> Strin
     output
 }
 
-fn doctor_report(file: Option<&Path>) -> Result<String, RbmemError> {
+fn doctor_report(file: Option<&Path>, format: OutputFormat) -> Result<String, RbmemError> {
+    match format {
+        OutputFormat::Text => doctor_text_report(file),
+        OutputFormat::Json => Ok(format!(
+            "{}\n",
+            serde_json::to_string_pretty(&doctor_json(file)?)?
+        )),
+    }
+}
+
+fn doctor_text_report(file: Option<&Path>) -> Result<String, RbmemError> {
     let mut output = String::new();
     output.push_str("rbmem doctor\n");
     output.push_str(&format!(
@@ -923,7 +1077,21 @@ fn doctor_report(file: Option<&Path>) -> Result<String, RbmemError> {
     Ok(output)
 }
 
-fn hermes_doctor_report(file: &Path, rbmem_cli: Option<&Path>) -> Result<String, RbmemError> {
+fn hermes_doctor_report(
+    file: &Path,
+    rbmem_cli: Option<&Path>,
+    format: OutputFormat,
+) -> Result<String, RbmemError> {
+    match format {
+        OutputFormat::Text => hermes_doctor_text_report(file, rbmem_cli),
+        OutputFormat::Json => Ok(format!(
+            "{}\n",
+            serde_json::to_string_pretty(&hermes_doctor_json(file, rbmem_cli)?)?
+        )),
+    }
+}
+
+fn hermes_doctor_text_report(file: &Path, rbmem_cli: Option<&Path>) -> Result<String, RbmemError> {
     let mut output = String::new();
     output.push_str("rbmem hermes doctor\n");
     output.push_str(&format!(
@@ -950,6 +1118,74 @@ fn hermes_doctor_report(file: &Path, rbmem_cli: Option<&Path>) -> Result<String,
     output.push_str("hermes-load: ok\n");
     output.push_str(&format!("hermes-context-bytes: {context_len}\n"));
     Ok(output)
+}
+
+fn doctor_json(file: Option<&Path>) -> Result<Value, RbmemError> {
+    let document = if let Some(file) = file {
+        Some(document_diagnostics_json(file)?.0)
+    } else {
+        None
+    };
+
+    Ok(json!({
+        "schema": "rbmem.doctor.v1",
+        "cli_version": format!("rbmem {}", env!("CARGO_PKG_VERSION")),
+        "document_format": "RBMEM v1.3",
+        "document": document,
+    }))
+}
+
+fn hermes_doctor_json(file: &Path, rbmem_cli: Option<&Path>) -> Result<Value, RbmemError> {
+    let configured_rbmem_cli = if let Some(rbmem_cli) = rbmem_cli {
+        Some(json!({
+            "path": rbmem_cli.display().to_string(),
+            "version": external_cli_version(rbmem_cli)?,
+        }))
+    } else {
+        None
+    };
+    let (document, rbmem_document) = document_diagnostics_json(file)?;
+    let payload = hermes_json(&rbmem_document, true, false, true)?;
+    let context_bytes = payload
+        .get("context")
+        .and_then(Value::as_str)
+        .map(str::len)
+        .unwrap_or(0);
+
+    Ok(json!({
+        "schema": "rbmem.hermes.doctor.v1",
+        "cli_version": format!("rbmem {}", env!("CARGO_PKG_VERSION")),
+        "configured_rbmem_cli": configured_rbmem_cli,
+        "document": document,
+        "hermes_load": {
+            "status": "ok",
+            "context_bytes": context_bytes,
+        },
+    }))
+}
+
+fn document_diagnostics_json(file: &Path) -> Result<(Value, RbmemDocument), RbmemError> {
+    let file_exists = file.exists();
+    let text = fs::read_to_string(file)?;
+    let parsed = parse_document(&text, TimestampPolicy::Preserve)?;
+    let mut warnings = parsed.warnings;
+    warnings.extend(parsed.document.validate());
+    let graph = parsed.document.graph_view();
+    let validation_status = if warnings.is_empty() { "ok" } else { "warning" };
+    let value = json!({
+        "file": file.display().to_string(),
+        "file_exists": file_exists,
+        "parse": "ok",
+        "meta_version": parsed.document.meta.version,
+        "sections": parsed.document.sections.len(),
+        "graph_edges": graph.edges.len(),
+        "validation": {
+            "status": validation_status,
+            "warnings": warnings,
+        },
+    });
+
+    Ok((value, parsed.document))
 }
 
 fn append_document_diagnostics(
@@ -1398,13 +1634,17 @@ fn notify_error(error: notify::Error) -> RbmemError {
     RbmemError::Io(io::Error::other(error))
 }
 
-fn hermes_json(
-    document: &RbmemDocument,
-    resolve: bool,
-    compact: bool,
-    minified: bool,
-) -> Result<Value, RbmemError> {
-    let sections = if resolve {
+fn document_meta_json(document: &RbmemDocument) -> Value {
+    json!({
+        "version": document.meta.version,
+        "purpose": document.meta.purpose,
+        "compact_mode": document.meta.compact_mode.to_string(),
+        "last_updated": document.meta.last_updated,
+    })
+}
+
+fn sections_json(document: &RbmemDocument, resolve: bool) -> Vec<Value> {
+    if resolve {
         document
             .resolved_sections()
             .into_iter()
@@ -1419,7 +1659,7 @@ fn hermes_json(
                     "graph": section.graph,
                 })
             })
-            .collect::<Vec<_>>()
+            .collect()
     } else {
         document
             .sections
@@ -1435,9 +1675,16 @@ fn hermes_json(
                     "graph": section.graph,
                 })
             })
-            .collect::<Vec<_>>()
-    };
+            .collect()
+    }
+}
 
+fn hermes_json(
+    document: &RbmemDocument,
+    resolve: bool,
+    compact: bool,
+    minified: bool,
+) -> Result<Value, RbmemError> {
     let context = if minified {
         document.to_minified_string(resolve)
     } else if compact {
@@ -1460,14 +1707,9 @@ fn hermes_json(
 
     Ok(json!({
         "schema": "hermes.rbmem.v1",
-        "meta": {
-            "version": document.meta.version,
-            "purpose": document.meta.purpose,
-            "compact_mode": document.meta.compact_mode.to_string(),
-            "last_updated": document.meta.last_updated,
-        },
+        "meta": document_meta_json(document),
         "context": context,
-        "sections": sections,
+        "sections": sections_json(document, resolve),
         "graph": graph_view_to_json(&document.graph_view()),
         "timeline": document.timeline().into_iter().map(|section| {
             json!({
@@ -1994,7 +2236,7 @@ Body.
         let document = hermes_starter_document("Demo Project", fixed_time());
         fs::write(&file, document.to_rbmem_string()).unwrap();
 
-        let report = doctor_report(Some(&file)).unwrap();
+        let report = doctor_report(Some(&file), OutputFormat::Text).unwrap();
 
         assert!(report.contains("rbmem doctor"));
         assert!(report.contains("cli-version: rbmem"));
@@ -2014,7 +2256,7 @@ Body.
         let document = hermes_starter_document("Demo Project", fixed_time());
         fs::write(&file, document.to_rbmem_string()).unwrap();
 
-        let report = hermes_doctor_report(&file, None).unwrap();
+        let report = hermes_doctor_report(&file, None, OutputFormat::Text).unwrap();
 
         assert!(report.contains("rbmem hermes doctor"));
         assert!(report.contains("parse: ok"));
@@ -2023,6 +2265,62 @@ Body.
         assert!(report.contains("hermes-context-bytes:"));
 
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn doctor_json_reports_machine_readable_health() {
+        let root = temp_test_dir("doctor-json");
+        fs::create_dir_all(&root).unwrap();
+        let file = root.join("memory.rbmem");
+        let document = hermes_starter_document("Demo Project", fixed_time());
+        fs::write(&file, document.to_rbmem_string()).unwrap();
+
+        let report = doctor_report(Some(&file), OutputFormat::Json).unwrap();
+        let value: Value = serde_json::from_str(&report).unwrap();
+
+        assert_eq!(value["schema"], "rbmem.doctor.v1");
+        assert_eq!(value["document"]["parse"], "ok");
+        assert_eq!(value["document"]["validation"]["status"], "ok");
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn context_json_contains_selected_sections() {
+        let now = fixed_time();
+        let mut document = RbmemDocument::new(now, "me");
+        document.upsert_section("rules", SectionType::List, "- Base rule".to_string(), now);
+        document.upsert_section(
+            "rules.review",
+            SectionType::Text,
+            "Review pull requests.".to_string(),
+            now,
+        );
+
+        let context = query_document(&document, "pull requests", true, 0);
+        let value = context_json(
+            ContextOutputRequest {
+                operation: "query",
+                file: Path::new("memory.rbmem"),
+                selector_name: "text",
+                selector_value: "pull requests",
+                resolve: true,
+                compact: false,
+                minified: true,
+                graph_depth: 0,
+                format: OutputFormat::Json,
+            },
+            &document,
+            &context,
+        );
+
+        assert_eq!(value["schema"], "rbmem.context.v1");
+        assert_eq!(value["operation"], "query");
+        assert_eq!(value["sections"].as_array().unwrap().len(), 2);
+        assert!(value["context"]
+            .as_str()
+            .unwrap()
+            .contains("[rules.review]"));
     }
 
     #[test]

@@ -4,6 +4,13 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## [0.4.0] - 2026-05-01
+
+### Added
+
+- Phase 3 machine-readable diagnostics with `--format json` for `rbmem doctor` and `rbmem hermes doctor`.
+- Phase 4 machine-readable context assembly with `--format json` for `rbmem query`, `rbmem context`, and `rbmem pack`.
+
 ## [0.3.0] - 2026-05-01
 
 ### Added

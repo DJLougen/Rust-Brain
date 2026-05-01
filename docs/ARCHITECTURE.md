@@ -55,3 +55,9 @@ Hermes commands are a thin adapter over the core document model. They expose a s
 `rbmem doctor` reports the CLI release version, locked RBMEM document format version, optional file existence, parser status, validation status, section count, and graph edge count.
 
 `rbmem hermes doctor` extends that check for Hermes memory files by verifying the Hermes JSON/context load path. When passed `--rbmem-cli`, it also runs that configured binary with `--version`, which helps catch Windows/WSL path mismatches and stale release binaries before a chat request times out.
+
+## Phases 3 And 4 Tool Output
+
+Phase 3 adds JSON diagnostics to `rbmem doctor` and `rbmem hermes doctor` through `--format json`. The JSON payloads are intended for agents and automation, while text remains the default for humans.
+
+Phase 4 adds JSON context assembly to `rbmem query`, `rbmem context`, and `rbmem pack`. These commands now expose the rendered context string, selected sections, source document metadata, options, and graph view under the `rbmem.context.v1` schema.
