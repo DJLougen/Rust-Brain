@@ -4,6 +4,12 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## [0.3.0] - 2026-05-01
+
+### Added
+
+- Phase 2 diagnostics with `rbmem doctor` and `rbmem hermes doctor` for CLI, file, validation, and Hermes-load checks.
+
 ## [0.2.1] - 2026-05-01
 
 ### Fixed

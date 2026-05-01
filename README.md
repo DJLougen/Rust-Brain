@@ -214,6 +214,13 @@ Review and compare memory changes:
 .\target\release\rbmem.exe diff before.rbmem after.rbmem
 ```
 
+Run Phase 2 diagnostics:
+
+```powershell
+.\target\release\rbmem.exe doctor memory.rbmem
+.\target\release\rbmem.exe hermes doctor my-agent-memory.rbmem --rbmem-cli .\target\release\rbmem.exe
+```
+
 Sections can now carry optional provenance:
 
 ```rbmem
@@ -255,6 +262,7 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. Se
 | `pack <file.rbmem> <name>` | Render a named context pack from `.rbmempacks`. |
 | `diff <before.rbmem> <after.rbmem>` | Report section-level memory changes. |
 | `review <file.rbmem>` | Validate and flag agent-written or inferred memory for human review. |
+| `doctor [file.rbmem]` | Report CLI version, RBMEM format version, parse status, validation status, section count, and graph edges. |
 | `graph <file.rbmem> --format json` | Export graph nodes and edges. |
 | `graph <file.rbmem> --format dot` | Export a DOT graph. |
 | `tree <file.rbmem>` | Show section hierarchy. |
@@ -262,6 +270,7 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. Se
 | `validate <file.rbmem>` | Validate parser compatibility. |
 | `hermes load <file.rbmem>` | Output Hermes-friendly JSON. |
 | `hermes save <file.rbmem> --json <payload>` | Apply Hermes-style memory updates. |
+| `hermes doctor <file.rbmem>` | Check RBMEM memory health and verify Hermes JSON/context loading. |
 | `hermes watch <file.rbmem>` | Watch a file and print Hermes JSON on changes. |
 
 ## RBMEM vs Markdown: Real Measurements

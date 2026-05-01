@@ -49,3 +49,9 @@ Timestamps are tool-owned. The parser can preserve trusted timestamps when readi
 ## Hermes Integration
 
 Hermes commands are a thin adapter over the core document model. They expose a stable JSON shape with sections, resolved content, graph edges, timeline entries, and context renderings. `hermes:memory` sections use safer append behavior for agent-written memory.
+
+## Phase 2 Diagnostics
+
+`rbmem doctor` reports the CLI release version, locked RBMEM document format version, optional file existence, parser status, validation status, section count, and graph edge count.
+
+`rbmem hermes doctor` extends that check for Hermes memory files by verifying the Hermes JSON/context load path. When passed `--rbmem-cli`, it also runs that configured binary with `--version`, which helps catch Windows/WSL path mismatches and stale release binaries before a chat request times out.

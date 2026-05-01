@@ -16,6 +16,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::process::Command as ProcessCommand;
 use std::str::FromStr;
 use std::sync::mpsc;
 use std::time::SystemTime;
@@ -138,6 +139,9 @@ enum Command {
     Review {
         file: PathBuf,
     },
+    Doctor {
+        file: Option<PathBuf>,
+    },
     Pack {
         file: PathBuf,
         name: String,
@@ -192,6 +196,11 @@ enum HermesCommand {
     },
     Watch {
         file: PathBuf,
+    },
+    Doctor {
+        file: PathBuf,
+        #[arg(long)]
+        rbmem_cli: Option<PathBuf>,
     },
 }
 
@@ -414,6 +423,9 @@ fn run() -> Result<(), RbmemError> {
             let parsed = parse_document(&text, TimestampPolicy::Preserve)?;
             print!("{}", review_document(&parsed.document, parsed.warnings));
         }
+        Command::Doctor { file } => {
+            print!("{}", doctor_report(file.as_deref())?);
+        }
         Command::Pack {
             file,
             name,
@@ -487,6 +499,9 @@ fn run() -> Result<(), RbmemError> {
             }
             HermesCommand::Watch { file } => {
                 watch_hermes_file(file)?;
+            }
+            HermesCommand::Doctor { file, rbmem_cli } => {
+                print!("{}", hermes_doctor_report(&file, rbmem_cli.as_deref())?);
             }
         },
         Command::Timeline { file } => {
@@ -888,6 +903,100 @@ fn review_document(document: &RbmemDocument, mut warnings: Vec<String>) -> Strin
     }
 
     output
+}
+
+fn doctor_report(file: Option<&Path>) -> Result<String, RbmemError> {
+    let mut output = String::new();
+    output.push_str("rbmem doctor\n");
+    output.push_str(&format!(
+        "cli-version: rbmem {}\n",
+        env!("CARGO_PKG_VERSION")
+    ));
+    output.push_str("document-format: RBMEM v1.3\n");
+
+    if let Some(file) = file {
+        append_document_diagnostics(&mut output, file)?;
+    } else {
+        output.push_str("file: not provided\n");
+    }
+
+    Ok(output)
+}
+
+fn hermes_doctor_report(file: &Path, rbmem_cli: Option<&Path>) -> Result<String, RbmemError> {
+    let mut output = String::new();
+    output.push_str("rbmem hermes doctor\n");
+    output.push_str(&format!(
+        "cli-version: rbmem {}\n",
+        env!("CARGO_PKG_VERSION")
+    ));
+
+    if let Some(rbmem_cli) = rbmem_cli {
+        output.push_str(&format!("configured-rbmem-cli: {}\n", rbmem_cli.display()));
+        output.push_str(&format!(
+            "configured-rbmem-cli-version: {}\n",
+            external_cli_version(rbmem_cli)?
+        ));
+    }
+
+    let document = append_document_diagnostics(&mut output, file)?;
+    let payload = hermes_json(&document, true, false, true)?;
+    let context_len = payload
+        .get("context")
+        .and_then(Value::as_str)
+        .map(str::len)
+        .unwrap_or(0);
+
+    output.push_str("hermes-load: ok\n");
+    output.push_str(&format!("hermes-context-bytes: {context_len}\n"));
+    Ok(output)
+}
+
+fn append_document_diagnostics(
+    output: &mut String,
+    file: &Path,
+) -> Result<RbmemDocument, RbmemError> {
+    output.push_str(&format!("file: {}\n", file.display()));
+    output.push_str(&format!(
+        "file-exists: {}\n",
+        if file.exists() { "ok" } else { "missing" }
+    ));
+
+    let text = fs::read_to_string(file)?;
+    let parsed = parse_document(&text, TimestampPolicy::Preserve)?;
+    let mut warnings = parsed.warnings;
+    warnings.extend(parsed.document.validate());
+    let graph = parsed.document.graph_view();
+
+    output.push_str("parse: ok\n");
+    output.push_str(&format!("meta-version: {}\n", parsed.document.meta.version));
+    output.push_str(&format!("sections: {}\n", parsed.document.sections.len()));
+    output.push_str(&format!("graph-edges: {}\n", graph.edges.len()));
+    if warnings.is_empty() {
+        output.push_str("validation: ok\n");
+    } else {
+        output.push_str(&format!("validation: {} warning(s)\n", warnings.len()));
+        for warning in warnings {
+            output.push_str(&format!("warning: {warning}\n"));
+        }
+    }
+
+    Ok(parsed.document)
+}
+
+fn external_cli_version(path: &Path) -> Result<String, RbmemError> {
+    let output = ProcessCommand::new(path).arg("--version").output()?;
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Ok(stdout.trim().to_string())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(RbmemError::Parse(format!(
+            "{} --version failed: {}",
+            path.display(),
+            stderr.trim()
+        )))
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -1875,6 +1984,45 @@ Body.
 
         assert!(review.contains("review source: memory from hermes"));
         assert!(review.contains("review inferred edge: memory -> rules"));
+    }
+
+    #[test]
+    fn doctor_report_summarizes_file_health() {
+        let root = temp_test_dir("doctor");
+        fs::create_dir_all(&root).unwrap();
+        let file = root.join("memory.rbmem");
+        let document = hermes_starter_document("Demo Project", fixed_time());
+        fs::write(&file, document.to_rbmem_string()).unwrap();
+
+        let report = doctor_report(Some(&file)).unwrap();
+
+        assert!(report.contains("rbmem doctor"));
+        assert!(report.contains("cli-version: rbmem"));
+        assert!(report.contains("document-format: RBMEM v1.3"));
+        assert!(report.contains("file-exists: ok"));
+        assert!(report.contains("parse: ok"));
+        assert!(report.contains("validation: ok"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn hermes_doctor_report_checks_loadable_context() {
+        let root = temp_test_dir("hermes-doctor");
+        fs::create_dir_all(&root).unwrap();
+        let file = root.join("memory.rbmem");
+        let document = hermes_starter_document("Demo Project", fixed_time());
+        fs::write(&file, document.to_rbmem_string()).unwrap();
+
+        let report = hermes_doctor_report(&file, None).unwrap();
+
+        assert!(report.contains("rbmem hermes doctor"));
+        assert!(report.contains("parse: ok"));
+        assert!(report.contains("validation: ok"));
+        assert!(report.contains("hermes-load: ok"));
+        assert!(report.contains("hermes-context-bytes:"));
+
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]
