@@ -40,6 +40,8 @@ RBMEM graph output combines:
 - Manual relations written in a section's `graph.relations`.
 - Inferred relations added by `convert-from-md --infer-relations` or `rbmem infer`.
 
+Inference is configurable with `--inference-strategy off|explicit|balanced|aggressive`. `balanced` preserves the default heuristic, `explicit` accepts only direct relation phrases, and `aggressive` lowers the effective confidence threshold for recall-heavy agent indexing. Markdown sync can set the same behavior in `.rbmemsync` with `inference_strategy: explicit`.
+
 Graph JSON marks each edge source so agents can distinguish trusted manual edges from inferred ones.
 
 ## Timestamp Protection

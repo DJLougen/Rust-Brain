@@ -2,7 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-`rbmem` is a Rust command-line tool for **Rust-Brain Memory Format** (`.rbmem`) v1.3.
+Rust-Brain is the project. RBMEM is the structured memory format. `rbmem` is the CLI and Rust library for reading, writing, validating, and serving `.rbmem` files.
+
+`rbmem` currently targets **Rust-Brain Memory Format** (`.rbmem`) v1.4.0, while still parsing v1.3 files for migration and compatibility.
 
 RBMEM is a small, readable file format for agent memory, instructions, research notes, project rules, and long-lived context. It keeps the parts humans like about Markdown, but adds the structure agents need: stable section paths, protected timestamps, hierarchy, graph relationships, timelines, validation, and compact context output.
 
@@ -63,16 +65,28 @@ Create a memory file:
 .\target\release\rbmem.exe create memory.rbmem
 ```
 
+```bash
+./target/release/rbmem create memory.rbmem
+```
+
 Add a section:
 
 ```powershell
 .\target\release\rbmem.exe update memory.rbmem --section goals --type list --content "- Ship the project"
 ```
 
+```bash
+./target/release/rbmem update memory.rbmem --section goals --type list --content "- Ship the project"
+```
+
 Read it back:
 
 ```powershell
 .\target\release\rbmem.exe read memory.rbmem
+```
+
+```bash
+./target/release/rbmem read memory.rbmem
 ```
 
 Feed the smallest useful resolved view to an agent:
@@ -88,15 +102,20 @@ Ask RBMEM for task-specific context:
 .\target\release\rbmem.exe context memory.rbmem --task "review this PR" --resolve --minified
 ```
 
+```bash
+./target/release/rbmem query memory.rbmem "github code review" --resolve --minified --graph-depth 1
+./target/release/rbmem context memory.rbmem --task "review this PR" --resolve --minified
+```
+
 ## RBMEM At A Glance
 
 An RBMEM file is plain text:
 
 ```rbmem
-rbmem# RBMEM v1.3 - Rust-Brain Memory Format
+rbmem# RBMEM v1.4.0 - Rust-Brain Memory Format
 
 meta:
-  version: 1.3
+  version: 1.4.0
   purpose: "personal-agent-memory"
   generated_at: "2026-04-27T13:10:00Z"
   last_updated: "2026-04-27T13:10:00Z"
@@ -124,7 +143,7 @@ The CLI protects timestamps during import/update flows, so model-generated times
 Convert one Markdown file:
 
 ```powershell
-.\target\release\rbmem.exe convert-from-md examples\sample.md examples\from_md.rbmem --infer-relations
+.\target\release\rbmem.exe convert-from-md examples\sample.md examples\from_md.rbmem --infer-relations --inference-strategy balanced
 ```
 
 Markdown headings become dotted paths:
@@ -146,7 +165,7 @@ agents.reader.capabilities
 Sync a whole Markdown folder:
 
 ```powershell
-.\target\release\rbmem.exe sync C:\notes C:\agent-memory --infer-relations --min-confidence 0.7
+.\target\release\rbmem.exe sync C:\notes C:\agent-memory --infer-relations --min-confidence 0.7 --inference-strategy explicit
 ```
 
 Watch for changes:
@@ -154,6 +173,14 @@ Watch for changes:
 ```powershell
 .\target\release\rbmem.exe sync C:\notes C:\agent-memory --watch --infer-relations
 ```
+
+Infer graph relations on an existing file:
+
+```powershell
+.\target\release\rbmem.exe infer memory.rbmem --inference-strategy aggressive --min-confidence 0.7
+```
+
+Inference strategies are `off`, `explicit`, `balanced`, and `aggressive`. `balanced` is the default and preserves the original heuristic; `explicit` only accepts prose with relation verbs such as "uses" or "depends on"; `aggressive` lowers the effective threshold for broader recall.
 
 ## Hermes Harness Workflow
 
@@ -261,25 +288,143 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. Se
 | `read <file.rbmem> --resolve` | Apply hierarchy merge rules before rendering. |
 | `read <file.rbmem> --resolve --compact` | Hide most metadata for shorter context. |
 | `read <file.rbmem> --resolve --minified` | Smallest agent-oriented text view. |
+| `read <file.rbmem> --decrypt` | Include encrypted sections after resolving the encryption key. |
 | `update <file.rbmem> --section <path>` | Safely add or update one section. |
+| `update <file.rbmem> --section <path> --dry-run` | Preview an update without writing it. |
+| `delete-section <file.rbmem> --section <path>` | Remove one section by path. |
+| `prune <file.rbmem>` | Remove expired sections. |
+| `encrypt <file.rbmem> --section <path>` | Encrypt one section with AES-256-GCM. |
+| `decrypt <file.rbmem> --section <path>` | Persistently decrypt one encrypted section. |
 | `convert-from-md <in.md> <out.rbmem>` | Convert Markdown headings into dotted RBMEM paths. |
 | `sync <md-folder> <out-folder>` | Convert a Markdown folder into RBMEM files. |
 | `infer <file.rbmem>` | Infer graph relations from prose. |
-| `query <file.rbmem> <text>` | Return matching task-specific context; use `--format json` for tool callers. |
-| `context <file.rbmem> --task <text>` | Alias for task-oriented context assembly; use `--format json` for tool callers. |
+| `query <file.rbmem> <text>` | Return matching task-specific context; use `--format json` or `--decrypt` when needed. |
+| `context <file.rbmem> --task <text>` | Alias for task-oriented context assembly; use `--format json` or `--decrypt` when needed. |
 | `pack <file.rbmem> <name>` | Render a named context pack from `.rbmempacks`; use `--format json` for tool callers. |
-| `diff <before.rbmem> <after.rbmem>` | Report section-level memory changes. |
+| `diff <before.rbmem> <after.rbmem> --format text|json|yaml` | Report typed section-level memory changes. |
+| `merge <base.rbmem> <local.rbmem> <remote.rbmem> --strategy manual` | Run a three-way section merge. |
+| `migrate <file.rbmem> --dry-run` | Explicitly normalize older RBMEM documents and preserve `_source_version`. |
 | `review <file.rbmem>` | Validate and flag agent-written or inferred memory for human review. |
 | `doctor [file.rbmem]` | Report CLI version, RBMEM format version, parse status, validation status, section count, and graph edges; supports `--format json`. |
+| `--log-format json` | Emit structured `tracing` logs; pair with `RUST_LOG=info`. |
 | `graph <file.rbmem> --format json` | Export graph nodes and edges. |
 | `graph <file.rbmem> --format dot` | Export a DOT graph. |
+| `export <file.rbmem> --format dot|mermaid|cytoscape|gexf` | Export graph visualizations for Graphviz, Markdown, Cytoscape, or Gephi. |
+| `serve --bind localhost:3000 --dir <memory_dir>` | Run the Axum REST API server. |
 | `tree <file.rbmem>` | Show section hierarchy. |
 | `timeline <file.rbmem>` | Show temporal entries. |
 | `validate <file.rbmem>` | Validate parser compatibility. |
 | `hermes load <file.rbmem>` | Output Hermes-friendly JSON. |
 | `hermes save <file.rbmem> --json <payload>` | Apply Hermes-style memory updates. |
+| `hermes save <file.rbmem> --json-file payload.json` | Apply Hermes updates from a file. |
 | `hermes doctor <file.rbmem>` | Check RBMEM memory health and verify Hermes JSON/context loading; supports `--format json`. |
 | `hermes watch <file.rbmem>` | Watch a file and print Hermes JSON on changes. |
+
+## Encryption
+
+Encrypted sections use AES-256-GCM and are stored as `type: encrypted` with `nonce`, `ciphertext`, and `encrypted_at`. Normal reads and queries skip encrypted sections. Add `--decrypt` when the caller should resolve the key and include decrypted content.
+
+Key lookup order is:
+
+1. `RBMEM_ENCRYPTION_KEY`
+2. `~/.rbmem/key`
+3. interactive prompt
+
+The key must be 32 raw bytes or base64-encoded 32 bytes.
+
+```powershell
+$env:RBMEM_ENCRYPTION_KEY = "<base64-encoded-32-byte-key>"
+rbmem encrypt memory.rbmem --section secrets.api
+rbmem read memory.rbmem
+rbmem read memory.rbmem --decrypt
+rbmem query memory.rbmem "api token" --decrypt
+rbmem decrypt memory.rbmem --section secrets.api
+```
+
+## Diff, Merge, Export, And Server
+
+Typed diffs can render as text, JSON, or YAML:
+
+```powershell
+rbmem diff base.rbmem changed.rbmem --format json
+```
+
+Three-way merge compares `base`, `local`, and `remote` at section granularity. `manual` creates `type: conflict` sections when both sides changed the same section.
+
+```powershell
+rbmem merge base.rbmem local.rbmem remote.rbmem --strategy manual --output merged.rbmem
+```
+
+Graph exports support DOT, Mermaid, Cytoscape JSON, and GEXF:
+
+```powershell
+rbmem export memory.rbmem --format mermaid
+rbmem export memory.rbmem --format gexf
+```
+
+The HTTP server exposes health, memory CRUD, section CRUD, query, context, diff, merge, and export routes:
+
+```powershell
+rbmem serve --bind localhost:3000 --dir .\memories
+```
+
+## Rust Library API
+
+Rust-Brain now builds both a `rbmem` binary and a `rbmem` library crate. The CLI remains the supported human-facing interface, while Rust callers can use the same create, read, update, query, context, load, save, and diff behavior without spawning a process.
+
+```rust
+use chrono::Utc;
+use rbmem::{
+    create, query, update, ContextOptions, CreateOptions, OutputFormat, SectionType,
+    TimestampPolicy, UpdateOptions,
+};
+
+# fn demo() -> Result<(), rbmem::RbmemError> {
+let file = "memory.rbmem";
+let now = Utc::now();
+
+create(
+    file,
+    CreateOptions {
+        created_by: "agent".to_string(),
+        purpose: "personal-agent-memory".to_string(),
+        default_expiry_days: None,
+        human: false,
+        now,
+    },
+)?;
+
+update(
+    file,
+    UpdateOptions {
+        section: "agents.reader".to_string(),
+        section_type: SectionType::Text,
+        content: "Reads memory carefully.".to_string(),
+        human: false,
+        dry_run: false,
+        now,
+    },
+)?;
+
+let context = query(
+    file,
+    "reader",
+    ContextOptions {
+        resolve: true,
+        compact: false,
+        minified: true,
+        graph_depth: 0,
+        decrypt: false,
+        key: None,
+        format: OutputFormat::Text,
+        policy: TimestampPolicy::Preserve,
+    },
+)?;
+# Ok(())
+# }
+```
+
+Library functions return `Result<T, RbmemError>`. New writes use RBMEM v1.4.0, while v1.3 files still parse and normalize with `_source_version`.
 
 ## RBMEM vs Markdown: Real Measurements
 

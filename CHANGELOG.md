@@ -4,6 +4,30 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+### Added
+
+- Added an explicit `rbmem` library target with public APIs for `load`, `save`, `create`, `read`, `update`, `query`, `context`, and `diff`.
+- Added a direct library integration test covering create/update/read/query/context without spawning the CLI.
+- Added a cross-project implementation plan in `docs/IMPLEMENTATION_PLAN.md`.
+- Added section-level AES-256-GCM encryption with `encrypt`, `decrypt`, and read/query `--decrypt` support.
+- Added typed diff rendering and section-level three-way merge with `ours`, `theirs`, `union`, and `manual` strategies.
+- Added `SectionIndex` with keyword, path-prefix, graph adjacency, mtime validation, and disk-cache helpers.
+- Added graph export formats for DOT, Mermaid, Cytoscape JSON, and GEXF.
+- Added Axum HTTP server mode with health, memory, section, query, context, diff, merge, and export routes.
+- Added `update --dry-run`, `delete-section`, `hermes save --json-file`, and `migrate`.
+- Added source content hashes for Markdown sync provenance and `_source_version` tracking for normalized documents.
+- Added parser regression coverage for common LLM-produced RBMEM variants.
+- Added configurable graph inference strategies for Markdown conversion, sync, and `rbmem infer`.
+- Added `--log-format json|text` backed by `tracing` for structured CLI observability.
+- Added RBMEM format version constants and bumped the CLI/library crate to `1.4.0`.
+
+### Changed
+
+- Refactored the core create/read/update/query/context/diff CLI paths to call the library API.
+- Markdown title slugs now use dotted paths consistently.
+- `hermes:memory` writes are enforced as append-only.
+- New writes use RBMEM `1.4.0`; v1.3/v1.3.0 files still parse and normalize with `_source_version`.
+
 ## [0.4.0] - 2026-05-01
 
 ### Added
