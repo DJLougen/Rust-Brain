@@ -1,13 +1,14 @@
-//! Forgiving Nom parser for RBMEM v1.3.
+//! Forgiving Nom parser for RBMEM v1.4.0.
 //!
 //! This parser is deliberately hand-written and small-function oriented. RBMEM is
 //! meant to survive LLM output, so the parser accepts minor formatting drift,
 //! records warnings, and lets `document.rs` re-emit canonical RBMEM.
 
 use crate::document::{
-    CompactMode, GraphInfo, GraphRelation, Meta, RbmemDocument, RbmemError, Section, SectionType,
-    SourceInfo, Temporal, TimestampPolicy,
+    CompactMode, EncryptedPayload, GraphInfo, GraphRelation, Meta, RbmemDocument, RbmemError,
+    Section, SectionType, SourceInfo, Temporal, TimestampPolicy,
 };
+use crate::version::RBMEM_FORMAT_VERSION;
 use chrono::{DateTime, Utc};
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until, take_while1};
@@ -19,7 +20,7 @@ use nom::IResult;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ParsedDocument {
     pub document: RbmemDocument,
     pub warnings: Vec<String>,
@@ -121,7 +122,14 @@ fn parse_meta(
     if let Some(version) = values.get("version") {
         meta.version = version.clone();
     } else {
-        warnings.push("missing meta.version; defaulted to 1.3".to_string());
+        warnings.push(format!(
+            "missing meta.version; defaulted to {RBMEM_FORMAT_VERSION}"
+        ));
+    }
+    if let Some(source_version) = values.get("_source_version") {
+        if source_version != "null" && !source_version.is_empty() {
+            meta.source_version = Some(source_version.clone());
+        }
     }
 
     if let Some(purpose) = values.get("purpose") {
@@ -173,6 +181,7 @@ struct RawSection {
     temporal_values: HashMap<String, String>,
     source: Option<SourceInfo>,
     graph: Option<GraphInfo>,
+    encrypted_values: HashMap<String, String>,
     content: String,
 }
 
@@ -233,6 +242,7 @@ impl RawSection {
             temporal,
             source: self.source,
             graph: self.graph,
+            encrypted: encrypted_from_values(self.encrypted_values, now, warnings),
             content: self.content,
         }
     }
@@ -294,6 +304,7 @@ fn parse_section_body(path: &str, body: &str) -> RawSection {
     let mut section_type = None;
     let mut temporal_values = HashMap::new();
     let mut source_values = HashMap::new();
+    let mut encrypted_values = HashMap::new();
     let mut graph = GraphInfo::default();
     let mut saw_graph = false;
     let mut content_lines = Vec::new();
@@ -335,6 +346,21 @@ fn parse_section_body(path: &str, body: &str) -> RawSection {
                 content_lines.push(clean_inline_content(inline));
             }
             continue;
+        }
+
+        if mode != BodyMode::Content {
+            if let Some(value) = parse_field_line(trimmed, "nonce") {
+                encrypted_values.insert("nonce".to_string(), value);
+                continue;
+            }
+            if let Some(value) = parse_field_line(trimmed, "ciphertext") {
+                encrypted_values.insert("ciphertext".to_string(), value);
+                continue;
+            }
+            if let Some(value) = parse_field_line(trimmed, "encrypted_at") {
+                encrypted_values.insert("encrypted_at".to_string(), value);
+                continue;
+            }
         }
 
         match mode {
@@ -416,6 +442,7 @@ fn parse_section_body(path: &str, body: &str) -> RawSection {
         temporal_values,
         source: source_from_values(source_values),
         graph: saw_graph.then_some(graph),
+        encrypted_values,
         content: trim_trailing_blank_lines(content_lines).join("\n"),
     }
 }
@@ -440,6 +467,25 @@ fn source_from_values(values: HashMap<String, String>) -> Option<SourceInfo> {
             .get("actor")
             .cloned()
             .filter(|value| !value.is_empty()),
+        hash: values
+            .get("hash")
+            .cloned()
+            .filter(|value| !value.is_empty()),
+    })
+}
+
+fn encrypted_from_values(
+    values: HashMap<String, String>,
+    now: DateTime<Utc>,
+    warnings: &mut Vec<String>,
+) -> Option<EncryptedPayload> {
+    let nonce = values.get("nonce")?.clone();
+    let ciphertext = values.get("ciphertext")?.clone();
+    let encrypted_at = parse_time(values.get("encrypted_at"), now, "encrypted_at", warnings);
+    Some(EncryptedPayload {
+        nonce,
+        ciphertext,
+        encrypted_at,
     })
 }
 

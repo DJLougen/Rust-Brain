@@ -1,6 +1,7 @@
 use chrono::Utc;
 use clap::{Parser, Subcommand, ValueEnum};
 use notify::{Config as NotifyConfig, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use rbmem::commands as api;
 use rbmem::document::graph_view_to_json;
 #[cfg(test)]
 use rbmem::document::GraphInfo;
@@ -8,11 +9,13 @@ use rbmem::parser::parse_document;
 #[cfg(test)]
 use rbmem::GraphRelation;
 use rbmem::{
-    CompactMode, RbmemDocument, RbmemError, Section, SectionType, SourceInfo, TimestampPolicy,
+    CompactMode, DiffFormat, InferenceStrategy, MergeStrategy, OutputFormat, RbmemDocument,
+    RbmemError, Section, SectionType, SourceInfo, TimestampPolicy,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::{BTreeSet, HashMap};
+use std::collections::BTreeSet;
+use std::error::Error;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -20,12 +23,15 @@ use std::process::Command as ProcessCommand;
 use std::str::FromStr;
 use std::sync::mpsc;
 use std::time::SystemTime;
+use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, Parser)]
 #[command(name = "rbmem")]
 #[command(version)]
-#[command(about = "Rust-Brain Memory Format (.rbmem) v1.3 CLI")]
+#[command(about = "Rust-Brain Memory Format (.rbmem) v1.4.0 CLI")]
 struct Cli {
+    #[arg(long, value_enum, default_value_t = LogFormat::Text, global = true)]
+    log_format: LogFormat,
     #[command(subcommand)]
     command: Command,
 }
@@ -43,6 +49,13 @@ enum Command {
         #[arg(long)]
         human: bool,
     },
+    DeleteSection {
+        file: PathBuf,
+        #[arg(long)]
+        section: String,
+        #[arg(long)]
+        dry_run: bool,
+    },
     Read {
         file: PathBuf,
         #[arg(long)]
@@ -53,6 +66,8 @@ enum Command {
         minified: bool,
         #[arg(long)]
         hide_empty_temporal: bool,
+        #[arg(long)]
+        decrypt: bool,
         #[arg(long)]
         hermes: bool,
         #[arg(long)]
@@ -79,6 +94,8 @@ enum Command {
         content_file: Option<PathBuf>,
         #[arg(long)]
         human: bool,
+        #[arg(long)]
+        dry_run: bool,
     },
     Prune {
         file: PathBuf,
@@ -87,6 +104,11 @@ enum Command {
         file: PathBuf,
         #[arg(long, value_enum, default_value_t = GraphFormat::Json)]
         format: GraphFormat,
+    },
+    Export {
+        file: PathBuf,
+        #[arg(long, value_enum)]
+        format: rbmem::ExportFormat,
     },
     Tree {
         file: PathBuf,
@@ -101,11 +123,15 @@ enum Command {
         infer_relations: bool,
         #[arg(long, default_value_t = 0.6)]
         min_confidence: f64,
+        #[arg(long, value_enum, default_value_t = InferenceStrategy::Balanced)]
+        inference_strategy: InferenceStrategy,
     },
     Infer {
         file: PathBuf,
         #[arg(long, default_value_t = 0.6)]
         min_confidence: f64,
+        #[arg(long, value_enum, default_value_t = InferenceStrategy::Balanced)]
+        inference_strategy: InferenceStrategy,
     },
     Query {
         file: PathBuf,
@@ -120,6 +146,8 @@ enum Command {
         graph_depth: usize,
         #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
         format: OutputFormat,
+        #[arg(long)]
+        decrypt: bool,
     },
     Context {
         file: PathBuf,
@@ -135,10 +163,40 @@ enum Command {
         graph_depth: usize,
         #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
         format: OutputFormat,
+        #[arg(long)]
+        decrypt: bool,
+    },
+    Encrypt {
+        file: PathBuf,
+        #[arg(long)]
+        section: String,
+    },
+    Decrypt {
+        file: PathBuf,
+        #[arg(long)]
+        section: String,
     },
     Diff {
         before: PathBuf,
         after: PathBuf,
+        #[arg(long, value_enum, default_value_t = DiffFormat::Text)]
+        format: DiffFormat,
+    },
+    Merge {
+        base: PathBuf,
+        local: PathBuf,
+        remote: PathBuf,
+        #[arg(long, value_enum, default_value_t = MergeStrategy::Manual)]
+        strategy: MergeStrategy,
+        #[arg(long)]
+        output: Option<PathBuf>,
+    },
+    Migrate {
+        file: PathBuf,
+        #[arg(long)]
+        output: Option<PathBuf>,
+        #[arg(long)]
+        dry_run: bool,
     },
     Review {
         file: PathBuf,
@@ -171,8 +229,16 @@ enum Command {
         infer_relations: bool,
         #[arg(long, default_value_t = 0.6)]
         min_confidence: f64,
+        #[arg(long, value_enum, default_value_t = InferenceStrategy::Balanced)]
+        inference_strategy: InferenceStrategy,
         #[arg(long)]
         dry_run: bool,
+    },
+    Serve {
+        #[arg(long, default_value = "localhost:3000")]
+        bind: String,
+        #[arg(long)]
+        dir: PathBuf,
     },
     Hermes {
         #[command(subcommand)]
@@ -197,7 +263,9 @@ enum HermesCommand {
     Save {
         file: PathBuf,
         #[arg(long)]
-        json: String,
+        json: Option<String>,
+        #[arg(long)]
+        json_file: Option<PathBuf>,
     },
     Init {
         project_name: String,
@@ -221,20 +289,42 @@ enum GraphFormat {
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
-enum OutputFormat {
+enum LogFormat {
     Text,
     Json,
+}
+
+fn init_tracing(format: LogFormat) {
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("warn"));
+    let result = match format {
+        LogFormat::Text => tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .without_time()
+            .try_init(),
+        LogFormat::Json => tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .json()
+            .try_init(),
+    };
+    let _ = result;
 }
 
 fn main() {
     if let Err(error) = run() {
         eprintln!("error: {error}");
+        let mut source = error.source();
+        while let Some(error) = source {
+            eprintln!("caused by: {error}");
+            source = error.source();
+        }
         std::process::exit(1);
     }
 }
 
 fn run() -> Result<(), RbmemError> {
     let cli = Cli::parse();
+    init_tracing(cli.log_format);
+    tracing::info!(command = ?cli.command, "rbmem_command_start");
 
     match cli.command {
         Command::Create {
@@ -245,10 +335,16 @@ fn run() -> Result<(), RbmemError> {
             human,
         } => {
             let now = Utc::now();
-            let mut document = RbmemDocument::new(now, created_by);
-            document.meta.purpose = purpose;
-            document.meta.default_expiry_days = default_expiry_days;
-            write_document(&file, &document, human)?;
+            api::create(
+                &file,
+                api::CreateOptions {
+                    created_by,
+                    purpose,
+                    default_expiry_days,
+                    human,
+                    now,
+                },
+            )?;
             println!("created {}", file.display());
         }
         Command::Read {
@@ -257,36 +353,40 @@ fn run() -> Result<(), RbmemError> {
             compact,
             minified,
             hide_empty_temporal,
+            decrypt,
             hermes,
             hermes_inject,
         } => {
-            let document = read_document(&file, TimestampPolicy::Preserve)?;
             if hermes_inject {
+                let document = api::load(&file, TimestampPolicy::Preserve)?;
                 print!(
                     "{}",
                     hermes_inject_block(&document, resolve, compact, minified)?
                 );
             } else if hermes {
+                let document = api::load(&file, TimestampPolicy::Preserve)?;
                 println!(
                     "{}",
                     serde_json::to_string_pretty(&hermes_json(
                         &document, resolve, compact, minified
                     )?)?
                 );
-            } else if minified
-                || (resolve && !compact && document.meta.compact_mode == CompactMode::Minified)
-            {
-                print!("{}", document.to_minified_string(resolve));
-            } else if compact || (resolve && document.meta.compact_mode == CompactMode::Compact) {
-                print!("{}", document.to_compact_string(resolve, Utc::now()));
-            } else if resolve {
-                for section in document.resolved_sections() {
-                    println!("[{}] type={}", section.path, section.section_type);
-                    println!("{}", section.content);
-                    println!();
-                }
             } else {
-                print_full_document(&document, hide_empty_temporal);
+                print!(
+                    "{}",
+                    api::read(
+                        &file,
+                        api::ReadOptions {
+                            resolve,
+                            compact,
+                            minified,
+                            hide_empty_temporal,
+                            decrypt,
+                            key: None,
+                            policy: TimestampPolicy::Preserve,
+                        },
+                    )?
+                );
             }
         }
         Command::Resolve {
@@ -316,28 +416,39 @@ fn run() -> Result<(), RbmemError> {
             content,
             content_file,
             human,
+            dry_run,
         } => {
             let now = Utc::now();
-            let mut document = if file.exists() {
-                read_document(&file, TimestampPolicy::Preserve)?
-            } else {
-                RbmemDocument::new(now, "me")
-            };
             let section_type = SectionType::from_str(&r#type)?;
-            let body = read_content_argument(content, content_file)?;
-            document.upsert_section(&section, section_type, body, now);
-            set_section_source(
-                &mut document,
-                &section,
-                SourceInfo {
-                    kind: "cli".to_string(),
-                    path: None,
-                    actor: Some("me".to_string()),
+            let body = api::read_content_argument(content, content_file)?;
+            api::update(
+                &file,
+                api::UpdateOptions {
+                    section,
+                    section_type,
+                    content: body,
+                    human,
+                    dry_run,
+                    now,
                 },
-            );
-            document.enforce_protected_timestamps(now);
-            write_document(&file, &document, human)?;
-            println!("updated {}", file.display());
+            )?;
+            if dry_run {
+                println!("would update {}", file.display());
+            } else {
+                println!("updated {}", file.display());
+            }
+        }
+        Command::DeleteSection {
+            file,
+            section,
+            dry_run,
+        } => {
+            api::delete_section(&file, &section, dry_run, Utc::now())?;
+            if dry_run {
+                println!("would delete {}#{}", file.display(), section);
+            } else {
+                println!("deleted {}#{}", file.display(), section);
+            }
         }
         Command::Prune { file } => {
             let now = Utc::now();
@@ -356,6 +467,10 @@ fn run() -> Result<(), RbmemError> {
                 GraphFormat::Dot => print!("{}", document.graph_as_dot()),
             }
         }
+        Command::Export { file, format } => {
+            let document = read_document(&file, TimestampPolicy::Preserve)?;
+            print!("{}", rbmem::export_graph(&document, format)?);
+        }
         Command::Tree { file } => {
             let document = read_document(&file, TimestampPolicy::Preserve)?;
             print!("{}", document.tree());
@@ -365,7 +480,7 @@ fn run() -> Result<(), RbmemError> {
             let mut warnings = parsed.warnings;
             warnings.extend(parsed.document.validate());
             if warnings.is_empty() {
-                println!("valid RBMEM v1.3");
+                println!("valid RBMEM v1.4.0");
             } else {
                 for warning in warnings {
                     println!("warning: {warning}");
@@ -377,20 +492,22 @@ fn run() -> Result<(), RbmemError> {
             output,
             infer_relations,
             min_confidence,
+            inference_strategy,
         } => {
             let now = Utc::now();
             let text = fs::read_to_string(&markdown)?;
             let mut document = convert_markdown_to_rbmem(&text, now);
             stamp_document_source(
                 &mut document,
-                SourceInfo {
-                    kind: "markdown".to_string(),
-                    path: Some(markdown.display().to_string()),
-                    actor: Some("sync".to_string()),
-                },
+                source_info(
+                    "markdown",
+                    Some(markdown.display().to_string()),
+                    "sync",
+                    Some(&text),
+                ),
             );
             if infer_relations {
-                document.infer_relations(now, min_confidence);
+                document.infer_relations_with_strategy(now, min_confidence, inference_strategy);
             }
             write_document(&output, &document, false)?;
             println!("converted {} -> {}", markdown.display(), output.display());
@@ -398,10 +515,12 @@ fn run() -> Result<(), RbmemError> {
         Command::Infer {
             file,
             min_confidence,
+            inference_strategy,
         } => {
             let now = Utc::now();
             let mut document = read_document(&file, TimestampPolicy::Preserve)?;
-            let added = document.infer_relations(now, min_confidence);
+            let added =
+                document.infer_relations_with_strategy(now, min_confidence, inference_strategy);
             write_document(&file, &document, false)?;
             println!("added {added} inferred relation(s)");
         }
@@ -413,24 +532,28 @@ fn run() -> Result<(), RbmemError> {
             minified,
             graph_depth,
             format,
+            decrypt,
         } => {
-            let document = read_document(&file, TimestampPolicy::Preserve)?;
-            let context = query_document(&document, &text, resolve, graph_depth);
-            print_context_output(
-                ContextOutputRequest {
-                    operation: "query",
-                    file: &file,
-                    selector_name: "text",
-                    selector_value: &text,
-                    resolve,
-                    compact,
-                    minified,
-                    graph_depth,
-                    format,
-                },
-                &document,
-                &context,
-            )?;
+            print!(
+                "{}",
+                api::query(
+                    &file,
+                    &text,
+                    api::ContextOptions {
+                        resolve,
+                        compact,
+                        minified,
+                        graph_depth,
+                        decrypt,
+                        key: None,
+                        format,
+                        policy: TimestampPolicy::Preserve,
+                    },
+                )?
+            );
+            if format == OutputFormat::Json {
+                println!();
+            }
         }
         Command::Context {
             file,
@@ -440,29 +563,103 @@ fn run() -> Result<(), RbmemError> {
             minified,
             graph_depth,
             format,
+            decrypt,
         } => {
-            let document = read_document(&file, TimestampPolicy::Preserve)?;
-            let context = query_document(&document, &task, resolve, graph_depth);
-            print_context_output(
-                ContextOutputRequest {
-                    operation: "context",
-                    file: &file,
-                    selector_name: "task",
-                    selector_value: &task,
-                    resolve,
-                    compact,
-                    minified,
-                    graph_depth,
-                    format,
-                },
-                &document,
-                &context,
-            )?;
+            print!(
+                "{}",
+                api::context(
+                    &file,
+                    &task,
+                    api::ContextOptions {
+                        resolve,
+                        compact,
+                        minified,
+                        graph_depth,
+                        decrypt,
+                        key: None,
+                        format,
+                        policy: TimestampPolicy::Preserve,
+                    },
+                )?
+            );
+            if format == OutputFormat::Json {
+                println!();
+            }
         }
-        Command::Diff { before, after } => {
-            let before = read_document(&before, TimestampPolicy::Preserve)?;
-            let after = read_document(&after, TimestampPolicy::Preserve)?;
-            print!("{}", diff_documents(&before, &after));
+        Command::Encrypt { file, section } => {
+            let key = rbmem::EncryptionKey::resolve()?;
+            api::encrypt_section(&file, &section, &key, Utc::now())?;
+            println!("encrypted {}#{}", file.display(), section);
+        }
+        Command::Decrypt { file, section } => {
+            let key = rbmem::EncryptionKey::resolve()?;
+            api::decrypt_section(&file, &section, &key, Utc::now())?;
+            println!("decrypted {}#{}", file.display(), section);
+        }
+        Command::Diff {
+            before,
+            after,
+            format,
+        } => {
+            print!("{}", api::diff_file_with_format(&before, &after, format)?);
+        }
+        Command::Merge {
+            base,
+            local,
+            remote,
+            strategy,
+            output,
+        } => {
+            let base_document = api::load(&base, TimestampPolicy::Preserve)?;
+            let local_document = api::load(&local, TimestampPolicy::Preserve)?;
+            let remote_document = api::load(&remote, TimestampPolicy::Preserve)?;
+            let merged = rbmem::merge_documents(
+                &base_document,
+                &local_document,
+                &remote_document,
+                strategy,
+                Utc::now(),
+            );
+            if let Some(output) = output {
+                api::save(&output, &merged, false)?;
+                println!("merged {}", output.display());
+            } else {
+                print!("{}", merged.to_rbmem_string());
+            }
+        }
+        Command::Migrate {
+            file,
+            output,
+            dry_run,
+        } => {
+            let raw = fs::read_to_string(&file)?;
+            let parsed = parse_document(&raw, TimestampPolicy::Preserve)?;
+            let target = output.unwrap_or_else(|| file.clone());
+            let source_version = parsed
+                .document
+                .meta
+                .source_version
+                .clone()
+                .unwrap_or_else(|| parsed.document.meta.version.clone());
+            if dry_run {
+                println!(
+                    "would migrate {} from RBMEM {} to RBMEM 1.4.0",
+                    file.display(),
+                    source_version
+                );
+                for warning in parsed.warnings {
+                    println!("warning: {warning}");
+                }
+                print!("{}", parsed.document.to_rbmem_string());
+            } else {
+                write_document(&target, &parsed.document, false)?;
+                println!(
+                    "migrated {} -> {} from RBMEM {} to RBMEM 1.4.0",
+                    file.display(),
+                    target.display(),
+                    source_version
+                );
+            }
         }
         Command::Review { file } => {
             let text = fs::read_to_string(&file)?;
@@ -510,18 +707,25 @@ fn run() -> Result<(), RbmemError> {
             watch,
             infer_relations,
             min_confidence,
+            inference_strategy,
             dry_run,
         } => {
             let options = SyncOptions::from_folder(
                 &markdown_folder,
                 infer_relations,
                 min_confidence,
+                inference_strategy,
                 dry_run,
             )?;
             sync_markdown_folder(&markdown_folder, &output_folder, &options)?;
             if watch {
                 watch_markdown_folder(markdown_folder, output_folder, options)?;
             }
+        }
+        Command::Serve { bind, dir } => {
+            tokio::runtime::Runtime::new()
+                .map_err(RbmemError::Io)?
+                .block_on(rbmem::server::serve(&bind, dir))?;
         }
         Command::Hermes { command } => match command {
             HermesCommand::Load {
@@ -538,14 +742,18 @@ fn run() -> Result<(), RbmemError> {
                     )?)?
                 );
             }
-            HermesCommand::Save { file, json } => {
+            HermesCommand::Save {
+                file,
+                json,
+                json_file,
+            } => {
                 let now = Utc::now();
                 let mut document = if file.exists() {
                     read_document(&file, TimestampPolicy::Preserve)?
                 } else {
                     RbmemDocument::new(now, "hermes")
                 };
-                let payload = read_hermes_payload(&json)?;
+                let payload = read_hermes_payload(json, json_file)?;
                 apply_hermes_payload(&mut document, payload, now)?;
                 write_document(&file, &document, false)?;
                 validate_or_error(&document)?;
@@ -601,28 +809,6 @@ fn write_document(path: &Path, document: &RbmemDocument, human: bool) -> Result<
     };
     fs::write(path, text)?;
     Ok(())
-}
-
-fn print_full_document(document: &RbmemDocument, hide_empty_temporal: bool) {
-    if hide_empty_temporal {
-        print!("{}", document.to_rbmem_string_hiding_empty_temporal());
-    } else {
-        print!("{}", document.to_rbmem_string());
-    }
-}
-
-fn read_content_argument(
-    content: Option<String>,
-    content_file: Option<PathBuf>,
-) -> Result<String, RbmemError> {
-    match (content, content_file) {
-        (Some(content), None) => Ok(content),
-        (None, Some(path)) => Ok(fs::read_to_string(path)?),
-        (None, None) => Ok(String::new()),
-        (Some(_), Some(_)) => Err(RbmemError::Parse(
-            "use either --content or --content-file, not both".to_string(),
-        )),
-    }
 }
 
 fn convert_markdown_to_rbmem(markdown: &str, now: chrono::DateTime<Utc>) -> RbmemDocument {
@@ -684,14 +870,12 @@ fn title_to_path(title: &str) -> String {
             slug.push(ch.to_ascii_lowercase());
             last_was_separator = false;
         } else if !last_was_separator && !slug.is_empty() {
-            // Spaces and punctuation belong inside the current heading segment.
-            // Dots are reserved for real Markdown heading depth.
-            slug.push('-');
+            slug.push('.');
             last_was_separator = true;
         }
     }
 
-    while slug.ends_with('-') {
+    while slug.ends_with('.') {
         slug.pop();
     }
 
@@ -945,6 +1129,29 @@ fn stamp_document_source(document: &mut RbmemDocument, source: SourceInfo) {
     }
 }
 
+fn source_info(
+    kind: impl Into<String>,
+    path: Option<String>,
+    actor: impl Into<String>,
+    hash_input: Option<&str>,
+) -> SourceInfo {
+    SourceInfo {
+        kind: kind.into(),
+        path,
+        actor: Some(actor.into()),
+        hash: hash_input.map(sha256_hex),
+    }
+}
+
+fn sha256_hex(input: &str) -> String {
+    let digest = ring::digest::digest(&ring::digest::SHA256, input.as_bytes());
+    let mut output = String::from("sha256:");
+    for byte in digest.as_ref() {
+        output.push_str(&format!("{byte:02x}"));
+    }
+    output
+}
+
 fn set_section_source(document: &mut RbmemDocument, path: &str, source: SourceInfo) {
     if let Some(section) = document
         .sections
@@ -955,69 +1162,12 @@ fn set_section_source(document: &mut RbmemDocument, path: &str, source: SourceIn
     }
 }
 
-fn diff_documents(before: &RbmemDocument, after: &RbmemDocument) -> String {
-    let before_by_path = section_map(before);
-    let after_by_path = section_map(after);
-    let mut output = String::new();
-
-    for path in after_by_path.keys() {
-        if !before_by_path.contains_key(path) {
-            output.push_str(&format!("added: {path}\n"));
-        }
-    }
-
-    for path in before_by_path.keys() {
-        if !after_by_path.contains_key(path) {
-            output.push_str(&format!("removed: {path}\n"));
-        }
-    }
-
-    for path in after_by_path.keys() {
-        let Some(before_section) = before_by_path.get(path) else {
-            continue;
-        };
-        let after_section = after_by_path[path];
-        if before_section.section_type != after_section.section_type {
-            output.push_str(&format!(
-                "changed type: {path} {} -> {}\n",
-                before_section.section_type, after_section.section_type
-            ));
-        }
-        if before_section.content != after_section.content {
-            output.push_str(&format!("changed content: {path}\n"));
-        }
-        if before_section.temporal != after_section.temporal {
-            output.push_str(&format!("changed temporal: {path}\n"));
-        }
-        if before_section.source != after_section.source {
-            output.push_str(&format!("changed source: {path}\n"));
-        }
-        if before_section.graph != after_section.graph {
-            output.push_str(&format!("changed graph: {path}\n"));
-        }
-    }
-
-    if output.is_empty() {
-        "no RBMEM differences\n".to_string()
-    } else {
-        output
-    }
-}
-
-fn section_map(document: &RbmemDocument) -> HashMap<String, &Section> {
-    document
-        .sections
-        .iter()
-        .map(|section| (section.path.clone(), section))
-        .collect()
-}
-
 fn review_document(document: &RbmemDocument, mut warnings: Vec<String>) -> String {
     warnings.extend(document.validate());
     let mut output = String::new();
 
     if warnings.is_empty() {
-        output.push_str("valid RBMEM v1.3\n");
+        output.push_str("valid RBMEM v1.4.0\n");
     } else {
         for warning in warnings {
             output.push_str(&format!("warning: {warning}\n"));
@@ -1066,7 +1216,7 @@ fn doctor_text_report(file: Option<&Path>) -> Result<String, RbmemError> {
         "cli-version: rbmem {}\n",
         env!("CARGO_PKG_VERSION")
     ));
-    output.push_str("document-format: RBMEM v1.3\n");
+    output.push_str("document-format: RBMEM v1.4.0\n");
 
     if let Some(file) = file {
         append_document_diagnostics(&mut output, file)?;
@@ -1130,7 +1280,7 @@ fn doctor_json(file: Option<&Path>) -> Result<Value, RbmemError> {
     Ok(json!({
         "schema": "rbmem.doctor.v1",
         "cli_version": format!("rbmem {}", env!("CARGO_PKG_VERSION")),
-        "document_format": "RBMEM v1.3",
+        "document_format": "RBMEM v1.4.0",
         "document": document,
     }))
 }
@@ -1345,6 +1495,7 @@ fn pack_document(
 struct SyncOptions {
     infer_relations: bool,
     min_confidence: f64,
+    inference_strategy: InferenceStrategy,
     dry_run: bool,
     default_expiry_days: Option<i64>,
     compact_mode: CompactMode,
@@ -1355,11 +1506,13 @@ impl SyncOptions {
         markdown_folder: &Path,
         infer_relations: bool,
         min_confidence: f64,
+        inference_strategy: InferenceStrategy,
         dry_run: bool,
     ) -> Result<Self, RbmemError> {
         let mut options = Self {
             infer_relations,
             min_confidence: min_confidence.clamp(0.0, 1.0),
+            inference_strategy,
             dry_run,
             default_expiry_days: None,
             compact_mode: CompactMode::Full,
@@ -1396,6 +1549,9 @@ fn apply_sync_config(text: &str, options: &mut SyncOptions) -> Result<(), RbmemE
                 if let Ok(confidence) = value.parse::<f64>() {
                     options.min_confidence = confidence.clamp(0.0, 1.0);
                 }
+            }
+            "inference_strategy" => {
+                options.inference_strategy = <InferenceStrategy as FromStr>::from_str(value)?;
             }
             "default_expiry_days" => {
                 options.default_expiry_days = if value.eq_ignore_ascii_case("null") {
@@ -1498,14 +1654,14 @@ fn sync_markdown_file(
         .to_string();
     stamp_document_source(
         &mut document,
-        SourceInfo {
-            kind: "markdown".to_string(),
-            path: Some(source_path),
-            actor: Some("sync".to_string()),
-        },
+        source_info("markdown", Some(source_path), "sync", Some(&markdown)),
     );
     if options.infer_relations {
-        document.infer_relations(now, options.min_confidence);
+        document.infer_relations_with_strategy(
+            now,
+            options.min_confidence,
+            options.inference_strategy,
+        );
     }
 
     if let Some(parent) = output_file.parent() {
@@ -1637,6 +1793,7 @@ fn notify_error(error: notify::Error) -> RbmemError {
 fn document_meta_json(document: &RbmemDocument) -> Value {
     json!({
         "version": document.meta.version,
+        "source_version": document.meta.source_version,
         "purpose": document.meta.purpose,
         "compact_mode": document.meta.compact_mode.to_string(),
         "last_updated": document.meta.last_updated,
@@ -1768,11 +1925,23 @@ fn default_text_type() -> String {
     "text".to_string()
 }
 
-fn read_hermes_payload(input: &str) -> Result<HermesPayload, RbmemError> {
-    let text = if Path::new(input).exists() {
-        fs::read_to_string(input)?
-    } else {
-        input.to_string()
+fn read_hermes_payload(
+    json: Option<String>,
+    json_file: Option<PathBuf>,
+) -> Result<HermesPayload, RbmemError> {
+    let text = match (json, json_file) {
+        (Some(_), Some(_)) => {
+            return Err(RbmemError::Parse(
+                "use either --json or --json-file, not both".to_string(),
+            ))
+        }
+        (Some(json), None) => json,
+        (None, Some(path)) => fs::read_to_string(path)?,
+        (None, None) => {
+            return Err(RbmemError::Parse(
+                "missing --json or --json-file".to_string(),
+            ))
+        }
     };
     Ok(serde_json::from_str(&text)?)
 }
@@ -1784,6 +1953,12 @@ fn apply_hermes_payload(
 ) -> Result<(), RbmemError> {
     for patch in payload.sections {
         let section_type = SectionType::from_str(&patch.r#type)?;
+        if section_type == SectionType::HermesMemory && patch.mode == HermesWriteMode::Replace {
+            return Err(RbmemError::Parse(format!(
+                "hermes:memory section '{}' is append-only; use mode auto or append",
+                patch.path
+            )));
+        }
         let should_append = patch.mode == HermesWriteMode::Append
             || (patch.mode == HermesWriteMode::Auto && section_type == SectionType::HermesMemory);
 
@@ -1799,6 +1974,7 @@ fn apply_hermes_payload(
                 kind: "hermes".to_string(),
                 path: None,
                 actor: Some("hermes".to_string()),
+                hash: None,
             }),
         );
     }
@@ -1990,7 +2166,7 @@ Body.
 
         assert_eq!(
             paths,
-            vec!["inhibition-of-return.how-it-works.theoretical-mechanisms"]
+            vec!["inhibition.of.return.how.it.works.theoretical.mechanisms"]
         );
     }
 
@@ -2029,7 +2205,9 @@ Body.
         .unwrap();
         fs::write(markdown.join(".rbmemsync"), "compact_mode: minified\n").unwrap();
 
-        let options = SyncOptions::from_folder(&markdown, false, 0.6, false).unwrap();
+        let options =
+            SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, false)
+                .unwrap();
         sync_markdown_folder(&markdown, &output, &options).unwrap();
 
         let generated = output.join("concepts").join("agent.rbmem");
@@ -2049,6 +2227,10 @@ Body.
         assert_eq!(source.kind, "markdown");
         let expected_source_path = Path::new("concepts").join("agent.md").display().to_string();
         assert_eq!(source.path.as_deref(), Some(expected_source_path.as_str()));
+        assert!(source
+            .hash
+            .as_ref()
+            .is_some_and(|hash| hash.starts_with("sha256:")));
 
         let _ = fs::remove_dir_all(root);
     }
@@ -2061,7 +2243,9 @@ Body.
         fs::create_dir_all(&markdown).unwrap();
         fs::write(markdown.join("note.md"), "# Note\n\nBody.").unwrap();
 
-        let options = SyncOptions::from_folder(&markdown, false, 0.6, true).unwrap();
+        let options =
+            SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, true)
+                .unwrap();
         sync_markdown_folder(&markdown, &output, &options).unwrap();
 
         assert!(!output.join("note.rbmem").exists());
@@ -2076,7 +2260,9 @@ Body.
         fs::create_dir_all(&markdown).unwrap();
         fs::write(markdown.join("note.md"), "# Note\n\nBody.").unwrap();
 
-        let options = SyncOptions::from_folder(&markdown, false, 0.6, false).unwrap();
+        let options =
+            SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, false)
+                .unwrap();
         sync_markdown_folder(&markdown, &output, &options).unwrap();
         let generated = output.join("note.rbmem");
         let first_modified = fs::metadata(&generated).unwrap().modified().unwrap();
@@ -2184,7 +2370,7 @@ Body.
         after.upsert_section("rules", SectionType::Text, "new".to_string(), now);
         after.upsert_section("memory", SectionType::Text, "added".to_string(), now);
 
-        let diff = diff_documents(&before, &after);
+        let diff = api::diff_documents(&before, &after);
 
         assert!(diff.contains("added: memory"));
         assert!(diff.contains("changed content: rules"));
@@ -2209,6 +2395,7 @@ Body.
             kind: "hermes".to_string(),
             path: None,
             actor: Some("hermes".to_string()),
+            hash: None,
         });
         memory.graph = Some(GraphInfo {
             node_type: None,
@@ -2240,7 +2427,7 @@ Body.
 
         assert!(report.contains("rbmem doctor"));
         assert!(report.contains("cli-version: rbmem"));
-        assert!(report.contains("document-format: RBMEM v1.3"));
+        assert!(report.contains("document-format: RBMEM v1.4.0"));
         assert!(report.contains("file-exists: ok"));
         assert!(report.contains("parse: ok"));
         assert!(report.contains("validation: ok"));
@@ -2372,7 +2559,8 @@ include:
         let now = fixed_time();
         let mut document = hermes_starter_document("Demo Project", now);
         let payload = read_hermes_payload(
-            r#"{
+            Some(
+                r#"{
               "sections": [
                 {
                   "path": "memory",
@@ -2381,7 +2569,10 @@ include:
                   "mode": "auto"
                 }
               ]
-            }"#,
+            }"#
+                .to_string(),
+            ),
+            None,
         )
         .unwrap();
 
@@ -2389,7 +2580,8 @@ include:
         apply_hermes_payload(
             &mut document,
             read_hermes_payload(
-                r#"{"sections":[{"path":"memory","type":"hermes:memory","content":"- User prefers compact context."}]}"#,
+                Some(r#"{"sections":[{"path":"memory","type":"hermes:memory","content":"- User prefers compact context."}]}"#.to_string()),
+                None,
             )
             .unwrap(),
             now,
@@ -2409,6 +2601,24 @@ include:
             1
         );
         assert_eq!(memory.section_type, SectionType::HermesMemory);
+    }
+
+    #[test]
+    fn hermes_save_rejects_replace_for_append_only_memory() {
+        let now = fixed_time();
+        let mut document = hermes_starter_document("Demo Project", now);
+        let payload = read_hermes_payload(
+            Some(
+                r#"{"sections":[{"path":"memory","type":"hermes:memory","content":"replacement","mode":"replace"}]}"#
+                    .to_string(),
+            ),
+            None,
+        )
+        .unwrap();
+
+        let error = apply_hermes_payload(&mut document, payload, now).unwrap_err();
+
+        assert!(error.to_string().contains("append-only"));
     }
 
     fn temp_test_dir(name: &str) -> PathBuf {

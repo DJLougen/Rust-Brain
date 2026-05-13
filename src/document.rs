@@ -1,4 +1,6 @@
+use crate::version::{is_supported_format_version, RBMEM_FORMAT_LABEL, RBMEM_FORMAT_VERSION};
 use chrono::{DateTime, Duration, Utc};
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -17,6 +19,9 @@ pub enum RbmemError {
     #[error("parse error: {0}")]
     Parse(String),
 
+    #[error("cryptography error: {0}")]
+    Crypto(String),
+
     #[error("invalid section type: {0}")]
     InvalidSectionType(String),
 
@@ -29,7 +34,7 @@ pub enum RbmemError {
 /// `Preserve` is useful when simply reading a trusted file. `Protect` is used
 /// when importing or updating LLM-produced content: incoming timestamps are
 /// ignored and replaced by the tool's clock.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TimestampPolicy {
     Preserve,
     Protect { now: DateTime<Utc> },
@@ -38,6 +43,8 @@ pub enum TimestampPolicy {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Meta {
     pub version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_version: Option<String>,
     pub purpose: String,
     pub generated_at: DateTime<Utc>,
     pub last_updated: DateTime<Utc>,
@@ -50,7 +57,8 @@ pub struct Meta {
 impl Meta {
     pub fn new(now: DateTime<Utc>, created_by: impl Into<String>) -> Self {
         Self {
-            version: "1.3".to_string(),
+            version: RBMEM_FORMAT_VERSION.to_string(),
+            source_version: None,
             purpose: "personal-agent-memory".to_string(),
             generated_at: now,
             last_updated: now,
@@ -62,12 +70,19 @@ impl Meta {
     }
 
     pub fn enforce_v13(&mut self, warnings: &mut Vec<String>) {
-        if self.version != "1.3" {
-            warnings.push(format!(
-                "document version '{}' was normalized to locked RBMEM v1.3",
-                self.version
-            ));
-            self.version = "1.3".to_string();
+        if self.version != RBMEM_FORMAT_VERSION {
+            let original = self.version.clone();
+            self.source_version = Some(self.version.clone());
+            if is_supported_format_version(&original) {
+                warnings.push(format!(
+                    "legacy document version '{original}' was normalized to {RBMEM_FORMAT_LABEL}"
+                ));
+            } else {
+                warnings.push(format!(
+                    "document version '{original}' was normalized to {RBMEM_FORMAT_LABEL}"
+                ));
+            }
+            self.version = RBMEM_FORMAT_VERSION.to_string();
         }
     }
 }
@@ -104,6 +119,61 @@ impl FromStr for CompactMode {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, ValueEnum)]
+#[serde(rename_all = "lowercase")]
+pub enum InferenceStrategy {
+    Off,
+    Explicit,
+    #[default]
+    Balanced,
+    Aggressive,
+}
+
+impl InferenceStrategy {
+    fn effective_min_confidence(self, min_confidence: f64) -> f64 {
+        let min_confidence = min_confidence.clamp(0.0, 1.0);
+        match self {
+            Self::Aggressive => (min_confidence - 0.10).clamp(0.0, 1.0),
+            _ => min_confidence,
+        }
+    }
+
+    fn allows_candidate_kind(self, kind: InferredRelationKind) -> bool {
+        match self {
+            Self::Off => false,
+            Self::Explicit => kind == InferredRelationKind::Explicit,
+            Self::Balanced | Self::Aggressive => true,
+        }
+    }
+}
+
+impl Display for InferenceStrategy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Off => f.write_str("off"),
+            Self::Explicit => f.write_str("explicit"),
+            Self::Balanced => f.write_str("balanced"),
+            Self::Aggressive => f.write_str("aggressive"),
+        }
+    }
+}
+
+impl FromStr for InferenceStrategy {
+    type Err = RbmemError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "off" | "none" | "disabled" => Ok(Self::Off),
+            "explicit" | "strict" | "conservative" => Ok(Self::Explicit),
+            "balanced" | "default" => Ok(Self::Balanced),
+            "aggressive" => Ok(Self::Aggressive),
+            other => Err(RbmemError::Parse(format!(
+                "invalid inference strategy: {other}"
+            ))),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum SectionType {
@@ -114,6 +184,8 @@ pub enum SectionType {
     Timeline,
     Template,
     HermesMemory,
+    Encrypted,
+    Conflict,
 }
 
 impl SectionType {
@@ -125,6 +197,8 @@ impl SectionType {
             SectionType::Timeline => "timeline",
             SectionType::Template => "template",
             SectionType::HermesMemory => "hermes:memory",
+            SectionType::Encrypted => "encrypted",
+            SectionType::Conflict => "conflict",
         }
     }
 }
@@ -146,9 +220,18 @@ impl FromStr for SectionType {
             "timeline" => Ok(Self::Timeline),
             "template" => Ok(Self::Template),
             "hermes:memory" | "hermes_memory" | "hermes-memory" => Ok(Self::HermesMemory),
+            "encrypted" => Ok(Self::Encrypted),
+            "conflict" => Ok(Self::Conflict),
             other => Err(RbmemError::InvalidSectionType(other.to_string())),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct EncryptedPayload {
+    pub nonce: String,
+    pub ciphertext: String,
+    pub encrypted_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -202,6 +285,8 @@ pub struct SourceInfo {
     pub path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub actor: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hash: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -211,6 +296,7 @@ pub struct Section {
     pub temporal: Temporal,
     pub source: Option<SourceInfo>,
     pub graph: Option<GraphInfo>,
+    pub encrypted: Option<EncryptedPayload>,
     pub content: String,
 }
 
@@ -222,6 +308,7 @@ impl Section {
             temporal: Temporal::new(now, None),
             source: None,
             graph: None,
+            encrypted: None,
             content: String::new(),
         }
     }
@@ -246,6 +333,7 @@ pub struct ResolvedSection {
     pub temporal: Temporal,
     pub source: Option<SourceInfo>,
     pub graph: Option<GraphInfo>,
+    pub encrypted: Option<EncryptedPayload>,
     pub content: String,
 }
 
@@ -287,9 +375,9 @@ impl RbmemDocument {
     pub fn validate(&self) -> Vec<String> {
         let mut warnings = Vec::new();
 
-        if self.meta.version != "1.3" {
+        if !is_supported_format_version(&self.meta.version) {
             warnings.push(format!(
-                "expected RBMEM version 1.3, found {}",
+                "expected RBMEM version {RBMEM_FORMAT_VERSION}, found {}",
                 self.meta.version
             ));
         }
@@ -327,7 +415,20 @@ impl RbmemDocument {
     }
 
     pub fn infer_relations(&mut self, now: DateTime<Utc>, min_confidence: f64) -> usize {
-        let min_confidence = min_confidence.clamp(0.0, 1.0);
+        self.infer_relations_with_strategy(now, min_confidence, InferenceStrategy::Balanced)
+    }
+
+    pub fn infer_relations_with_strategy(
+        &mut self,
+        now: DateTime<Utc>,
+        min_confidence: f64,
+        strategy: InferenceStrategy,
+    ) -> usize {
+        if strategy == InferenceStrategy::Off {
+            return 0;
+        }
+
+        let min_confidence = strategy.effective_min_confidence(min_confidence);
         let known_paths: Vec<String> = self
             .sections
             .iter()
@@ -336,7 +437,8 @@ impl RbmemDocument {
         let mut added = 0;
 
         for section in &mut self.sections {
-            let inferred = infer_section_relations(section, &known_paths, now, min_confidence);
+            let inferred =
+                infer_section_relations(section, &known_paths, now, min_confidence, strategy);
             if inferred.is_empty() {
                 continue;
             }
@@ -383,6 +485,7 @@ impl RbmemDocument {
                 section_type
             };
             section.section_type = section_type;
+            section.encrypted = None;
             section.content = merge_update_content(merge_type, &section.content, &content);
             section.temporal.updated_at = now;
             return;
@@ -551,7 +654,13 @@ impl RbmemDocument {
     pub fn to_compact_string(&self, resolve: bool, now: DateTime<Utc>) -> String {
         let mut output = String::new();
         output.push_str("meta:\n");
-        output.push_str("  version: 1.3\n");
+        output.push_str(&format!("  version: {}\n", self.meta.version));
+        if let Some(source_version) = &self.meta.source_version {
+            output.push_str(&format!(
+                "  _source_version: \"{}\"\n",
+                escape_string(source_version)
+            ));
+        }
         output.push_str(&format!(
             "  purpose: \"{}\"\n\n",
             escape_string(&self.meta.purpose)
@@ -568,7 +677,11 @@ impl RbmemDocument {
                         format_optional_time(section.temporal.expires_at)
                     ));
                 }
-                write_content_block(&mut output, &section.content, RbmemWriteStyle::Canonical);
+                if section.section_type == SectionType::Encrypted {
+                    write_encrypted_fields(&mut output, section.encrypted.as_ref());
+                } else {
+                    write_content_block(&mut output, &section.content, RbmemWriteStyle::Canonical);
+                }
                 output.push_str("[END SECTION]\n\n");
             }
         } else {
@@ -582,7 +695,11 @@ impl RbmemDocument {
                         format_optional_time(section.temporal.expires_at)
                     ));
                 }
-                write_content_block(&mut output, &section.content, RbmemWriteStyle::Canonical);
+                if section.section_type == SectionType::Encrypted {
+                    write_encrypted_fields(&mut output, section.encrypted.as_ref());
+                } else {
+                    write_content_block(&mut output, &section.content, RbmemWriteStyle::Canonical);
+                }
                 output.push_str("[END SECTION]\n\n");
             }
         }
@@ -632,15 +749,17 @@ impl RbmemDocument {
         let mut output = String::new();
         match options.style {
             RbmemWriteStyle::Canonical => {
-                output.push_str("rbmem# RBMEM v1.3 - Rust-Brain Memory Format\n\n");
+                output.push_str(&format!(
+                    "rbmem# {RBMEM_FORMAT_LABEL} - Rust-Brain Memory Format\n\n"
+                ));
             }
             RbmemWriteStyle::Human => {
-                output.push_str("# RBMEM v1.3 human-editable file\n");
+                output.push_str(&format!("# {RBMEM_FORMAT_LABEL} human-editable file\n"));
                 output.push_str("# The parser accepts these short section delimiters.\n\n");
             }
         }
         output.push_str("meta:\n");
-        output.push_str("  version: 1.3\n");
+        output.push_str(&format!("  version: {}\n", self.meta.version));
         output.push_str(&format!(
             "  purpose: \"{}\"\n",
             escape_string(&self.meta.purpose)
@@ -707,6 +826,9 @@ impl RbmemDocument {
                 if let Some(actor) = &source.actor {
                     output.push_str(&format!("  actor: \"{}\"\n", escape_string(actor)));
                 }
+                if let Some(hash) = &source.hash {
+                    output.push_str(&format!("  hash: \"{}\"\n", escape_string(hash)));
+                }
             }
 
             if let Some(graph) = &section.graph {
@@ -744,7 +866,11 @@ impl RbmemDocument {
                 }
             }
 
-            write_content_block(&mut output, &section.content, options.style);
+            if section.section_type == SectionType::Encrypted {
+                write_encrypted_fields(&mut output, section.encrypted.as_ref());
+            } else {
+                write_content_block(&mut output, &section.content, options.style);
+            }
             match options.style {
                 RbmemWriteStyle::Canonical => output.push_str("[END SECTION]\n\n"),
                 RbmemWriteStyle::Human => output.push_str("=== END SECTION\n\n"),
@@ -810,6 +936,7 @@ fn merge_section_chain(chain: &[&Section]) -> ResolvedSection {
         temporal: resolved.temporal,
         source: resolved.source,
         graph: resolved.graph,
+        encrypted: resolved.encrypted,
         content: resolved.content,
     }
 }
@@ -866,6 +993,7 @@ fn infer_section_relations(
     known_paths: &[String],
     now: DateTime<Utc>,
     min_confidence: f64,
+    strategy: InferenceStrategy,
 ) -> Vec<GraphRelation> {
     let text = normalize_for_matching(&section.content);
     let mut relations = Vec::new();
@@ -875,7 +1003,7 @@ fn infer_section_relations(
             continue;
         }
 
-        if let Some(candidate) = infer_relation_candidate(&text, target) {
+        if let Some(candidate) = infer_relation_candidate(&text, target, strategy) {
             if candidate.confidence < min_confidence {
                 continue;
             }
@@ -898,9 +1026,21 @@ fn infer_section_relations(
 struct InferredRelationCandidate {
     relation_type: String,
     confidence: f64,
+    kind: InferredRelationKind,
 }
 
-fn infer_relation_candidate(text: &str, target_path: &str) -> Option<InferredRelationCandidate> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum InferredRelationKind {
+    Explicit,
+    VerbWindow,
+    Mention,
+}
+
+fn infer_relation_candidate(
+    text: &str,
+    target_path: &str,
+    strategy: InferenceStrategy,
+) -> Option<InferredRelationCandidate> {
     let aliases = target_aliases(target_path);
     let mut best: Option<InferredRelationCandidate> = None;
 
@@ -916,7 +1056,9 @@ fn infer_relation_candidate(text: &str, target_path: &str) -> Option<InferredRel
                     InferredRelationCandidate {
                         relation_type: pattern.relation_type.to_string(),
                         confidence: pattern.confidence,
+                        kind: InferredRelationKind::Explicit,
                     },
+                    strategy,
                 );
             }
         }
@@ -927,7 +1069,9 @@ fn infer_relation_candidate(text: &str, target_path: &str) -> Option<InferredRel
                 InferredRelationCandidate {
                     relation_type: "references".to_string(),
                     confidence: 0.72,
+                    kind: InferredRelationKind::VerbWindow,
                 },
+                strategy,
             );
         }
 
@@ -940,7 +1084,9 @@ fn infer_relation_candidate(text: &str, target_path: &str) -> Option<InferredRel
                 } else {
                     0.60
                 },
+                kind: InferredRelationKind::Mention,
             },
+            strategy,
         );
     }
 
@@ -1002,7 +1148,15 @@ const RELATION_PATTERNS: &[RelationPattern] = &[
     },
 ];
 
-fn push_best(best: &mut Option<InferredRelationCandidate>, candidate: InferredRelationCandidate) {
+fn push_best(
+    best: &mut Option<InferredRelationCandidate>,
+    candidate: InferredRelationCandidate,
+    strategy: InferenceStrategy,
+) {
+    if !strategy.allows_candidate_kind(candidate.kind) {
+        return;
+    }
+
     if best
         .as_ref()
         .is_none_or(|current| candidate.confidence > current.confidence)
@@ -1274,6 +1428,20 @@ fn write_content_block(output: &mut String, content: &str, style: RbmemWriteStyl
     }
 }
 
+fn write_encrypted_fields(output: &mut String, encrypted: Option<&EncryptedPayload>) {
+    if let Some(payload) = encrypted {
+        output.push_str(&format!("nonce: \"{}\"\n", escape_string(&payload.nonce)));
+        output.push_str(&format!(
+            "ciphertext: \"{}\"\n",
+            escape_string(&payload.ciphertext)
+        ));
+        output.push_str(&format!(
+            "encrypted_at: \"{}\"\n",
+            payload.encrypted_at.to_rfc3339()
+        ));
+    }
+}
+
 pub fn graph_view_to_json(view: &GraphView) -> Value {
     let nodes = view.nodes.iter().map(|id| json!({ "id": id })).collect();
     let edges = view
@@ -1506,6 +1674,78 @@ mod tests {
             .unwrap();
         assert!(doc.sections[alpha_index].graph.is_none());
         assert_eq!(doc.infer_relations(now, 0.6), 1);
+    }
+
+    #[test]
+    fn relation_inference_strategy_off_disables_edges() {
+        let now = fixed_time();
+        let mut doc = RbmemDocument::new(now, "me");
+        doc.upsert_section(
+            "agents.reader",
+            SectionType::Text,
+            "The reader uses writer.".to_string(),
+            now,
+        );
+        doc.upsert_section(
+            "agents.writer",
+            SectionType::Text,
+            "Writer.".to_string(),
+            now,
+        );
+
+        assert_eq!(
+            doc.infer_relations_with_strategy(now, 0.6, InferenceStrategy::Off),
+            0
+        );
+        assert!(doc.sections[0].graph.is_none());
+    }
+
+    #[test]
+    fn relation_inference_explicit_strategy_ignores_mentions() {
+        let now = fixed_time();
+        let mut doc = RbmemDocument::new(now, "me");
+        doc.upsert_section(
+            "notes.alpha",
+            SectionType::Text,
+            "Alpha mentions beta without an action verb.".to_string(),
+            now,
+        );
+        doc.upsert_section("notes.beta", SectionType::Text, "Beta.".to_string(), now);
+
+        assert_eq!(
+            doc.infer_relations_with_strategy(now, 0.6, InferenceStrategy::Explicit),
+            0
+        );
+    }
+
+    #[test]
+    fn relation_inference_aggressive_strategy_lowers_threshold() {
+        let now = fixed_time();
+        let mut balanced = RbmemDocument::new(now, "me");
+        balanced.upsert_section(
+            "notes.alpha",
+            SectionType::Text,
+            "Alpha mentions beta without an action verb.".to_string(),
+            now,
+        );
+        balanced.upsert_section("notes.beta", SectionType::Text, "Beta.".to_string(), now);
+        assert_eq!(
+            balanced.infer_relations_with_strategy(now, 0.69, InferenceStrategy::Balanced),
+            0
+        );
+
+        let mut aggressive = RbmemDocument::new(now, "me");
+        aggressive.upsert_section(
+            "notes.alpha",
+            SectionType::Text,
+            "Alpha mentions beta without an action verb.".to_string(),
+            now,
+        );
+        aggressive.upsert_section("notes.beta", SectionType::Text, "Beta.".to_string(), now);
+        assert_eq!(
+            aggressive.infer_relations_with_strategy(now, 0.69, InferenceStrategy::Aggressive),
+            1
+        );
     }
 
     #[test]

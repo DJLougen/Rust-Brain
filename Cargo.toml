@@ -1,7 +1,7 @@
 [package]
 name = "rbmem"
-version = "0.4.0"
-authors = ["basbe"]
+version = "1.4.0"
+authors = ["DJLougen"]
 edition = "2021"
 rust-version = "1.82"
 description = "Rust-Brain Memory Format CLI for structured, temporal, graph-aware agent memory."
@@ -14,15 +14,31 @@ keywords = ["agent", "memory", "markdown", "graph", "cli"]
 categories = ["command-line-utilities", "parser-implementations", "data-structures"]
 exclude = ["graphify-out/", "target/"]
 
+[lib]
+name = "rbmem"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rbmem"
+path = "src/main.rs"
+
 [dependencies]
+base64 = "0.22"
+axum = "0.7"
 chrono = { version = "0.4", features = ["serde", "clock"] }
 clap = { version = "4", features = ["derive"] }
 nom = "7"
 notify = "8"
 petgraph = { version = "0.6", optional = true }
+ring = "0.17"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0.9"
 thiserror = "1"
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "sync"] }
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 
 [features]
 default = ["graph"]
