@@ -27,6 +27,7 @@ base64 = "0.22"
 axum = "0.7"
 chrono = { version = "0.4", features = ["serde", "clock"] }
 clap = { version = "4", features = ["derive"] }
+md5 = "0.7"
 nom = "7"
 notify = "8"
 petgraph = { version = "0.6", optional = true }

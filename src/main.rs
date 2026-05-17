@@ -200,9 +200,13 @@ enum Command {
     },
     Review {
         file: PathBuf,
+        #[arg(long)]
+        dry_run: bool,
     },
     Doctor {
         file: Option<PathBuf>,
+        #[arg(long, default_value_t = 30)]
+        stale_days: u64,
         #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
         format: OutputFormat,
     },
@@ -275,6 +279,8 @@ enum HermesCommand {
     },
     Doctor {
         file: PathBuf,
+        #[arg(long, default_value_t = 30)]
+        stale_days: u64,
         #[arg(long)]
         rbmem_cli: Option<PathBuf>,
         #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
@@ -419,7 +425,7 @@ fn run() -> Result<(), RbmemError> {
             dry_run,
         } => {
             let now = Utc::now();
-            let section_type = SectionType::from_str(&r#type)?;
+            let section_type = <SectionType as std::str::FromStr>::from_str(&r#type)?;
             let body = api::read_content_argument(content, content_file)?;
             api::update(
                 &file,
@@ -661,13 +667,24 @@ fn run() -> Result<(), RbmemError> {
                 );
             }
         }
-        Command::Review { file } => {
+        Command::Review { file, dry_run } => {
             let text = fs::read_to_string(&file)?;
             let parsed = parse_document(&text, TimestampPolicy::Preserve)?;
+            let warning_count = parsed.warnings.len();
             print!("{}", review_document(&parsed.document, parsed.warnings));
+            if !dry_run && warning_count > 0 {
+                return Err(RbmemError::Parse(format!(
+                    "review found {} warning(s)",
+                    warning_count
+                )));
+            }
         }
-        Command::Doctor { file, format } => {
-            print!("{}", doctor_report(file.as_deref(), format)?);
+        Command::Doctor {
+            file,
+            stale_days,
+            format,
+        } => {
+            print!("{}", doctor_report(file.as_deref(), stale_days, format)?);
         }
         Command::Pack {
             file,
@@ -771,12 +788,13 @@ fn run() -> Result<(), RbmemError> {
             }
             HermesCommand::Doctor {
                 file,
+                stale_days,
                 rbmem_cli,
                 format,
             } => {
                 print!(
                     "{}",
-                    hermes_doctor_report(&file, rbmem_cli.as_deref(), format)?
+                    hermes_doctor_report(&file, rbmem_cli.as_deref(), stale_days, format)?
                 );
             }
         },
@@ -1199,17 +1217,21 @@ fn review_document(document: &RbmemDocument, mut warnings: Vec<String>) -> Strin
     output
 }
 
-fn doctor_report(file: Option<&Path>, format: OutputFormat) -> Result<String, RbmemError> {
+fn doctor_report(
+    file: Option<&Path>,
+    stale_days: u64,
+    format: OutputFormat,
+) -> Result<String, RbmemError> {
     match format {
-        OutputFormat::Text => doctor_text_report(file),
+        OutputFormat::Text => doctor_text_report(file, stale_days),
         OutputFormat::Json => Ok(format!(
             "{}\n",
-            serde_json::to_string_pretty(&doctor_json(file)?)?
+            serde_json::to_string_pretty(&doctor_json(file, stale_days)?)?
         )),
     }
 }
 
-fn doctor_text_report(file: Option<&Path>) -> Result<String, RbmemError> {
+fn doctor_text_report(file: Option<&Path>, stale_days: u64) -> Result<String, RbmemError> {
     let mut output = String::new();
     output.push_str("rbmem doctor\n");
     output.push_str(&format!(
@@ -1220,6 +1242,30 @@ fn doctor_text_report(file: Option<&Path>) -> Result<String, RbmemError> {
 
     if let Some(file) = file {
         append_document_diagnostics(&mut output, file)?;
+
+        // Health scoring with configurable stale threshold
+        match api::health_report(file, stale_days) {
+            Ok(health) => {
+                output.push_str(&format!("health-score: {:.1}/100\n", health.score));
+                output.push_str(&format!("health-stale-days: {}\n", stale_days));
+                output.push_str(&format!(
+                    "health-total-sections: {}\n",
+                    health.total_sections
+                ));
+                output.push_str(&format!(
+                    "health-stale-sections: {}\n",
+                    health.stale_sections
+                ));
+                output.push_str(&format!(
+                    "health-orphaned-edges: {}\n",
+                    health.orphaned_edges
+                ));
+                output.push_str(&format!("health-conflicts: {}\n", health.conflicts));
+            }
+            Err(e) => {
+                output.push_str(&format!("health-score: error: {e}\n"));
+            }
+        }
     } else {
         output.push_str("file: not provided\n");
     }
@@ -1230,18 +1276,23 @@ fn doctor_text_report(file: Option<&Path>) -> Result<String, RbmemError> {
 fn hermes_doctor_report(
     file: &Path,
     rbmem_cli: Option<&Path>,
+    stale_days: u64,
     format: OutputFormat,
 ) -> Result<String, RbmemError> {
     match format {
-        OutputFormat::Text => hermes_doctor_text_report(file, rbmem_cli),
+        OutputFormat::Text => hermes_doctor_text_report(file, rbmem_cli, stale_days),
         OutputFormat::Json => Ok(format!(
             "{}\n",
-            serde_json::to_string_pretty(&hermes_doctor_json(file, rbmem_cli)?)?
+            serde_json::to_string_pretty(&hermes_doctor_json(file, rbmem_cli, stale_days)?)?
         )),
     }
 }
 
-fn hermes_doctor_text_report(file: &Path, rbmem_cli: Option<&Path>) -> Result<String, RbmemError> {
+fn hermes_doctor_text_report(
+    file: &Path,
+    rbmem_cli: Option<&Path>,
+    stale_days: u64,
+) -> Result<String, RbmemError> {
     let mut output = String::new();
     output.push_str("rbmem hermes doctor\n");
     output.push_str(&format!(
@@ -1267,12 +1318,52 @@ fn hermes_doctor_text_report(file: &Path, rbmem_cli: Option<&Path>) -> Result<St
 
     output.push_str("hermes-load: ok\n");
     output.push_str(&format!("hermes-context-bytes: {context_len}\n"));
+
+    // Health scoring
+    match api::health_report(file, stale_days) {
+        Ok(health) => {
+            output.push_str(&format!("health-score: {:.1}/100\n", health.score));
+            output.push_str(&format!("health-stale-days: {}\n", stale_days));
+            output.push_str(&format!(
+                "health-total-sections: {}\n",
+                health.total_sections
+            ));
+            output.push_str(&format!(
+                "health-stale-sections: {}\n",
+                health.stale_sections
+            ));
+            output.push_str(&format!(
+                "health-orphaned-edges: {}\n",
+                health.orphaned_edges
+            ));
+            output.push_str(&format!("health-conflicts: {}\n", health.conflicts));
+        }
+        Err(e) => {
+            output.push_str(&format!("health-score: error: {e}\n"));
+        }
+    }
+
     Ok(output)
 }
 
-fn doctor_json(file: Option<&Path>) -> Result<Value, RbmemError> {
+fn doctor_json(file: Option<&Path>, stale_days: u64) -> Result<Value, RbmemError> {
     let document = if let Some(file) = file {
         Some(document_diagnostics_json(file)?.0)
+    } else {
+        None
+    };
+
+    let health = if let Some(file) = file {
+        api::health_report(file, stale_days).ok().map(|h| {
+            json!({
+                "score": h.score,
+                "stale_days": stale_days,
+                "total_sections": h.total_sections,
+                "stale_sections": h.stale_sections,
+                "orphaned_edges": h.orphaned_edges,
+                "conflicts": h.conflicts,
+            })
+        })
     } else {
         None
     };
@@ -1282,10 +1373,15 @@ fn doctor_json(file: Option<&Path>) -> Result<Value, RbmemError> {
         "cli_version": format!("rbmem {}", env!("CARGO_PKG_VERSION")),
         "document_format": "RBMEM v1.4.0",
         "document": document,
+        "health": health,
     }))
 }
 
-fn hermes_doctor_json(file: &Path, rbmem_cli: Option<&Path>) -> Result<Value, RbmemError> {
+fn hermes_doctor_json(
+    file: &Path,
+    rbmem_cli: Option<&Path>,
+    stale_days: u64,
+) -> Result<Value, RbmemError> {
     let configured_rbmem_cli = if let Some(rbmem_cli) = rbmem_cli {
         Some(json!({
             "path": rbmem_cli.display().to_string(),
@@ -1302,6 +1398,17 @@ fn hermes_doctor_json(file: &Path, rbmem_cli: Option<&Path>) -> Result<Value, Rb
         .map(str::len)
         .unwrap_or(0);
 
+    let health = api::health_report(file, stale_days).ok().map(|h| {
+        json!({
+            "score": h.score,
+            "stale_days": stale_days,
+            "total_sections": h.total_sections,
+            "stale_sections": h.stale_sections,
+            "orphaned_edges": h.orphaned_edges,
+            "conflicts": h.conflicts,
+        })
+    });
+
     Ok(json!({
         "schema": "rbmem.hermes.doctor.v1",
         "cli_version": format!("rbmem {}", env!("CARGO_PKG_VERSION")),
@@ -1311,6 +1418,7 @@ fn hermes_doctor_json(file: &Path, rbmem_cli: Option<&Path>) -> Result<Value, Rb
             "status": "ok",
             "context_bytes": context_bytes,
         },
+        "health": health,
     }))
 }
 
@@ -1952,7 +2060,7 @@ fn apply_hermes_payload(
     now: chrono::DateTime<Utc>,
 ) -> Result<(), RbmemError> {
     for patch in payload.sections {
-        let section_type = SectionType::from_str(&patch.r#type)?;
+        let section_type = <SectionType as std::str::FromStr>::from_str(&patch.r#type)?;
         if section_type == SectionType::HermesMemory && patch.mode == HermesWriteMode::Replace {
             return Err(RbmemError::Parse(format!(
                 "hermes:memory section '{}' is append-only; use mode auto or append",
@@ -2423,7 +2531,7 @@ Body.
         let document = hermes_starter_document("Demo Project", fixed_time());
         fs::write(&file, document.to_rbmem_string()).unwrap();
 
-        let report = doctor_report(Some(&file), OutputFormat::Text).unwrap();
+        let report = doctor_report(Some(&file), 30, OutputFormat::Text).unwrap();
 
         assert!(report.contains("rbmem doctor"));
         assert!(report.contains("cli-version: rbmem"));
@@ -2431,6 +2539,7 @@ Body.
         assert!(report.contains("file-exists: ok"));
         assert!(report.contains("parse: ok"));
         assert!(report.contains("validation: ok"));
+        assert!(report.contains("health-score:"));
 
         let _ = fs::remove_dir_all(root);
     }
@@ -2443,13 +2552,14 @@ Body.
         let document = hermes_starter_document("Demo Project", fixed_time());
         fs::write(&file, document.to_rbmem_string()).unwrap();
 
-        let report = hermes_doctor_report(&file, None, OutputFormat::Text).unwrap();
+        let report = hermes_doctor_report(&file, None, 30, OutputFormat::Text).unwrap();
 
         assert!(report.contains("rbmem hermes doctor"));
         assert!(report.contains("parse: ok"));
         assert!(report.contains("validation: ok"));
         assert!(report.contains("hermes-load: ok"));
         assert!(report.contains("hermes-context-bytes:"));
+        assert!(report.contains("health-score:"));
 
         let _ = fs::remove_dir_all(root);
     }
@@ -2462,12 +2572,13 @@ Body.
         let document = hermes_starter_document("Demo Project", fixed_time());
         fs::write(&file, document.to_rbmem_string()).unwrap();
 
-        let report = doctor_report(Some(&file), OutputFormat::Json).unwrap();
+        let report = doctor_report(Some(&file), 30, OutputFormat::Json).unwrap();
         let value: Value = serde_json::from_str(&report).unwrap();
 
         assert_eq!(value["schema"], "rbmem.doctor.v1");
         assert_eq!(value["document"]["parse"], "ok");
         assert_eq!(value["document"]["validation"]["status"], "ok");
+        assert!(value["health"].as_object().is_some());
 
         let _ = fs::remove_dir_all(root);
     }

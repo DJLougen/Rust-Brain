@@ -14,10 +14,12 @@ pub mod server;
 pub mod version;
 
 pub use commands::{
-    context, context_json, create, decrypt_section, delete_section, diff, diff_documents,
-    diff_file_with_format, encrypt_section, load, query, query_document, read,
-    read_content_argument, render_context_document, render_context_output, save, update,
-    ContextOptions, ContextOutputRequest, CreateOptions, OutputFormat, ReadOptions, UpdateOptions,
+    add_guard, context, context_json, create, decrypt_section, delete_section, diff, diff_documents,
+    diff_file_with_format, encrypt_section, health_report, list_guards, list_snapshots, load, query,
+    query_document, read, read_content_argument, render_context_document, render_context_output,
+    remove_guard, review_commit, review_out, rollback_to_snapshot, save, update, ContextOptions,
+    ContextOutputRequest, CreateOptions, GuardAction, GuardConstraint, HealthReport, OutputFormat,
+    ReadOptions, SnapshotRecord, UpdateOptions,
 };
 pub use crypto::EncryptionKey;
 pub use diff::{

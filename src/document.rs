@@ -174,7 +174,7 @@ impl FromStr for InferenceStrategy {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum SectionType {
     #[default]
@@ -186,6 +186,8 @@ pub enum SectionType {
     HermesMemory,
     Encrypted,
     Conflict,
+    Guards,
+    Review,
 }
 
 impl SectionType {
@@ -199,13 +201,9 @@ impl SectionType {
             SectionType::HermesMemory => "hermes:memory",
             SectionType::Encrypted => "encrypted",
             SectionType::Conflict => "conflict",
+            SectionType::Guards => "guards",
+            SectionType::Review => "review",
         }
-    }
-}
-
-impl Display for SectionType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
     }
 }
 
@@ -222,8 +220,16 @@ impl FromStr for SectionType {
             "hermes:memory" | "hermes_memory" | "hermes-memory" => Ok(Self::HermesMemory),
             "encrypted" => Ok(Self::Encrypted),
             "conflict" => Ok(Self::Conflict),
+            "guards" => Ok(Self::Guards),
+            "review" => Ok(Self::Review),
             other => Err(RbmemError::InvalidSectionType(other.to_string())),
         }
+    }
+}
+
+impl Display for SectionType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
     }
 }
 
@@ -1866,7 +1872,7 @@ mod tests {
     #[test]
     fn section_type_accepts_hermes_memory() {
         assert_eq!(
-            SectionType::from_str("hermes:memory").unwrap(),
+            <SectionType as std::str::FromStr>::from_str("hermes:memory").unwrap(),
             SectionType::HermesMemory
         );
         assert_eq!(SectionType::HermesMemory.to_string(), "hermes:memory");

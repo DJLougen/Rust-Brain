@@ -4,8 +4,58 @@ use crate::{crypto, diff as diff_engine, DiffFormat, EncryptionKey};
 use crate::{
     CompactMode, RbmemDocument, RbmemError, Section, SectionType, SourceInfo, TimestampPolicy,
 };
+use md5;
+
+/// Record of a memory snapshot for rollback purposes.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotRecord {
+    pub label: String,
+    pub timestamp: String,
+    pub file_hash: String,
+    pub section_count: usize,
+}
+
+/// Health scoring report for RBMEM memory files.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HealthReport {
+    pub total_sections: usize,
+    pub stale_sections: usize,
+    pub orphaned_edges: usize,
+    pub conflicts: usize,
+    pub score: f64,
+}
+
+/// Guard constraint types for validation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GuardConstraint {
+    pub max_tokens: Option<u64>,
+    pub max_iterations: Option<u64>,
+    pub max_retries: Option<u64>,
+    pub output_validation: Option<String>,
+}
+
+impl Default for GuardConstraint {
+    fn default() -> Self {
+        Self {
+            max_tokens: None,
+            max_iterations: None,
+            max_retries: None,
+            output_validation: None,
+        }
+    }
+}
+
+/// Guard operation actions.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum GuardAction {
+    Set,
+    Remove,
+    Check,
+}
+
 use chrono::{DateTime, Utc};
 use clap::ValueEnum;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::fs;
@@ -660,7 +710,377 @@ fn sections_json(document: &RbmemDocument, resolve: bool) -> Vec<Value> {
     }
 }
 
-#[cfg(test)]
+
+pub fn create_snapshot(path: impl AsRef<Path>, label: &str) -> Result<SnapshotRecord, RbmemError> {
+    let path = path.as_ref();
+    let raw = fs::read_to_string(path)?;
+    let hash = format!("{:x}", md5::compute(&raw));
+    let now = Utc::now();
+
+    let doc = parse_document(&raw, TimestampPolicy::Preserve)?.document;
+
+    let record = SnapshotRecord {
+        label: label.to_string(),
+        timestamp: now.to_rfc3339(),
+        file_hash: hash,
+        section_count: doc.sections.len(),
+    };
+
+    let snapshot_dir = path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(".rbmem");
+    fs::create_dir_all(&snapshot_dir).ok();
+
+    // Store metadata as JSON (robust against labels with colons/quotes)
+    let snapshot_file = snapshot_dir.join(format!("{}.snap", label));
+    let snapshot_content = serde_json::to_string_pretty(&record)?;
+    fs::write(&snapshot_file, snapshot_content)?;
+
+    // Store actual file content for rollback
+    let content_file = snapshot_dir.join(format!("{}.rbmem", label));
+    fs::write(&content_file, &raw)?;
+
+    Ok(record)
+}
+
+pub fn list_snapshots(path: impl AsRef<Path>) -> Result<Vec<SnapshotRecord>, RbmemError> {
+    let path = path.as_ref();
+    let snapshot_dir = path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(".rbmem");
+
+    if !snapshot_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut snapshots = Vec::new();
+    for entry in fs::read_dir(&snapshot_dir)? {
+        let entry = entry?;
+        let entry_path = entry.path();
+        if entry_path.extension().and_then(|e| e.to_str()) == Some("snap") {
+            let content = fs::read_to_string(&entry_path)?;
+            let record: SnapshotRecord = serde_json::from_str(&content)?;
+            snapshots.push(record);
+        }
+    }
+    Ok(snapshots)
+}
+
+pub fn rollback_to_snapshot(path: impl AsRef<Path>, label: &str) -> Result<(), RbmemError> {
+    let path = path.as_ref();
+    let snapshot_dir = path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(".rbmem");
+
+    let snapshot_file = snapshot_dir.join(format!("{}.snap", label));
+    if !snapshot_file.exists() {
+        return Err(RbmemError::Parse(format!("snapshot '{}' not found", label)));
+    }
+
+    // Auto-backup before rollback
+    let auto_label = format!("pre-rollback-{}", Utc::now().format("%Y%m%d-%H%M%S"));
+    let _ = create_snapshot(path, &auto_label);
+
+    // Restore from backup
+    let content_file = snapshot_dir.join(format!("{}.rbmem", label));
+    if !content_file.exists() {
+        return Err(RbmemError::Parse(format!(
+            "snapshot content file not found: {}",
+            content_file.display()
+        )));
+    }
+
+    let backup = fs::read_to_string(&content_file)?;
+    fs::write(path, &backup)?;
+    println!("rolled back '{}' to {}", label, path.display());
+    Ok(())
+}
+
+fn parse_snapshot_line(content: &str, key: &str) -> Option<String> {
+    let prefix = format!("{}: \"", key);
+    content
+        .lines()
+        .find(|l| l.trim().starts_with(&prefix))
+        .and_then(|l| {
+            let trimmed = l.trim_start();
+            let after = &trimmed[prefix.len()..];
+            after.strip_suffix("\"").map(|s| s.to_string())
+        })
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthScore {
+    pub total_sections: usize,
+    pub stale_sections: usize,
+    pub orphaned_edges: usize,
+    pub conflicts: usize,
+    pub score: f64,
+}
+
+pub fn health_report(path: impl AsRef<Path>, stale_days: u64) -> Result<HealthScore, RbmemError> {
+    let document = load(path, TimestampPolicy::Preserve)?;
+    let now = Utc::now();
+    let stale_cutoff = now - chrono::Duration::days(stale_days as i64);
+
+    let stale_sections = document.sections.iter().filter(|s| {
+        s.temporal.updated_at < stale_cutoff
+    }).count();
+
+    let orphaned_edges = count_orphaned_edges(&document);
+    let conflicts = count_conflicts(&document);
+
+    let total = document.sections.len() as f64;
+    let score = if total == 0.0 {
+        100.0
+    } else {
+        let penalty = ((stale_sections as f64 / total) * 30.0
+            + (orphaned_edges as f64 / total.max(1.0)) * 20.0
+            + (conflicts as f64 / total.max(1.0)) * 25.0);
+        (100.0 - penalty).max(0.0)
+    };
+
+    Ok(HealthScore {
+        total_sections: document.sections.len(),
+        stale_sections,
+        orphaned_edges,
+        conflicts,
+        score,
+    })
+}
+
+fn count_orphaned_edges(document: &RbmemDocument) -> usize {
+    let all_section_paths: std::collections::HashSet<&str> =
+        document.sections.iter().map(|s| s.path.as_str()).collect();
+    let mut count = 0;
+    for section in &document.sections {
+        if let Some(graph) = &section.graph {
+            for edge in &graph.relations {
+                if !all_section_paths.contains(edge.to.as_str()) {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+fn count_conflicts(document: &RbmemDocument) -> usize {
+    let mut conflicts = 0;
+    for i in 0..document.sections.len() {
+        for j in (i+1)..document.sections.len() {
+            let s1 = &document.sections[i];
+            let s2 = &document.sections[j];
+            if s1.path == s2.path && s1.content != s2.content {
+                conflicts += 1;
+            }
+        }
+    }
+    conflicts
+}
+
+pub fn add_guard(
+    path: impl AsRef<Path>,
+    guard_type: &str,
+    value: &str,
+    now: DateTime<Utc>,
+) -> Result<RbmemDocument, RbmemError> {
+    let path = path.as_ref();
+    let mut document = load(path, TimestampPolicy::Preserve)?;
+
+    let guard_section = document.sections.iter_mut()
+        .find(|s| s.section_type == SectionType::Guards)
+        .ok_or_else(|| RbmemError::Parse("no guards section found".to_string()))?;
+
+    let mut existing_guards: GuardConstraint = serde_json::from_str(&guard_section.content)
+        .unwrap_or_else(|_| GuardConstraint::default());
+
+    match guard_type {
+        "max-tokens" => {
+            existing_guards.max_tokens = Some(
+                value.parse::<u64>().map_err(|e| RbmemError::Parse(e.to_string()))?,
+            )
+        }
+        "max-iterations" => {
+            existing_guards.max_iterations = Some(
+                value.parse::<u64>().map_err(|e| RbmemError::Parse(e.to_string()))?,
+            )
+        }
+        "max-retries" => {
+            existing_guards.max_retries = Some(
+                value.parse::<u64>().map_err(|e| RbmemError::Parse(e.to_string()))?,
+            )
+        }
+        "output-validation" => existing_guards.output_validation = Some(value.to_string()),
+        other => return Err(RbmemError::Parse(format!("unknown guard type: {other}"))),
+    }
+
+    guard_section.content = serde_json::to_string(&existing_guards)?;
+    guard_section.temporal.updated_at = now;
+    document.meta.last_updated = now;
+
+    if guard_section.source.is_none() {
+        guard_section.source = Some(SourceInfo {
+            kind: "cli".to_string(),
+            path: None,
+            actor: Some("user".to_string()),
+            hash: None,
+        });
+    }
+
+    save(path, &document, false)?;
+    Ok(document)
+}
+
+pub fn remove_guard(
+    path: impl AsRef<Path>,
+    guard_type: &str,
+    now: DateTime<Utc>,
+) -> Result<RbmemDocument, RbmemError> {
+    let path = path.as_ref();
+    let mut document = load(path, TimestampPolicy::Preserve)?;
+
+    let guard_section = document.sections.iter_mut()
+        .find(|s| s.section_type == SectionType::Guards)
+        .ok_or_else(|| RbmemError::Parse("no guards section found".to_string()))?;
+
+    let mut updated_guards: GuardConstraint = serde_json::from_str(&guard_section.content)
+        .unwrap_or_else(|_| GuardConstraint::default());
+
+    match guard_type {
+        "max-tokens" => updated_guards.max_tokens = None,
+        "max-iterations" => updated_guards.max_iterations = None,
+        "max-retries" => updated_guards.max_retries = None,
+        "output-validation" => updated_guards.output_validation = None,
+        _ => {
+            return Err(RbmemError::Parse(format!(
+                "unknown guard type: {guard_type}"
+            )))
+        }
+    }
+    guard_section.content = serde_json::to_string(&updated_guards)?;
+    guard_section.temporal.updated_at = now;
+    document.meta.last_updated = now;
+
+    save(path, &document, false)?;
+    Ok(document)
+}
+
+pub fn review_out(
+    path: impl AsRef<Path>,
+    output_path: impl AsRef<Path>,
+) -> Result<Vec<Section>, RbmemError> {
+    let document = load(path, TimestampPolicy::Preserve)?;
+    let mut pending = Vec::new();
+
+    for section in &document.sections {
+        let should_flag = match section.source.as_ref().map(|s| s.kind.as_str()) {
+            Some("agent") | Some("llm") | Some("auto") => true,
+            Some("sync") => false,
+            None => false,
+            Some(other) if other.contains("review") => true,
+            _ => false,
+        };
+
+        if should_flag {
+            pending.push(section.clone());
+        }
+    }
+
+    let mut review_doc = RbmemDocument::new(Utc::now(), "review");
+    for section in &pending {
+        let mut flagged = section.clone();
+        if let Some(ref mut source) = flagged.source {
+            source.kind = format!("{}-pending-review", source.kind);
+        } else {
+            flagged.source = Some(SourceInfo {
+                kind: "pending-review".to_string(),
+                path: None,
+                actor: Some("reviewer".to_string()),
+                hash: None,
+            });
+        }
+        review_doc.upsert_section(
+            &flagged.path,
+            SectionType::Review,
+            format!(
+                "[REVIEW] type={}\n{}\n",
+                flagged.section_type,
+                flagged.content
+            ),
+            Utc::now(),
+        );
+    }
+
+    save(output_path, &review_doc, false)?;
+    Ok(pending)
+}
+
+pub fn review_commit(
+    pending_path: impl AsRef<Path>,
+    target_path: impl AsRef<Path>,
+) -> Result<usize, RbmemError> {
+    let pending = load(pending_path, TimestampPolicy::Preserve)?;
+    let mut target = if target_path.as_ref().exists() {
+        load(&target_path, TimestampPolicy::Preserve)?
+    } else {
+        RbmemDocument::new(Utc::now(), "me")
+    };
+
+    let mut applied = 0;
+    for section in &pending.sections {
+        if section.section_type == SectionType::Review {
+            let original_type = section
+                .content
+                .lines()
+                .next()
+                .and_then(|l| l.split_once("type="))
+                .and_then(|(_, t)| t.split_whitespace().next())
+                .unwrap_or("text")
+                .to_string();
+
+            let content_start = section
+                .content
+                .find("]\n")
+                .map(|i| &section.content[i + 2..])
+                .unwrap_or("");
+
+            target.upsert_section(
+                &section.path,
+                original_type.parse().unwrap_or(SectionType::Text),
+                content_start.to_string(),
+                Utc::now(),
+            );
+            applied += 1;
+        }
+    }
+
+    if applied > 0 {
+        save(&target_path, &target, false)?;
+    }
+
+    Ok(applied)
+}
+
+
+
+pub fn list_guards(path: impl AsRef<Path>) -> Result<GuardConstraint, RbmemError> {
+    let document = load(path, TimestampPolicy::Preserve)?;
+
+    let guard_section = document
+        .sections
+        .iter()
+        .find(|s| s.section_type == SectionType::Guards)
+        .ok_or_else(|| RbmemError::Parse("no guards section found".to_string()))?;
+
+    let guards: GuardConstraint = serde_json::from_str(&guard_section.content)
+        .unwrap_or_else(|_| GuardConstraint::default());
+
+    Ok(guards)
+}
+
 mod tests {
     use super::*;
     use chrono::TimeZone;
@@ -723,4 +1143,102 @@ mod tests {
         assert!(diff.contains("added: memory"));
         assert!(diff.contains("changed content: rules"));
     }
+
+
+    #[test]
+    fn test_create_and_list_snapshot() {
+        let content = r#"meta:
+  purpose: test document
+  created_by: test
+
+[SECTION: memory.user]
+type: text
+
+Daniel, PhD CogNeuro UofT
+[END SECTION]
+"#;
+        let dir = std::env::temp_dir().join(format!("rbmem_test_{}", std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let path = dir.join("memory.rbmem");
+        std::fs::create_dir_all(&dir).ok();
+        std::fs::write(&path, content).ok();
+
+        let record = create_snapshot(&path, "test-snapshot").unwrap();
+        assert_eq!(record.label, "test-snapshot");
+        assert_eq!(record.section_count, 1);
+        assert!(!record.file_hash.is_empty());
+
+        let snapshots = list_snapshots(&path).unwrap();
+        assert_eq!(snapshots.len(), 1);
+        assert_eq!(snapshots[0].label, "test-snapshot");
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn test_rollback_restores_content() {
+        let original = r#"meta:
+  purpose: test document
+  created_by: test
+
+[SECTION: memory.user]
+type: text
+
+original content here
+[END SECTION]
+"#;
+        let dir = std::env::temp_dir().join(format!("rbmem_test_{}", std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let path = dir.join("memory.rbmem");
+        std::fs::create_dir_all(&dir).ok();
+        std::fs::write(&path, original).ok();
+
+        // Create snapshot
+        create_snapshot(&path, "before-modification").unwrap();
+
+        // Modify the file
+        let modified = r#"meta:
+  purpose: test document
+  created_by: test
+
+[SECTION: memory.user]
+type: text
+
+modified content after rollback
+[END SECTION]
+"#;
+        std::fs::write(&path, modified).unwrap();
+        assert_ne!(std::fs::read_to_string(&path).unwrap(), original);
+
+        // Rollback
+        rollback_to_snapshot(&path, "before-modification").unwrap();
+
+        // Verify restoration
+        let restored = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(restored, original);
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn test_rollback_fails_on_missing_snapshot() {
+        let dir = std::env::temp_dir().join(format!("rbmem_test_{}", std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let path = dir.join("memory.rbmem");
+        std::fs::create_dir_all(&dir).ok();
+        std::fs::write(&path, "memory:
+  test: text
+  content: hello
+").ok();
+
+        let result = rollback_to_snapshot(&path, "nonexistent");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
 }
