@@ -10,7 +10,7 @@ use md5;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotRecord {
     pub label: String,
-    pub timestamp: String,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
     pub file_hash: String,
     pub section_count: usize,
 }
@@ -721,7 +721,7 @@ pub fn create_snapshot(path: impl AsRef<Path>, label: &str) -> Result<SnapshotRe
 
     let record = SnapshotRecord {
         label: label.to_string(),
-        timestamp: now.to_rfc3339(),
+        timestamp: now,
         file_hash: hash,
         section_count: doc.sections.len(),
     };
@@ -839,7 +839,7 @@ pub fn health_report(path: impl AsRef<Path>, stale_days: u64) -> Result<HealthSc
         let penalty = ((stale_sections as f64 / total) * 30.0
             + (orphaned_edges as f64 / total.max(1.0)) * 20.0
             + (conflicts as f64 / total.max(1.0)) * 25.0);
-        (100.0 - penalty).max(0.0)
+        (100.0 - penalty).clamp(0.0, 100.0)
     };
 
     Ok(HealthScore {

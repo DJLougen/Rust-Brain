@@ -28,7 +28,7 @@ use tracing_subscriber::EnvFilter;
 #[derive(Debug, Parser)]
 #[command(name = "rbmem")]
 #[command(version)]
-#[command(about = "Rust-Brain Memory Format (.rbmem) v1.4.0 CLI")]
+#[command(about = "Rust-Brain Memory Format (.rbmem) CLI")]
 struct Cli {
     #[arg(long, value_enum, default_value_t = LogFormat::Text, global = true)]
     log_format: LogFormat,
