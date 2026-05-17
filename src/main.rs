@@ -92,6 +92,8 @@ enum Command {
         content: Option<String>,
         #[arg(long)]
         content_file: Option<PathBuf>,
+        #[arg(long, default_value = "me")]
+        actor: String,
         #[arg(long)]
         human: bool,
         #[arg(long)]
@@ -421,6 +423,7 @@ fn run() -> Result<(), RbmemError> {
             r#type,
             content,
             content_file,
+            actor,
             human,
             dry_run,
         } => {
@@ -433,6 +436,7 @@ fn run() -> Result<(), RbmemError> {
                     section,
                     section_type,
                     content: body,
+                    actor,
                     human,
                     dry_run,
                     now,

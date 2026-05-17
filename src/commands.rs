@@ -58,6 +58,7 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
+use std::hash::Hasher;
 use std::fs;
 use std::path::Path;
 
@@ -92,6 +93,7 @@ pub struct UpdateOptions {
     pub section: String,
     pub section_type: SectionType,
     pub content: String,
+    pub actor: String,
     pub human: bool,
     pub dry_run: bool,
     pub now: DateTime<Utc>,
@@ -166,6 +168,14 @@ pub fn delete_section(
             "section '{section_path}' not found"
         )));
     }
+    // Clean orphaned graph relations referencing the deleted section
+    let deleted_path = section_path.to_string();
+    for section in &mut document.sections {
+        if let Some(ref mut graph) = section.graph {
+            graph.relations.retain(|rel| rel.to != deleted_path);
+        }
+    }
+
     document.meta.last_updated = now;
     if !dry_run {
         save(path, &document, false)?;
@@ -199,7 +209,7 @@ pub fn update(path: impl AsRef<Path>, options: UpdateOptions) -> Result<RbmemDoc
         SourceInfo {
             kind: "cli".to_string(),
             path: None,
-            actor: Some("me".to_string()),
+            actor: Some(options.actor.clone()),
             hash: None,
         },
     );
@@ -288,7 +298,7 @@ pub fn encrypt_section(
         .sections
         .iter_mut()
         .find(|section| section.path == section_path)
-        .ok_or_else(|| RbmemError::Parse(format!("section '{section_path}' not found")))?;
+        .ok_or_else(|| RbmemError::NotFound(format!("section '{section_path}' not found")))?;
 
     if section.section_type != SectionType::Encrypted {
         let payload = crypto::encrypt_content(&section.content, key, now)?;
@@ -315,7 +325,7 @@ pub fn decrypt_section(
         .sections
         .iter_mut()
         .find(|section| section.path == section_path)
-        .ok_or_else(|| RbmemError::Parse(format!("section '{section_path}' not found")))?;
+        .ok_or_else(|| RbmemError::NotFound(format!("section '{section_path}' not found")))?;
 
     let payload = section
         .encrypted
@@ -733,12 +743,16 @@ pub fn create_snapshot(path: impl AsRef<Path>, label: &str) -> Result<SnapshotRe
     fs::create_dir_all(&snapshot_dir).ok();
 
     // Store metadata as JSON (robust against labels with colons/quotes)
-    let snapshot_file = snapshot_dir.join(format!("{}.snap", label));
+    // Generate unique filename to avoid collisions: label + 4-char hash suffix
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    std::hash::Hash::hash(&label, &mut hasher);
+    let label_hash = format!("{:04x}", hasher.finish() & 0xFFFF);
+    let snapshot_file = snapshot_dir.join(format!("{}-{}.snap", label, label_hash));
     let snapshot_content = serde_json::to_string_pretty(&record)?;
     fs::write(&snapshot_file, snapshot_content)?;
 
     // Store actual file content for rollback
-    let content_file = snapshot_dir.join(format!("{}.rbmem", label));
+    let content_file = snapshot_dir.join(format!("{}-{}.rbmem", label, label_hash));
     fs::write(&content_file, &raw)?;
 
     Ok(record)
@@ -775,17 +789,53 @@ pub fn rollback_to_snapshot(path: impl AsRef<Path>, label: &str) -> Result<(), R
         .unwrap_or_else(|| Path::new("."))
         .join(".rbmem");
 
-    let snapshot_file = snapshot_dir.join(format!("{}.snap", label));
-    if !snapshot_file.exists() {
-        return Err(RbmemError::Parse(format!("snapshot '{}' not found", label)));
+    // Find snapshot file matching label + hash suffix pattern
+    let mut snapshot_file = None;
+    let mut content_file = None;
+    if snapshot_dir.exists() {
+        for entry in fs::read_dir(&snapshot_dir)? {
+            let entry_path = entry?.path();
+            let file_name = entry_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+            if file_name.starts_with(&format!("{}-", label)) {
+                if file_name.ends_with(".snap") {
+                    snapshot_file = Some(entry_path.clone());
+                } else if file_name.ends_with(".rbmem") {
+                    content_file = Some(entry_path.clone());
+                }
+            }
+        }
     }
+
+    let snapshot_file = snapshot_file.ok_or_else(|| {
+        RbmemError::Parse(format!("snapshot '{}' not found", label))
+    })?;
+    
+    let content_file = content_file.ok_or_else(|| {
+        RbmemError::Parse(format!(
+            "snapshot content file not found for label '{}'",
+            label
+        ))
+    })?;
 
     // Auto-backup before rollback
     let auto_label = format!("pre-rollback-{}", Utc::now().format("%Y%m%d-%H%M%S"));
-    let _ = create_snapshot(path, &auto_label);
+    if let Err(e) = create_snapshot(path, &auto_label) {
+        eprintln!(
+            "Warning: failed to create auto-backup before rollback: {}",
+            e
+        );
+    }
 
     // Restore from backup
-    let content_file = snapshot_dir.join(format!("{}.rbmem", label));
+    if !content_file.exists() {
+        return Err(RbmemError::Parse(format!(
+            "snapshot content file not found: {}",
+            content_file.display()
+        )));
+    }
     if !content_file.exists() {
         return Err(RbmemError::Parse(format!(
             "snapshot content file not found: {}",
@@ -799,17 +849,6 @@ pub fn rollback_to_snapshot(path: impl AsRef<Path>, label: &str) -> Result<(), R
     Ok(())
 }
 
-fn parse_snapshot_line(content: &str, key: &str) -> Option<String> {
-    let prefix = format!("{}: \"", key);
-    content
-        .lines()
-        .find(|l| l.trim().starts_with(&prefix))
-        .and_then(|l| {
-            let trimmed = l.trim_start();
-            let after = &trimmed[prefix.len()..];
-            after.strip_suffix("\"").map(|s| s.to_string())
-        })
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthScore {

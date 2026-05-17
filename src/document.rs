@@ -27,6 +27,9 @@ pub enum RbmemError {
 
     #[error("document validation failed")]
     InvalidDocument,
+
+    #[error("not found: {0}")]
+    NotFound(String),
 }
 
 /// Controls how parsed timestamps are treated.

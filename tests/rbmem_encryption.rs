@@ -41,6 +41,7 @@ fn encrypted_sections_are_skipped_unless_decrypt_is_enabled() {
     update(
         &file,
         UpdateOptions {
+        actor: "test".to_string(),
             section: "secrets.api".to_string(),
             section_type: SectionType::Text,
             content: "token=super-secret".to_string(),
@@ -116,6 +117,7 @@ fn encrypted_sections_are_queryable_only_with_decryption() {
     update(
         &file,
         UpdateOptions {
+        actor: "test".to_string(),
             section: "secrets.review".to_string(),
             section_type: SectionType::Text,
             content: "github review secret phrase".to_string(),
