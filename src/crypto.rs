@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, AES_256_GCM};
 use ring::rand::{SecureRandom, SystemRandom};
 use std::fs;
-use std::io::{self, Write};
+use std::io::{self, IsTerminal, Write};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -40,6 +40,14 @@ impl EncryptionKey {
             if path.exists() {
                 return Self::from_env_value(&fs::read_to_string(path)?);
             }
+        }
+
+        if !io::stdin().is_terminal() {
+            return Err(RbmemError::Crypto(
+                "no encryption key found and stdin is not interactive; set RBMEM_ENCRYPTION_KEY \
+                 or place key in ~/.rbmem/key"
+                    .into(),
+            ));
         }
 
         print!("RBMEM encryption key: ");
