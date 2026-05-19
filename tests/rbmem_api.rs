@@ -38,7 +38,7 @@ fn public_api_create_update_read_query_and_context() {
     let updated = update(
         &file,
         UpdateOptions {
-        actor: "test".to_string(),
+            actor: "test".to_string(),
             section: "agents.reader".to_string(),
             section_type: SectionType::Text,
             content: "Reads memory carefully for github code review.".to_string(),
@@ -125,7 +125,7 @@ fn public_api_update_dry_run_and_delete_section() {
     update(
         &file,
         UpdateOptions {
-        actor: "test".to_string(),
+            actor: "test".to_string(),
             section: "scratch".to_string(),
             section_type: SectionType::Text,
             content: "not persisted".to_string(),
@@ -140,7 +140,7 @@ fn public_api_update_dry_run_and_delete_section() {
     update(
         &file,
         UpdateOptions {
-        actor: "test".to_string(),
+            actor: "test".to_string(),
             section: "scratch".to_string(),
             section_type: SectionType::Text,
             content: "persisted".to_string(),

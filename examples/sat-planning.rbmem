@@ -1,0 +1,57 @@
+rbmem# RBMEM v1.4.0 - Rust-Brain Memory Format
+
+meta:
+  version: 1.4.0
+  purpose: "sat-planning-demo"
+  generated_at: "2026-05-18T20:00:00Z"
+  last_updated: "2026-05-18T20:00:00Z"
+  valid_until: null
+  created_by: "rbmem"
+  default_expiry_days: null
+  compact_mode: minified
+
+[SECTION: goals]
+type: list
+temporal:
+  created_at: "2026-05-18T20:00:00Z"
+  updated_at: "2026-05-18T20:00:00Z"
+  expires_at: null
+content: |
+  - deploy the agent release
+[END SECTION]
+
+[SECTION: tasks]
+type: list
+temporal:
+  created_at: "2026-05-18T20:00:00Z"
+  updated_at: "2026-05-18T20:00:00Z"
+  expires_at: null
+content: |
+  - Gather release requirements
+  - Run focused regression tests
+  - Deploy agent release
+  - Publish release notes
+[END SECTION]
+
+[SECTION: rules.release]
+type: list
+temporal:
+  created_at: "2026-05-18T20:00:00Z"
+  updated_at: "2026-05-18T20:00:00Z"
+  expires_at: null
+content: |
+  - deploy agent release requires run focused regression tests
+  - publish release notes requires deploy agent release
+  - gather release requirements conflicts with deploy agent release
+[END SECTION]
+
+[SECTION: preferences.release]
+type: list
+temporal:
+  created_at: "2026-05-18T20:00:00Z"
+  updated_at: "2026-05-18T20:00:00Z"
+  expires_at: null
+content: |
+  - Prefer plans that preserve tests and release notes.
+  - Avoid deploying without validation.
+[END SECTION]

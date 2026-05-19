@@ -1,0 +1,9 @@
+[pack: release_ops]
+include:
+  - goals
+  - tasks
+  - rules.release
+  - preferences.release
+query: "deploy release"
+graph_depth: 1
+mode: minified

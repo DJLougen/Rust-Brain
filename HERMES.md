@@ -22,6 +22,10 @@ rbmem sync notes RBMEM-memory --watch --infer-relations
 
 - Load memory before planning:
   `rbmem hermes load project.rbmem --resolve --compact`
+- Use SAT planning for constrained task plans:
+  `rbmem plan "<goal>" --file project.rbmem --format json`
+- Add `--pack <name>` when the task should be planned against a stored context pack.
+- Use `rbmem plan --from-memory --file project.rbmem --format json` when the active goal is already stored in `goals` or `tasks`.
 - Treat `sections[].path` as the stable memory address.
 - Prefer `hermes:memory` for append-only facts, preferences, and observations.
 - `hermes:memory` sections are append-only; use `mode: "auto"` or `mode: "append"`.
@@ -218,7 +222,7 @@ Use CLI commands for human-operated workflows and one-off tasks. Use server mode
 
 ### Harness Decision Rules
 
-- For planning: `query` or `context` first, full `hermes load` only if the selected context is insufficient.
+- For planning: use `rbmem plan` when rules, constraints, prerequisites, or conflicts matter; use `query` or `context` for lightweight retrieval.
 - For sensitive data: encrypt the section, retrieve with `--decrypt` only for the exact task, and never persist decrypted material elsewhere.
 - For updates: write with `hermes save`, then run `diff`, `review`, and `doctor`.
 - For conflicting memory: run `merge --strategy manual` and treat conflict sections as requiring human or explicit agent resolution.
@@ -231,6 +235,14 @@ Use the smallest useful context by default:
 
 ```powershell
 rbmem context project.rbmem --task "<current task>" --resolve --minified --graph-depth 1 --format json
+```
+
+When the task needs a concrete feasible plan, ask the SAT planner to write the plan back into RBMEM:
+
+```powershell
+rbmem plan "<current goal>" --file project.rbmem --solver auto --format json
+rbmem plan --from-memory --file project.rbmem --cube-and-conquer --format json
+rbmem plan "<current goal>" --file project.rbmem --pack code_review --format json
 ```
 
 Fall back to the full Hermes JSON view when the agent needs complete memory state:

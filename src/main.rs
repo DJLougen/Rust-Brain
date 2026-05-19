@@ -9,8 +9,9 @@ use rbmem::parser::parse_document;
 #[cfg(test)]
 use rbmem::GraphRelation;
 use rbmem::{
-    CompactMode, DiffFormat, InferenceStrategy, MergeStrategy, OutputFormat, RbmemDocument,
-    RbmemError, Section, SectionType, SourceInfo, TimestampPolicy,
+    CompactMode, DiffFormat, InferenceStrategy, MergeStrategy, OutputFormat, PlanOptions,
+    PlanReport, RbmemDocument, RbmemError, SatBackend, SatStatus, Section, SectionType, SourceInfo,
+    TimestampPolicy,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -167,6 +168,29 @@ enum Command {
         format: OutputFormat,
         #[arg(long)]
         decrypt: bool,
+    },
+    Plan {
+        goal: Option<String>,
+        #[arg(long)]
+        file: Option<PathBuf>,
+        #[arg(long)]
+        from_memory: bool,
+        #[arg(long)]
+        pack: Option<String>,
+        #[arg(long, value_enum, default_value_t = SatBackend::Auto)]
+        solver: SatBackend,
+        #[arg(long)]
+        proof: bool,
+        #[arg(long)]
+        proof_path: Option<PathBuf>,
+        #[arg(long)]
+        verify_proof: bool,
+        #[arg(long)]
+        cube_and_conquer: bool,
+        #[arg(long)]
+        dry_run: bool,
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
     },
     Encrypt {
         file: PathBuf,
@@ -596,6 +620,38 @@ fn run() -> Result<(), RbmemError> {
                 println!();
             }
         }
+        Command::Plan {
+            goal,
+            file,
+            from_memory,
+            pack,
+            solver,
+            proof,
+            proof_path,
+            verify_proof,
+            cube_and_conquer,
+            dry_run,
+            format,
+        } => {
+            let report = rbmem::plan_memory(PlanOptions {
+                goal,
+                from_memory,
+                file,
+                search_dir: std::env::current_dir().map_err(RbmemError::Io)?,
+                context_pack: pack,
+                solver,
+                proof,
+                proof_path,
+                verify_proof,
+                cube_and_conquer,
+                dry_run,
+                now: Utc::now(),
+            })?;
+            match format {
+                OutputFormat::Text => print!("{}", render_plan_report(&report)),
+                OutputFormat::Json => println!("{}", serde_json::to_string_pretty(&report)?),
+            }
+        }
         Command::Encrypt { file, section } => {
             let key = rbmem::EncryptionKey::resolve()?;
             api::encrypt_section(&file, &section, &key, Utc::now())?;
@@ -831,6 +887,55 @@ fn write_document(path: &Path, document: &RbmemDocument, human: bool) -> Result<
     };
     fs::write(path, text)?;
     Ok(())
+}
+
+fn render_plan_report(report: &PlanReport) -> String {
+    let mut output = String::new();
+    output.push_str("rbmem SAT plan\n");
+    output.push_str(&format!("goal: {}\n", report.goal));
+    output.push_str(&format!("status: {:?}\n", report.status));
+    output.push_str(&format!("solver: {}\n", report.solver));
+    output.push_str(&format!("memory: {}\n", report.memory_file));
+    output.push_str(&format!("stored: {}\n", report.plan_path));
+    output.push_str(&format!(
+        "cnf: {} variable(s), {} clause(s)\n",
+        report.variables, report.clauses
+    ));
+    if report.dry_run {
+        output.push_str("dry-run: plan was not written\n");
+    }
+    if report.proof.requested {
+        output.push_str(&format!(
+            "proof: {} ({}, verified: {})\n",
+            report.proof.path.as_deref().unwrap_or("not written"),
+            report.proof.verifier,
+            report.proof.verified
+        ));
+    }
+
+    match report.status {
+        SatStatus::Sat => {
+            output.push_str("\nsteps:\n");
+            if report.steps.is_empty() {
+                output.push_str("- no concrete steps selected\n");
+            } else {
+                for step in &report.steps {
+                    if let Some(source) = &step.source {
+                        output.push_str(&format!("{}. {} [{}]\n", step.order, step.action, source));
+                    } else {
+                        output.push_str(&format!("{}. {}\n", step.order, step.action));
+                    }
+                }
+            }
+        }
+        SatStatus::Unsat => {
+            output.push_str(
+                "\nNo satisfying plan found. Review conflicting rules and constraints.\n",
+            );
+        }
+    }
+
+    output
 }
 
 fn convert_markdown_to_rbmem(markdown: &str, now: chrono::DateTime<Utc>) -> RbmemDocument {

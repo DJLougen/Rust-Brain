@@ -58,8 +58,8 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
-use std::hash::Hasher;
 use std::fs;
+use std::hash::Hasher;
 use std::path::Path;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -720,7 +720,6 @@ fn sections_json(document: &RbmemDocument, resolve: bool) -> Vec<Value> {
     }
 }
 
-
 pub fn create_snapshot(path: impl AsRef<Path>, label: &str) -> Result<SnapshotRecord, RbmemError> {
     let path = path.as_ref();
     let raw = fs::read_to_string(path)?;
@@ -809,10 +808,9 @@ pub fn rollback_to_snapshot(path: impl AsRef<Path>, label: &str) -> Result<(), R
         }
     }
 
-    let snapshot_file = snapshot_file.ok_or_else(|| {
-        RbmemError::Parse(format!("snapshot '{}' not found", label))
-    })?;
-    
+    let _snapshot_file = snapshot_file
+        .ok_or_else(|| RbmemError::Parse(format!("snapshot '{}' not found", label)))?;
+
     let content_file = content_file.ok_or_else(|| {
         RbmemError::Parse(format!(
             "snapshot content file not found for label '{}'",
@@ -849,7 +847,6 @@ pub fn rollback_to_snapshot(path: impl AsRef<Path>, label: &str) -> Result<(), R
     Ok(())
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthScore {
     pub total_sections: usize,
@@ -864,9 +861,11 @@ pub fn health_report(path: impl AsRef<Path>, stale_days: u64) -> Result<HealthSc
     let now = Utc::now();
     let stale_cutoff = now - chrono::Duration::days(stale_days as i64);
 
-    let stale_sections = document.sections.iter().filter(|s| {
-        s.temporal.updated_at < stale_cutoff
-    }).count();
+    let stale_sections = document
+        .sections
+        .iter()
+        .filter(|s| s.temporal.updated_at < stale_cutoff)
+        .count();
 
     let orphaned_edges = count_orphaned_edges(&document);
     let conflicts = count_conflicts(&document);
@@ -875,9 +874,9 @@ pub fn health_report(path: impl AsRef<Path>, stale_days: u64) -> Result<HealthSc
     let score = if total == 0.0 {
         100.0
     } else {
-        let penalty = ((stale_sections as f64 / total) * 30.0
+        let penalty = (stale_sections as f64 / total) * 30.0
             + (orphaned_edges as f64 / total.max(1.0)) * 20.0
-            + (conflicts as f64 / total.max(1.0)) * 25.0);
+            + (conflicts as f64 / total.max(1.0)) * 25.0;
         (100.0 - penalty).clamp(0.0, 100.0)
     };
 
@@ -909,7 +908,7 @@ fn count_orphaned_edges(document: &RbmemDocument) -> usize {
 fn count_conflicts(document: &RbmemDocument) -> usize {
     let mut conflicts = 0;
     for i in 0..document.sections.len() {
-        for j in (i+1)..document.sections.len() {
+        for j in (i + 1)..document.sections.len() {
             let s1 = &document.sections[i];
             let s2 = &document.sections[j];
             if s1.path == s2.path && s1.content != s2.content {
@@ -929,27 +928,35 @@ pub fn add_guard(
     let path = path.as_ref();
     let mut document = load(path, TimestampPolicy::Preserve)?;
 
-    let guard_section = document.sections.iter_mut()
+    let guard_section = document
+        .sections
+        .iter_mut()
         .find(|s| s.section_type == SectionType::Guards)
         .ok_or_else(|| RbmemError::Parse("no guards section found".to_string()))?;
 
-    let mut existing_guards: GuardConstraint = serde_json::from_str(&guard_section.content)
-        .unwrap_or_else(|_| GuardConstraint::default());
+    let mut existing_guards: GuardConstraint =
+        serde_json::from_str(&guard_section.content).unwrap_or_else(|_| GuardConstraint::default());
 
     match guard_type {
         "max-tokens" => {
             existing_guards.max_tokens = Some(
-                value.parse::<u64>().map_err(|e| RbmemError::Parse(e.to_string()))?,
+                value
+                    .parse::<u64>()
+                    .map_err(|e| RbmemError::Parse(e.to_string()))?,
             )
         }
         "max-iterations" => {
             existing_guards.max_iterations = Some(
-                value.parse::<u64>().map_err(|e| RbmemError::Parse(e.to_string()))?,
+                value
+                    .parse::<u64>()
+                    .map_err(|e| RbmemError::Parse(e.to_string()))?,
             )
         }
         "max-retries" => {
             existing_guards.max_retries = Some(
-                value.parse::<u64>().map_err(|e| RbmemError::Parse(e.to_string()))?,
+                value
+                    .parse::<u64>()
+                    .map_err(|e| RbmemError::Parse(e.to_string()))?,
             )
         }
         "output-validation" => existing_guards.output_validation = Some(value.to_string()),
@@ -981,12 +988,14 @@ pub fn remove_guard(
     let path = path.as_ref();
     let mut document = load(path, TimestampPolicy::Preserve)?;
 
-    let guard_section = document.sections.iter_mut()
+    let guard_section = document
+        .sections
+        .iter_mut()
         .find(|s| s.section_type == SectionType::Guards)
         .ok_or_else(|| RbmemError::Parse("no guards section found".to_string()))?;
 
-    let mut updated_guards: GuardConstraint = serde_json::from_str(&guard_section.content)
-        .unwrap_or_else(|_| GuardConstraint::default());
+    let mut updated_guards: GuardConstraint =
+        serde_json::from_str(&guard_section.content).unwrap_or_else(|_| GuardConstraint::default());
 
     match guard_type {
         "max-tokens" => updated_guards.max_tokens = None,
@@ -1046,8 +1055,7 @@ pub fn review_out(
             SectionType::Review,
             format!(
                 "[REVIEW] type={}\n{}\n",
-                flagged.section_type,
-                flagged.content
+                flagged.section_type, flagged.content
             ),
             Utc::now(),
         );
@@ -1103,8 +1111,6 @@ pub fn review_commit(
     Ok(applied)
 }
 
-
-
 pub fn list_guards(path: impl AsRef<Path>) -> Result<GuardConstraint, RbmemError> {
     let document = load(path, TimestampPolicy::Preserve)?;
 
@@ -1114,12 +1120,13 @@ pub fn list_guards(path: impl AsRef<Path>) -> Result<GuardConstraint, RbmemError
         .find(|s| s.section_type == SectionType::Guards)
         .ok_or_else(|| RbmemError::Parse("no guards section found".to_string()))?;
 
-    let guards: GuardConstraint = serde_json::from_str(&guard_section.content)
-        .unwrap_or_else(|_| GuardConstraint::default());
+    let guards: GuardConstraint =
+        serde_json::from_str(&guard_section.content).unwrap_or_else(|_| GuardConstraint::default());
 
     Ok(guards)
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
     use chrono::TimeZone;
@@ -1183,7 +1190,6 @@ mod tests {
         assert!(diff.contains("changed content: rules"));
     }
 
-
     #[test]
     fn test_create_and_list_snapshot() {
         let content = r#"meta:
@@ -1196,8 +1202,13 @@ type: text
 Daniel, PhD CogNeuro UofT
 [END SECTION]
 "#;
-        let dir = std::env::temp_dir().join(format!("rbmem_test_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let dir = std::env::temp_dir().join(format!(
+            "rbmem_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         let path = dir.join("memory.rbmem");
         std::fs::create_dir_all(&dir).ok();
         std::fs::write(&path, content).ok();
@@ -1227,8 +1238,13 @@ type: text
 original content here
 [END SECTION]
 "#;
-        let dir = std::env::temp_dir().join(format!("rbmem_test_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let dir = std::env::temp_dir().join(format!(
+            "rbmem_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         let path = dir.join("memory.rbmem");
         std::fs::create_dir_all(&dir).ok();
         std::fs::write(&path, original).ok();
@@ -1263,14 +1279,23 @@ modified content after rollback
 
     #[test]
     fn test_rollback_fails_on_missing_snapshot() {
-        let dir = std::env::temp_dir().join(format!("rbmem_test_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let dir = std::env::temp_dir().join(format!(
+            "rbmem_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         let path = dir.join("memory.rbmem");
         std::fs::create_dir_all(&dir).ok();
-        std::fs::write(&path, "memory:
+        std::fs::write(
+            &path,
+            "memory:
   test: text
   content: hello
-").ok();
+",
+        )
+        .ok();
 
         let result = rollback_to_snapshot(&path, "nonexistent");
         assert!(result.is_err());
@@ -1279,5 +1304,4 @@ modified content after rollback
         // Cleanup
         let _ = std::fs::remove_dir_all(dir);
     }
-
 }

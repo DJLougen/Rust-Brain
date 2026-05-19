@@ -107,6 +107,56 @@ Ask RBMEM for task-specific context:
 ./target/release/rbmem context memory.rbmem --task "review this PR" --resolve --minified
 ```
 
+## SAT Planning
+
+Rust-Brain now includes advanced SAT planning as a first-class RBMEM feature. `rbmem plan` loads goals, tasks, rules, constraints, preferences, graph context, and context sections from `.rbmem` files, encodes the planning problem as CNF, solves it with Kissat/CaDiCaL when available, falls back to a native Rust DPLL solver, and stores the resulting plan back into memory with timestamps and graph relations.
+
+Plan from an explicit goal:
+
+```powershell
+.\target\release\rbmem.exe plan "deploy agent release" --file examples\sat-planning.rbmem
+```
+
+Derive the goal from memory:
+
+```powershell
+.\target\release\rbmem.exe plan --from-memory --file examples\sat-planning.rbmem
+```
+
+Use solver/proof options:
+
+```powershell
+.\target\release\rbmem.exe plan "deploy agent release" --file examples\sat-planning.rbmem --solver kissat --proof --verify-proof
+.\target\release\rbmem.exe plan "deploy agent release" --file examples\sat-planning.rbmem --cube-and-conquer --format json
+```
+
+Plan with a stored context pack:
+
+```powershell
+.\target\release\rbmem.exe plan "deploy agent release" --file examples\sat-planning.rbmem --pack release_ops
+```
+
+The planner writes sections under `plans.<goal>.<timestamp>.*`:
+
+```text
+plans.deploy-agent-release-20260518200000.goal
+plans.deploy-agent-release-20260518200000.steps
+plans.deploy-agent-release-20260518200000.sat
+plans.deploy-agent-release-20260518200000.proof
+timeline
+```
+
+Rules can be plain RBMEM list items:
+
+```text
+- deploy agent release requires run focused regression tests
+- publish release notes requires deploy agent release
+- gather requirements conflicts with deploy agent release
+- avoid deploying without validation
+```
+
+DRAT support is proof-aware: external proof-producing solvers and `drat-trim` are used when installed; the native solver records the DIMACS/model for SAT plans and verifies simple empty-clause UNSAT proofs internally.
+
 ## RBMEM At A Glance
 
 An RBMEM file is plain text:
@@ -300,6 +350,8 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. Se
 | `infer <file.rbmem>` | Infer graph relations from prose. |
 | `query <file.rbmem> <text>` | Return matching task-specific context; use `--format json` or `--decrypt` when needed. |
 | `context <file.rbmem> --task <text>` | Alias for task-oriented context assembly; use `--format json` or `--decrypt` when needed. |
+| `plan "<goal>" [--file <file.rbmem>] [--pack <name>]` | Build a SAT planning problem from RBMEM memory, solve it, and store the resulting plan back into memory. |
+| `plan --from-memory [--file <file.rbmem>]` | Derive the goal from `goals`/`tasks` sections before planning. |
 | `pack <file.rbmem> <name>` | Render a named context pack from `.rbmempacks`; use `--format json` for tool callers. |
 | `diff <before.rbmem> <after.rbmem> --format text|json|yaml` | Report typed section-level memory changes. |
 | `merge <base.rbmem> <local.rbmem> <remote.rbmem> --strategy manual` | Run a three-way section merge. |

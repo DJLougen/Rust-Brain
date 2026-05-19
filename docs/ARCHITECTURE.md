@@ -6,6 +6,7 @@
 | --- | --- |
 | `src/parser.rs` | Forgiving Nom parser for RBMEM v1.3 syntax, including canonical and human-friendly section delimiters. |
 | `src/document.rs` | Core data model, smart merge, timestamp protection, provenance, graph view, compact rendering, relation inference, and validation helpers. |
+| `src/planner/` | SAT planning engine that extracts actions/rules from RBMEM, emits CNF, solves with Kissat/CaDiCaL or the internal DPLL fallback, handles proof metadata, and writes plans back into the memory graph. |
 | `src/main.rs` | CLI command wiring, Markdown conversion, sync workflow, context query/pack assembly, review/diff commands, Hermes integration, and file I/O. |
 
 ## Data Flow
@@ -21,6 +22,7 @@
    - JSON for Hermes and automation.
    - DOT or JSON graph output.
    - Task-specific context selected by query text, named packs, parent paths, and graph neighbors.
+   - SAT plans selected from goals, tasks, rules, constraints, preferences, and graph context.
 5. Updates write the full durable RBMEM document back to disk.
 
 ## Context Assembly
@@ -43,6 +45,25 @@ RBMEM graph output combines:
 Inference is configurable with `--inference-strategy off|explicit|balanced|aggressive`. `balanced` preserves the default heuristic, `explicit` accepts only direct relation phrases, and `aggressive` lowers the effective confidence threshold for recall-heavy agent indexing. Markdown sync can set the same behavior in `.rbmemsync` with `inference_strategy: explicit`.
 
 Graph JSON marks each edge source so agents can distinguish trusted manual edges from inferred ones.
+
+## SAT Planning
+
+`rbmem plan` is a native memory operation, not a sidecar planner. It discovers `.rbmem` files, chooses a primary memory file, extracts candidate actions from `goals`, `tasks`, `actions`, `steps`, and `plans`, then turns simple rule prose into SAT clauses:
+
+- `A requires B` or `A depends on B` becomes `not A or B`.
+- `A conflicts with B` becomes `not A or not B`.
+- `must/include/always <phrase>` becomes a required action clause.
+- `avoid/never/do not <phrase>` becomes a negative action clause.
+
+The solver path is:
+
+1. `--solver auto` tries `kissat`, then `cadical`, then the native DPLL fallback.
+2. `--solver internal` uses only the Rust implementation.
+3. `--cube-and-conquer` splits the first few variables into cubes and solves each subproblem.
+
+Plans are written under `plans.<goal>.<timestamp>.*` with `goal`, `steps`, `sat`, and `proof` sections. The planner stamps sections with `source.kind = "planner"` and adds graph relations such as `has_steps`, `encoded_as`, `uses_context`, `has_proof`, and `verifies`.
+
+DRAT support is integrated at the artifact layer. External proof-producing solvers and `drat-trim` can be used when installed; the internal solver records SAT DIMACS/model metadata and verifies simple empty-clause UNSAT proofs.
 
 ## Timestamp Protection
 
