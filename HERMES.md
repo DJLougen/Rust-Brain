@@ -23,9 +23,9 @@ rbmem sync notes RBMEM-memory --watch --infer-relations
 - Load memory before planning:
   `rbmem hermes load project.rbmem --resolve --compact`
 - Use SAT planning for constrained task plans:
-  `rbmem plan "<goal>" --file project.rbmem --format json`
+  `rbmem hermes plan project.rbmem --goal "<goal>" --format json`
 - Add `--pack <name>` when the task should be planned against a stored context pack.
-- Use `rbmem plan --from-memory --file project.rbmem --format json` when the active goal is already stored in `goals` or `tasks`.
+- Use `rbmem hermes plan project.rbmem --from-memory --format json` when the active goal is already stored in `goals` or `tasks`.
 - Treat `sections[].path` as the stable memory address.
 - Prefer `hermes:memory` for append-only facts, preferences, and observations.
 - `hermes:memory` sections are append-only; use `mode: "auto"` or `mode: "append"`.
@@ -240,9 +240,9 @@ rbmem context project.rbmem --task "<current task>" --resolve --minified --graph
 When the task needs a concrete feasible plan, ask the SAT planner to write the plan back into RBMEM:
 
 ```powershell
-rbmem plan "<current goal>" --file project.rbmem --solver auto --format json
-rbmem plan --from-memory --file project.rbmem --cube-and-conquer --format json
-rbmem plan "<current goal>" --file project.rbmem --pack code_review --format json
+rbmem hermes plan project.rbmem --goal "<current goal>" --solver auto --format json
+rbmem hermes plan project.rbmem --from-memory --cube-and-conquer --format json
+rbmem hermes plan project.rbmem --goal "<current goal>" --pack code_review --format json
 ```
 
 Fall back to the full Hermes JSON view when the agent needs complete memory state:

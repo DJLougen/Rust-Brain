@@ -297,6 +297,19 @@ enum HermesCommand {
         #[arg(long)]
         json_file: Option<PathBuf>,
     },
+    Plan {
+        file: PathBuf,
+        #[arg(long)]
+        goal: Option<String>,
+        #[arg(long)]
+        from_memory: bool,
+        #[arg(long)]
+        pack: Option<String>,
+        #[arg(long)]
+        dry_run: bool,
+        #[arg(long, value_enum, default_value_t = OutputFormat::Json)]
+        format: OutputFormat,
+    },
     Init {
         project_name: String,
     },
@@ -835,6 +848,36 @@ fn run() -> Result<(), RbmemError> {
                 write_document(&file, &document, false)?;
                 validate_or_error(&document)?;
                 println!("saved {}", file.display());
+            }
+            HermesCommand::Plan {
+                file,
+                goal,
+                from_memory,
+                pack,
+                dry_run,
+                format,
+            } => {
+                let search_dir = file.parent().map(Path::to_path_buf).unwrap_or_else(|| {
+                    std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+                });
+                let report = rbmem::plan_memory(PlanOptions {
+                    goal,
+                    from_memory,
+                    file: Some(file),
+                    search_dir,
+                    context_pack: pack,
+                    solver: SatBackend::Auto,
+                    proof: false,
+                    proof_path: None,
+                    verify_proof: false,
+                    cube_and_conquer: false,
+                    dry_run,
+                    now: Utc::now(),
+                })?;
+                match format {
+                    OutputFormat::Text => print!("{}", render_plan_report(&report)),
+                    OutputFormat::Json => println!("{}", serde_json::to_string_pretty(&report)?),
+                }
             }
             HermesCommand::Init { project_name } => {
                 let now = Utc::now();

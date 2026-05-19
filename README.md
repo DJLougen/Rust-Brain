@@ -246,6 +246,13 @@ Load Hermes-optimized JSON:
 .\target\release\rbmem.exe hermes load my-agent-memory.rbmem --resolve --minified
 ```
 
+Plan from Hermes memory with the native SAT planner:
+
+```powershell
+.\target\release\rbmem.exe hermes plan my-agent-memory.rbmem --goal "deploy agent release" --format json
+.\target\release\rbmem.exe hermes plan my-agent-memory.rbmem --from-memory --pack release_ops --format json
+```
+
 Save agent memory safely:
 
 ```powershell
@@ -367,6 +374,7 @@ See [HERMES.md](HERMES.md) for agent instructions and the save payload shape. Se
 | `timeline <file.rbmem>` | Show temporal entries. |
 | `validate <file.rbmem>` | Validate parser compatibility. |
 | `hermes load <file.rbmem>` | Output Hermes-friendly JSON. |
+| `hermes plan <file.rbmem> --goal <goal>` | Run SAT planning as a Hermes-native memory operation and store the plan in RBMEM. |
 | `hermes save <file.rbmem> --json <payload>` | Apply Hermes-style memory updates. |
 | `hermes save <file.rbmem> --json-file payload.json` | Apply Hermes updates from a file. |
 | `hermes doctor <file.rbmem>` | Check RBMEM memory health and verify Hermes JSON/context loading; supports `--format json`. |
