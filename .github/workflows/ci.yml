@@ -73,12 +73,19 @@ jobs:
           pip install -e .[dev]
           pip install pytest-cov coverage
       
+      - name: Run tests
+        working-directory: ./mcp-server
+        run: |
+          pytest tests/ -v
+
       - name: Run tests with coverage
         working-directory: ./mcp-server
         run: |
           pytest tests/ -v --cov --cov-report=xml --cov-report=term-missing --no-cov-on-fail
-      
+        continue-on-error: true
+
       - name: Upload coverage to Codecov
+        if: hashFiles('mcp-server/coverage.xml') != ''
         uses: codecov/codecov-action@v4
         with:
           file: ./mcp-server/coverage.xml
@@ -87,8 +94,9 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      
+
       - name: Coverage summary
+        if: hashFiles('mcp-server/coverage.xml') != ''
         working-directory: ./mcp-server
         run: |
           echo "## Python Test Coverage Report" >> $GITHUB_STEP_SUMMARY
