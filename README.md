@@ -121,7 +121,7 @@ rbmem pack memory.rbmem code_review --resolve
 ## Architecture
 
 <p align="center">
-  <img src="architecture.png" alt="RBMEM Architecture" width="100%">
+  <img src="architecture_v2.png" alt="RBMEM Architecture" width="100%">
 </p>
 
 RBMEM is organized as a Rust library with a CLI wrapper:
