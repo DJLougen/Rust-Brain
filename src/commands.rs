@@ -385,16 +385,24 @@ pub fn query_document_with_budget_and_index(
     let query_terms = query_terms(query);
     let phrase = normalize_for_query(query);
     let now = Utc::now();
-    let scored_matches = query_matches_indexed(document, index, &query_terms, &phrase, now);
-    let mut selected: BTreeSet<String> = scored_matches.iter().map(|(p, _)| p.clone()).collect();
+    let idf = compute_query_idf(index, &query_terms);
+    let scored_matches = query_matches_indexed(document, index, &query_terms, &phrase, now, &idf);
+
+    // Separate primary matches (directly scored) from context expansion
+    const MAX_PRIMARY: usize = 6;
+    let primary: Vec<(String, f64)> = scored_matches.iter().take(MAX_PRIMARY).cloned().collect();
+    let mut selected: BTreeSet<String> = primary.iter().map(|(p, _)| p.clone()).collect();
 
     if include_parents {
-        include_parent_sections_indexed(index, &mut selected);
+        let primary_paths: BTreeSet<String> = primary.iter().map(|(p, _)| p.clone()).collect();
+        include_parent_sections_indexed(index, &primary_paths, &mut selected);
     }
 
     if graph_depth > 0 && !selected.is_empty() {
-        for path in selected.clone() {
-            for neighbor in index.related(&path, graph_depth) {
+        // Follow graph edges from primary matches and their parents
+        let expand_from: Vec<String> = selected.iter().cloned().collect();
+        for path in &expand_from {
+            for neighbor in index.related(path, graph_depth) {
                 selected.insert(neighbor);
             }
         }
@@ -620,6 +628,7 @@ fn query_matches_indexed(
     terms: &[String],
     phrase: &str,
     now: chrono::DateTime<Utc>,
+    idf: &std::collections::HashMap<&str, f64>,
 ) -> Vec<(String, f64)> {
     let candidate_paths: BTreeSet<String> = terms
         .iter()
@@ -644,7 +653,7 @@ fn query_matches_indexed(
     let mut scored = sections_to_score
         .into_iter()
         .filter_map(|section| {
-            let score = query_score(section, terms, phrase, now);
+            let score = query_score(section, terms, phrase, now, idf);
             (score > 0.0).then_some((section.path.clone(), score))
         })
         .collect::<Vec<_>>();
@@ -656,10 +665,31 @@ fn query_matches_indexed(
             .unwrap_or(std::cmp::Ordering::Equal)
             .then_with(|| left.0.cmp(&right.0))
     });
+
+    // Precision cutoff: keep top-K and filter by relative score threshold
+    const MAX_MATCHES: usize = 8;
+    const SCORE_RATIO: f64 = 0.35;
+    if let Some(top_score) = scored.first().map(|(_, s)| *s) {
+        if top_score > 0.0 {
+            let threshold = top_score * SCORE_RATIO;
+            scored = scored
+                .into_iter()
+                .take(MAX_MATCHES)
+                .filter(|(_, s)| *s >= threshold)
+                .collect();
+        }
+    }
+
     scored
 }
 
-fn query_score(section: &Section, terms: &[String], phrase: &str, now: chrono::DateTime<Utc>) -> f64 {
+fn query_score(
+    section: &Section,
+    terms: &[String],
+    phrase: &str,
+    now: chrono::DateTime<Utc>,
+    idf: &std::collections::HashMap<&str, f64>,
+) -> f64 {
     let path = normalize_for_query(&section.path);
     let content = normalize_for_query(&section.content);
     let mut score: f64 = 0.0;
@@ -676,12 +706,13 @@ fn query_score(section: &Section, terms: &[String], phrase: &str, now: chrono::D
     }
 
     for term in terms {
+        let w = idf.get(term.as_str()).copied().unwrap_or(1.0);
         if path.contains(term.as_str()) {
-            score += 5.0;
+            score += 5.0 * w;
         }
         let term_count = content.matches(term.as_str()).count() as f64;
         if term_count > 0.0 {
-            score += (term_count / word_count.sqrt()) * 3.0;
+            score += (term_count / word_count.sqrt()) * 3.0 * w;
         }
     }
 
@@ -704,9 +735,27 @@ fn query_score(section: &Section, terms: &[String], phrase: &str, now: chrono::D
     score.max(0.0)
 }
 
-fn include_parent_sections_indexed(index: &SectionIndex, selected: &mut BTreeSet<String>) {
-    let matched = selected.iter().cloned().collect::<Vec<_>>();
+/// Compute IDF weights for each query term based on document frequency in the index.
+fn compute_query_idf<'a>(
+    index: &SectionIndex,
+    terms: &'a [String],
+) -> std::collections::HashMap<&'a str, f64> {
+    let n = index.section_count().max(1) as f64;
+    terms
+        .iter()
+        .map(|term| {
+            let df = index.keyword(term).len().max(1) as f64;
+            let idf = (n / df).ln() + 1.0;
+            (term.as_str(), idf)
+        })
+        .collect()
+}
 
+fn include_parent_sections_indexed(
+    index: &SectionIndex,
+    matched: &BTreeSet<String>,
+    selected: &mut BTreeSet<String>,
+) {
     for path in matched {
         let parts = path.split('.').collect::<Vec<_>>();
         for depth in 1..parts.len() {

@@ -1,6 +1,6 @@
 [package]
 name = "rbmem"
-version = "1.4.3"
+version = "1.4.4"
 authors = ["DJLougen"]
 edition = "2021"
 rust-version = "1.82"

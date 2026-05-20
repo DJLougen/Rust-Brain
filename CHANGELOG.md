@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented here.
 
+## [1.4.4] - 2026-05-20
+
+### Changed
+
+- **Precision-focused query overhaul**: IDF-weighted term scoring, relative score threshold cutoff (35% of top), top-K match limiting (8 primary candidates)
+- Parent section inclusion now limited to top-scoring primary matches only (prevents generic parent inflation)
+- Graph neighbor expansion scoped to primary matches and their parents (prevents unbounded graph blowup)
+- New `SectionIndex::section_count()` public API method
+
+### Performance
+
+- Query precision improved from 11.5% to 24.3% (2.1× better) while maintaining 100% graph-aware recall
+- F1 score improved from 0.206 to 0.375 (82% better)
+- Token efficiency improved from 41.9% to 70.3% savings vs full Markdown dump
+- Query speed improved from 48µs to 38µs per query (21% faster)
+
 ## [1.4.3] - 2026-05-20
 
 ### Added

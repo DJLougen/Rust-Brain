@@ -145,6 +145,10 @@ impl SectionIndex {
         self.paths.binary_search_by(|p| p.as_str().cmp(path)).is_ok()
     }
 
+    pub fn section_count(&self) -> usize {
+        self.paths.len()
+    }
+
     pub fn save_disk_cache(&self, path: impl AsRef<Path>) -> Result<(), crate::RbmemError> {
         fs::write(path, serde_json::to_string(self)?)?;
         Ok(())

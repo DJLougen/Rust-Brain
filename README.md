@@ -49,11 +49,12 @@ RBMEM outperforms plain Markdown for agent memory tasks:
 
 | Metric | RBMEM | Markdown | Improvement |
 |--------|-------|----------|-------------|
-| **Precision** | 11.5% | 6.4% | **1.8× better** |
-| **Recall** | 95.6% | 100% (full dump) | Targeted retrieval |
+| **Precision** | 24.3% | 6.4% | **3.8× better** |
+| **Recall** | 81.7% | 100% (full dump) | Targeted retrieval |
 | **Graph-aware recall** | 100% | N/A | **Unique capability** |
-| **Token efficiency** | 41.9% savings | baseline | Smarter context |
-| **Query latency** | 62 µs | 33 µs (grep) | 1.9× slower, richer results |
+| **F1 Score** | 0.375 | 0.312 (keyword) | **1.2× better** |
+| **Token efficiency** | 70.3% savings | baseline | Smarter context |
+| **Query latency** | 38 µs | 23 µs (grep) | 1.7× slower, richer results |
 
 *Benchmark: 46 sections, 15 queries, 100 iterations. See [benchmark methodology](benches/rbmem_vs_markdown.rs).*
 
