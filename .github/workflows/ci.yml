@@ -73,14 +73,6 @@ jobs:
           pip install -e .[dev]
           pip install pytest-cov coverage
       
-      - name: Debug environment
-        working-directory: ./mcp-server
-        run: |
-          python --version
-          pip list
-          echo "---"
-          ls -la src/
-
       - name: Run tests
         working-directory: ./mcp-server
         run: |

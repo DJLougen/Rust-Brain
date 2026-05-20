@@ -216,19 +216,15 @@ class TestGetPendingReviews:
     """Tests for get_pending_reviews()."""
 
     def test_returns_empty_when_no_sections(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            mem_file = pathlib.Path(tmpdir) / "empty.rbmem"
-            mem_file.write_text(
-                "rbmem# RBMEM v1.3\n\n[SECTION: tools.custom.foo]\ntype: json\ncontent: |\n  {\"name\": \"foo\"}\n[END SECTION]\n",
-                encoding="utf-8",
-            )
-            queue = get_pending_reviews(
-                limit=5,
-                memory_path=str(mem_file),
-            )
-            assert isinstance(queue, ReviewQueue)
-            assert len(queue.candidates) == 0
-            assert queue.total_pending == 0
+        mock_store = mock.Mock()
+        mock_store.context.return_value = {"sections": []}
+        queue = get_pending_reviews(
+            limit=5,
+            store=mock_store,
+        )
+        assert isinstance(queue, ReviewQueue)
+        assert len(queue.candidates) == 0
+        assert queue.total_pending == 0
 
     def test_returns_reviews_with_pending_status(self) -> None:
         """Reviews with pending status are returned."""
@@ -333,14 +329,14 @@ class TestGetPendingReviews:
 
     def test_fallback_on_bad_store(self) -> None:
         """If the store raises an exception, an empty queue is returned."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            mem_file = pathlib.Path(tmpdir) / "nonexistent.rbmem"
-            queue = get_pending_reviews(
-                limit=10,
-                memory_path=str(mem_file),
-            )
-            assert isinstance(queue, ReviewQueue)
-            assert len(queue.candidates) == 0
+        mock_store = mock.Mock()
+        mock_store.context.side_effect = RuntimeError("store unavailable")
+        queue = get_pending_reviews(
+            limit=10,
+            store=mock_store,
+        )
+        assert isinstance(queue, ReviewQueue)
+        assert len(queue.candidates) == 0
 
 
 class TestUpdateReview:
