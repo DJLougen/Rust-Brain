@@ -27,13 +27,20 @@ pub struct ParsedDocument {
 }
 
 pub fn parse_document(input: &str, policy: TimestampPolicy) -> Result<ParsedDocument, RbmemError> {
-    let normalized = input.replace("\r\n", "\n");
+    // Only allocate a new string if CRLF is present
+    let normalized;
+    let input = if input.contains("\r\n") {
+        normalized = input.replace("\r\n", "\n");
+        &normalized
+    } else {
+        input
+    };
     let now = match policy {
         TimestampPolicy::Preserve => Utc::now(),
         TimestampPolicy::Protect { now } => now,
     };
 
-    let (meta_text, section_text) = split_meta_and_sections(&normalized);
+    let (meta_text, section_text) = split_meta_and_sections(input);
     let mut warnings = Vec::new();
     let mut meta = parse_meta(meta_text, policy, &mut warnings)?;
     meta.enforce_v13(&mut warnings);

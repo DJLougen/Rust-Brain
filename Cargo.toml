@@ -1,6 +1,6 @@
 [package]
 name = "rbmem"
-version = "1.4.2"
+version = "1.4.3"
 authors = ["DJLougen"]
 edition = "2021"
 rust-version = "1.82"
@@ -47,4 +47,8 @@ graph = ["dep:petgraph"]
 
 [[bench]]
 name = "rbmem_vs_markdown"
+harness = false
+
+[[bench]]
+name = "planner_stress"
 harness = false

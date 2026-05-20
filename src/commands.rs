@@ -27,23 +27,12 @@ pub struct HealthReport {
 }
 
 /// Guard constraint types for validation.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GuardConstraint {
     pub max_tokens: Option<u64>,
     pub max_iterations: Option<u64>,
     pub max_retries: Option<u64>,
     pub output_validation: Option<String>,
-}
-
-impl Default for GuardConstraint {
-    fn default() -> Self {
-        Self {
-            max_tokens: None,
-            max_iterations: None,
-            max_retries: None,
-            output_validation: None,
-        }
-    }
 }
 
 /// Guard operation actions.
@@ -1011,7 +1000,7 @@ fn count_conflicts(document: &RbmemDocument) -> usize {
     }
 
     let mut conflicts = 0;
-    for (_path, contents) in &by_path {
+    for contents in by_path.values() {
         let n = contents.len();
         if n < 2 {
             continue;

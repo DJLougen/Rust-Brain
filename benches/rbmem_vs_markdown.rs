@@ -6,10 +6,14 @@
 //!   3. Relation-aware recall (graph neighbors pulled in)
 //!   4. Temporal filtering capability
 //!   5. Compact mode token savings
-
+//!   6. Graph traversal performance (index build, BFS at varying depths)
+//!   7. Planner execution time with large constraint sets
+//!   8. Document parsing/loading time
 use chrono::{Duration, Utc};
 use rbmem::commands::{self as api};
 use rbmem::document::{GraphInfo, GraphRelation, Section, SectionType};
+use rbmem::parser::parse_document;
+use rbmem::document::TimestampPolicy;
 use rbmem::RbmemDocument;
 use std::collections::BTreeSet;
 use std::time::Instant;
@@ -208,11 +212,6 @@ fn to_markdown(doc: &RbmemDocument) -> String {
     md
 }
 
-/// Simulate naive Markdown context retrieval: return the whole file.
-/// This is what most LLM agents do — they just dump the whole .md into context.
-fn markdown_full_context(md: &str) -> usize {
-    md.len()
-}
 
 /// Simulate keyword-search Markdown retrieval: grep for query terms, return matching paragraphs.
 fn markdown_keyword_context(md: &str, query: &str) -> (String, usize) {
@@ -633,6 +632,458 @@ fn main() {
     println!("║ Provenance tracking    │ {:>10}     │ {:>10}                ║",
         "per-section", "none");
     println!("╚════════════════════════╧═════════════════╧═══════════════════════════╝");
+
+    // New performance profiling tests
+    bench_graph_traversal(&doc);
+    bench_planner(&doc);
+    bench_parsing(&doc);
+}
+
+// ============================================================
+// TEST 6: Graph Traversal Performance
+// ============================================================
+fn bench_graph_traversal(doc: &RbmemDocument) {
+    println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    println!(" TEST 6: Graph Traversal Performance");
+    println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+    let iterations = 500;
+
+    // 6a: Index build time
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = rbmem::SectionIndex::build(doc);
+    }
+    let build_elapsed = start.elapsed();
+    let build_per_call = build_elapsed.as_micros() / iterations as u128;
+
+    println!(" {:<40} {:>12}", "Metric", "Time");
+    println!(" {}", "─".repeat(55));
+    println!(" {:<40} {:>10}µs", "SectionIndex::build()", build_per_call);
+
+    let index = rbmem::SectionIndex::build(doc);
+
+    // 6b: BFS traversal at varying depths
+    let traversal_paths = [
+        "architecture.api.auth",
+        "architecture.api",
+        "rules.testing",
+        "memory.incidents",
+        "deployment.ci_cd",
+    ];
+
+    for depth in [1, 2, 3, 5] {
+        let start = Instant::now();
+        for _ in 0..iterations {
+            for path in &traversal_paths {
+                let _ = index.related(path, depth);
+            }
+        }
+        let elapsed = start.elapsed();
+        let per_call = elapsed.as_micros() / (iterations * traversal_paths.len()) as u128;
+        println!(" {:<40} {:>10}µs", format!("related(depth={})", depth), per_call);
+    }
+
+    // 6c: graph_view() construction
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = doc.graph_view();
+    }
+    let gv_elapsed = start.elapsed();
+    let gv_per_call = gv_elapsed.as_micros() / iterations as u128;
+    println!(" {:<40} {:>10}µs", "graph_view()", gv_per_call);
+
+    // 6d: petgraph construction
+    #[cfg(feature = "graph")]
+    {
+        let start = Instant::now();
+        for _ in 0..iterations {
+            let _ = doc.petgraph();
+        }
+        let pg_elapsed = start.elapsed();
+        let pg_per_call = pg_elapsed.as_micros() / iterations as u128;
+        println!(" {:<40} {:>10}µs", "petgraph()", pg_per_call);
+    }
+
+    // 6e: resolved_sections (hierarchy traversal)
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = doc.resolved_sections();
+    }
+    let rs_elapsed = start.elapsed();
+    let rs_per_call = rs_elapsed.as_micros() / iterations as u128;
+    println!(" {:<40} {:>10}µs", "resolved_sections()", rs_per_call);
+
+    // 6f: Serialization
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = doc.to_rbmem_string();
+    }
+    let ser_elapsed = start.elapsed();
+    let ser_per_call = ser_elapsed.as_micros() / iterations as u128;
+    println!(" {:<40} {:>10}µs", "to_rbmem_string()", ser_per_call);
+
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = doc.to_minified_string(true);
+    }
+    let min_elapsed = start.elapsed();
+    let min_per_call = min_elapsed.as_micros() / iterations as u128;
+    println!(" {:<40} {:>10}µs", "to_minified_string(resolve=true)", min_per_call);
+
+    // 6g: Scale test — build large documents and measure traversal
+    println!("\n  Scale test: graph traversal with growing document size");
+    println!(" {:<20} {:>10} {:>10} {:>10}", "Sections", "Build µs", "BFS-d2 µs", "Query µs");
+    println!(" {}", "─".repeat(55));
+
+    for scale in [50, 100, 200, 500] {
+        let large_doc = build_scaled_document(scale);
+        let start = Instant::now();
+        for _ in 0..100 {
+            let _ = rbmem::SectionIndex::build(&large_doc);
+        }
+        let build_us = start.elapsed().as_micros() / 100;
+
+        let large_index = rbmem::SectionIndex::build(&large_doc);
+        let start = Instant::now();
+        for _ in 0..100 {
+            let _ = large_index.related("module_0.sub_0.leaf", 2);
+        }
+        let bfs_us = start.elapsed().as_micros() / 100;
+
+        let start = Instant::now();
+        for _ in 0..100 {
+            let _ = api::query_document_with_index(&large_doc, "module alpha data processing", true, 1, &large_index);
+        }
+        let query_us = start.elapsed().as_micros() / 100;
+
+        println!(" {:<20} {:>10} {:>10} {:>10}", scale, build_us, bfs_us, query_us);
+    }
+}
+
+/// Build a scaled document with N sections, organized in a hierarchy with graph relations.
+fn build_scaled_document(section_count: usize) -> RbmemDocument {
+    let base = Utc::now() - Duration::days(30);
+    let mut doc = RbmemDocument::new(base, "benchmark-scale");
+    doc.meta.purpose = format!("scale test with {} sections", section_count);
+
+    let modules = (section_count / 10).max(1);
+    let subs_per_module = 3;
+    let mut count = 0;
+
+    for m in 0..modules {
+        let mod_path = format!("module_{}", m);
+        doc.upsert_section(&mod_path, SectionType::Text,
+            format!("Module {} handles data processing and transformation for subsystem alpha.", m), base);
+
+        for s in 0..subs_per_module {
+            let sub_path = format!("{}.sub_{}", mod_path, s);
+            doc.upsert_section(&sub_path, SectionType::Text,
+                format!("Subsystem {} of module {}. Implements alpha-beta filtering and data validation.", s, m), base);
+
+            // Add leaf sections
+            let remaining = section_count - count;
+            if remaining > 0 {
+                let leaf_path = format!("{}.leaf", sub_path);
+                doc.upsert_section(&leaf_path, SectionType::Text,
+                    format!("Leaf configuration for subsystem {} in module {}. Contains alpha parameters and processing rules.", s, m), base);
+                count += 1;
+            }
+            count += 1;
+        }
+        count += 1;
+
+        // Add extra flat sections to reach target count
+        while count < section_count && count < (m + 1) * (1 + subs_per_module * 2) {
+            let flat_path = format!("{}.extra_{}", mod_path, count);
+            doc.upsert_section(&flat_path, SectionType::List,
+                format!("- Rule alpha for item {}\n- Constraint beta on processing\n- Task: validate data", count), base);
+            count += 1;
+        }
+    }
+
+    // Fill remaining with flat sections
+    while count < section_count {
+        let path = format!("extra.section_{}", count);
+        doc.upsert_section(&path, SectionType::Text,
+            format!("Additional section {} with alpha data processing rules and module references.", count), base);
+        count += 1;
+    }
+
+    // Add graph relations between modules
+    for m in 0..modules.min(10) {
+        let from_path = format!("module_{}.sub_0", m);
+        let to_path = format!("module_{}.sub_1", (m + 1) % modules);
+        if let Some(section) = doc.sections.iter_mut().find(|s| s.path == from_path) {
+            section.graph = Some(GraphInfo {
+                node_type: None,
+                relations: vec![GraphRelation {
+                    to: to_path,
+                    relation_type: "depends_on".into(),
+                    valid_from: Some(base),
+                    valid_until: None,
+                    inferred: false,
+                    confidence: None,
+                }],
+            });
+        }
+    }
+
+    doc
+}
+
+// ============================================================
+// TEST 7: Planner Execution Time
+// ============================================================
+fn bench_planner(doc: &RbmemDocument) {
+    println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    println!(" TEST 7: Planner Execution Time");
+    println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+    let iterations = 50;
+
+    println!(" {:<45} {:>10}", "Scenario", "µs/call");
+    println!(" {}", "─".repeat(58));
+
+    // Build a planning document from the existing knowledge base
+    let plan_doc = build_planning_document(doc);
+    let plan_rbmem = plan_doc.to_rbmem_string();
+
+    // Measure parse of plan doc
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = parse_document(&plan_rbmem, TimestampPolicy::Preserve).unwrap();
+    }
+    let parse_elapsed = start.elapsed();
+    let parse_per_call = parse_elapsed.as_micros() / iterations as u128;
+    println!(" {:<45} {:>10}µs", "parse_document (plan doc)", parse_per_call);
+
+    // Use temp file for plan_memory
+    let temp_dir = std::env::temp_dir().join("rbmem_bench_planner");
+    let _ = std::fs::create_dir_all(&temp_dir);
+    let temp_file = temp_dir.join("bench_plan.rbmem");
+    std::fs::write(&temp_file, &plan_rbmem).unwrap();
+
+    // Small problem
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let options = rbmem::PlanOptions {
+            goal: Some("Deploy authentication service".to_string()),
+            file: Some(temp_file.clone()),
+            search_dir: temp_dir.clone(),
+            solver: rbmem::SatBackend::Internal,
+            from_memory: false,
+            dry_run: true,
+            cube_and_conquer: false,
+            context_pack: None,
+            now: Utc::now(),
+            proof: false,
+            proof_path: None,
+            verify_proof: false,
+        };
+        let _ = rbmem::plan_memory(options);
+    }
+    let small_elapsed = start.elapsed();
+    let small_per_call = small_elapsed.as_micros() / iterations as u128;
+    println!(" {:<45} {:>10}µs", "plan_memory (small, ~20 candidates)", small_per_call);
+
+    // Large constraint set
+    let large_plan_doc = build_large_planning_problem(200);
+    let large_plan_rbmem = large_plan_doc.to_rbmem_string();
+    let large_temp_file = temp_dir.join("bench_large_plan.rbmem");
+    std::fs::write(&large_temp_file, &large_plan_rbmem).unwrap();
+
+    let start = Instant::now();
+    for _ in 0..10 {
+        let options = rbmem::PlanOptions {
+            goal: Some("Complete system migration with zero downtime".to_string()),
+            file: Some(large_temp_file.clone()),
+            search_dir: temp_dir.clone(),
+            solver: rbmem::SatBackend::Internal,
+            from_memory: false,
+            dry_run: true,
+            cube_and_conquer: false,
+            context_pack: None,
+            now: Utc::now(),
+            proof: false,
+            proof_path: None,
+            verify_proof: false,
+        };
+        let _ = rbmem::plan_memory(options);
+    }
+    let large_elapsed = start.elapsed();
+    let large_per_call = large_elapsed.as_micros() / 10 as u128;
+    println!(" {:<45} {:>10}µs", "plan_memory (large, ~200 candidates)", large_per_call);
+
+    // Cleanup
+    let _ = std::fs::remove_dir_all(&temp_dir);
+}
+
+fn build_planning_document(base_doc: &RbmemDocument) -> RbmemDocument {
+    let base = Utc::now() - Duration::days(30);
+    let mut doc = RbmemDocument::new(base, "benchmark-planner");
+    doc.meta.purpose = "planner benchmark".to_string();
+
+    // Copy some sections from base doc
+    for section in &base_doc.sections {
+        if section.path.starts_with("rules") || section.path.starts_with("tasks") {
+            doc.sections.push(section.clone());
+        }
+    }
+
+    // Add goal and action sections that the planner looks for
+    doc.upsert_section("goals", SectionType::List,
+        "- Deploy authentication service\n- Set up monitoring pipeline\n- Migrate database to new cluster".to_string(), base);
+    doc.upsert_section("actions", SectionType::List,
+        "- Deploy auth service to staging\n- Run integration tests\n- Configure Prometheus alerts\n- \
+         Set up Grafana dashboards\n- Migrate user data\n- Update API gateway routes\n- \
+         Enable rate limiting\n- Set up health checks\n- Configure log aggregation\n- \
+         Deploy to production\n- Run smoke tests\n- Enable feature flags\n- \
+         Set up backup schedule\n- Configure auto-scaling\n- Update DNS records\n- \
+         Enable TLS certificates\n- Set up CI/CD pipeline\n- Configure secrets manager\n- \
+         Deploy monitoring agent\n- Set up alerting rules".to_string(), base);
+    doc.upsert_section("constraints", SectionType::List,
+        "- Deploy auth service requires Run integration tests\n- \
+         Deploy to production requires Run smoke tests\n- \
+         Migrate user data requires Deploy auth service\n- \
+         Enable rate limiting conflicts with Enable feature flags\n- \
+         Update DNS records requires Deploy to production\n- \
+         Enable TLS certificates must come before Update API gateway routes\n- \
+         must Run integration tests\n- avoid Deploy to production without Run smoke tests\n- \
+         Set up monitoring pipeline requires Configure Prometheus alerts\n- \
+         Set up Grafana dashboards depends on Configure Prometheus alerts\n- \
+         Configure auto-scaling requires Deploy to production\n- \
+         Set up backup schedule must come after Migrate user data".to_string(), base);
+
+    doc
+}
+
+fn build_large_planning_problem(candidate_count: usize) -> RbmemDocument {
+    let base = Utc::now() - Duration::days(30);
+    let mut doc = RbmemDocument::new(base, "benchmark-large-planner");
+    doc.meta.purpose = "large planner benchmark".to_string();
+
+    let mut actions = Vec::new();
+    let modules = ["auth", "api", "database", "cache", "frontend", "monitoring", "deploy", "test"];
+    let verbs = ["Deploy", "Configure", "Update", "Migrate", "Enable", "Set up", "Optimize", "Refactor"];
+
+    for i in 0..candidate_count {
+        let module = modules[i % modules.len()];
+        let verb = verbs[i % verbs.len()];
+        actions.push(format!("- {} {} component {}", verb, module, i));
+    }
+    doc.upsert_section("actions", SectionType::List, actions.join("\n"), base);
+
+    let mut constraints = Vec::new();
+    for i in 0..(candidate_count / 4) {
+        let a_module = modules[i % modules.len()];
+        let b_module = modules[(i + 1) % modules.len()];
+        let a_verb = verbs[i % verbs.len()];
+        let b_verb = verbs[(i + 1) % verbs.len()];
+        constraints.push(format!(
+            "- {} {} component {} requires {} {} component {}",
+            a_verb, a_module, i,
+            b_verb, b_module, (i + 1) % candidate_count
+        ));
+    }
+    for i in 0..(candidate_count / 10) {
+        let a_module = modules[i % modules.len()];
+        let b_module = modules[(i + 3) % modules.len()];
+        constraints.push(format!(
+            "- Deploy {} component {} conflicts with Update {} component {}",
+            a_module, i, b_module, (i + 5) % candidate_count
+        ));
+    }
+    doc.upsert_section("constraints", SectionType::List, constraints.join("\n"), base);
+
+    doc.upsert_section("goals", SectionType::Text,
+        "Complete system migration with zero downtime".to_string(), base);
+
+    doc
+}
+
+// ============================================================
+// TEST 8: Document Parsing/Loading Time
+// ============================================================
+fn bench_parsing(doc: &RbmemDocument) {
+    println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    println!(" TEST 8: Document Parsing & Loading Time");
+    println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+    let iterations = 500;
+
+    // 8a: Parse small document (existing KB)
+    let rbmem_text = doc.to_rbmem_string();
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = parse_document(&rbmem_text, TimestampPolicy::Preserve).unwrap();
+    }
+    let small_elapsed = start.elapsed();
+    let small_per_call = small_elapsed.as_micros() / iterations as u128;
+
+    println!(" {:<45} {:>10}", "Scenario", "µs/call");
+    println!(" {}", "─".repeat(58));
+    println!(" {:<45} {:>10}µs", format!("parse ({} sections, {} chars)", doc.sections.len(), rbmem_text.len()), small_per_call);
+
+    // 8b: Parse minified format
+    let minified_text = doc.to_minified_string(false);
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = parse_document(&minified_text, TimestampPolicy::Preserve).unwrap();
+    }
+    let min_elapsed = start.elapsed();
+    let min_per_call = min_elapsed.as_micros() / iterations as u128;
+    println!(" {:<45} {:>10}µs", format!("parse minified ({} chars)", minified_text.len()), min_per_call);
+
+    // 8c: Scale test
+    println!("\n  Scale test: parsing time vs document size");
+    println!(" {:<20} {:>10} {:>10} {:>10}", "Sections", "Chars", "Parse µs", "µs/section");
+    println!(" {}", "─".repeat(55));
+
+    for scale in [50, 100, 200, 500] {
+        let large_doc = build_scaled_document(scale);
+        let large_text = large_doc.to_rbmem_string();
+        let iters = (500 / (scale / 50).max(1)).max(10);
+        let start = Instant::now();
+        for _ in 0..iters {
+            let _ = parse_document(&large_text, TimestampPolicy::Preserve).unwrap();
+        }
+        let elapsed = start.elapsed();
+        let per_call = elapsed.as_micros() / iters as u128;
+        let per_section = per_call / scale as u128;
+        println!(" {:<20} {:>10} {:>10} {:>10}", scale, large_text.len(), per_call, per_section);
+    }
+
+    // 8d: Round-trip
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let serialized = doc.to_rbmem_string();
+        let _ = parse_document(&serialized, TimestampPolicy::Preserve).unwrap();
+    }
+    let rt_elapsed = start.elapsed();
+    let rt_per_call = rt_elapsed.as_micros() / iterations as u128;
+    println!("\n {:<45} {:>10}µs", "round-trip (serialize + parse)", rt_per_call);
+
+    // 8e: Index build from parsed document
+    let parsed = parse_document(&rbmem_text, TimestampPolicy::Preserve).unwrap();
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = rbmem::SectionIndex::build(&parsed.document);
+    }
+    let idx_elapsed = start.elapsed();
+    let idx_per_call = idx_elapsed.as_micros() / iterations as u128;
+    println!(" {:<45} {:>10}µs", "SectionIndex::build() from parsed doc", idx_per_call);
+
+    // 8f: Full pipeline
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let parsed = parse_document(&rbmem_text, TimestampPolicy::Preserve).unwrap();
+        let index = rbmem::SectionIndex::build(&parsed.document);
+        let _ = api::query_document_with_index(&parsed.document, "authentication JWT tokens", true, 1, &index);
+    }
+    let full_elapsed = start.elapsed();
+    let full_per_call = full_elapsed.as_micros() / iterations as u128;
+    println!(" {:<45} {:>10}µs", "full pipeline (parse+index+query)", full_per_call);
 }
 
 fn format_num(n: usize) -> String {

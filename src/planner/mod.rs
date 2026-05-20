@@ -106,6 +106,10 @@ struct CandidateAction {
     text: String,
     source_path: Option<String>,
     score: i64,
+    /// Cached normalized title (populated after construction)
+    normalized_title: String,
+    /// Cached normalized text (populated after construction)
+    normalized_text: String,
 }
 
 #[derive(Debug, Clone)]
@@ -172,17 +176,18 @@ pub fn plan_memory(options: PlanOptions) -> Result<PlanReport, RbmemError> {
     )?;
 
     if !options.dry_run {
-        persist_plan(
-            &mut primary,
-            &primary_path,
-            &problem,
-            &solve,
-            &steps,
-            &proof,
-            &plan_path,
-            &dimacs,
-            options.now,
-        )?;
+        persist_plan(PersistPlanArgs {
+            document: &mut primary,
+            path: &primary_path,
+            problem: &problem,
+            solve: &solve,
+            steps: &steps,
+            proof: &proof,
+            plan_path: &plan_path,
+            dimacs: &dimacs,
+            now: options.now,
+        })?;
+
     }
 
     Ok(PlanReport {
@@ -375,10 +380,17 @@ fn build_problem(
             text: goal.clone(),
             source_path: None,
             score: 10,
+            normalized_title: String::new(),
+            normalized_text: String::new(),
         });
     }
 
     rank_candidates(&mut candidates, &goal);
+    // Pre-compute normalized title/text to avoid redundant work in matching_candidates
+    for candidate in &mut candidates {
+        candidate.normalized_title = normalize(&candidate.title);
+        candidate.normalized_text = normalize(&candidate.text);
+    }
     let mut clauses = Vec::new();
     add_goal_clause(&mut clauses, &candidates, &goal);
 
@@ -462,6 +474,8 @@ fn extract_candidates(documents: &[RbmemDocument], goal: &str) -> Vec<CandidateA
                             text: format!("{}\n{}", section.path, section.content),
                             source_path: Some(section.path.clone()),
                             score: 4,
+                            normalized_title: String::new(),
+                            normalized_text: String::new(),
                         });
                     }
                 }
@@ -477,6 +491,8 @@ fn extract_candidates(documents: &[RbmemDocument], goal: &str) -> Vec<CandidateA
                     text: section.content.clone(),
                     source_path: Some(section.path.clone()),
                     score: 3,
+                    normalized_title: String::new(),
+                    normalized_text: String::new(),
                 });
             }
         }
@@ -491,6 +507,8 @@ fn extract_candidates(documents: &[RbmemDocument], goal: &str) -> Vec<CandidateA
             text: goal.to_string(),
             source_path: None,
             score: 8,
+            normalized_title: String::new(),
+            normalized_text: String::new(),
         });
     }
 
@@ -707,7 +725,7 @@ fn matching_candidates(candidates: &[CandidateAction], phrase: &str) -> Vec<usiz
         .iter()
         .enumerate()
         .filter_map(|(index, candidate)| {
-            let haystack = normalize(&candidate.title);
+            let haystack = if candidate.normalized_title.is_empty() { normalize(&candidate.title) } else { candidate.normalized_title.clone() };
             let score = if haystack.contains(&phrase) {
                 100
             } else {
@@ -716,7 +734,7 @@ fn matching_candidates(candidates: &[CandidateAction], phrase: &str) -> Vec<usiz
             (score >= threshold).then_some((index, score))
         })
         .collect::<Vec<_>>();
-    scored.sort_by(|left, right| right.1.cmp(&left.1));
+    scored.sort_by_key(|(_, score)| std::cmp::Reverse(*score));
     if !scored.is_empty() {
         return scored.into_iter().take(3).map(|(index, _)| index).collect();
     }
@@ -725,7 +743,7 @@ fn matching_candidates(candidates: &[CandidateAction], phrase: &str) -> Vec<usiz
         .iter()
         .enumerate()
         .filter_map(|(index, candidate)| {
-            let haystack = normalize(&candidate.text);
+            let haystack = if candidate.normalized_text.is_empty() { normalize(&candidate.text) } else { candidate.normalized_text.clone() };
             let score = if haystack.contains(&phrase) {
                 50
             } else {
@@ -734,7 +752,7 @@ fn matching_candidates(candidates: &[CandidateAction], phrase: &str) -> Vec<usiz
             (score >= threshold).then_some((index, score))
         })
         .collect::<Vec<_>>();
-    scored.sort_by(|left, right| right.1.cmp(&left.1));
+    scored.sort_by_key(|(_, score)| std::cmp::Reverse(*score));
     scored.into_iter().take(3).map(|(index, _)| index).collect()
 }
 
@@ -888,6 +906,7 @@ fn dpll(clauses: &[Vec<i32>], assignment: &mut [Option<bool>]) -> bool {
     let decay = 0.95f64;
     let restart_threshold = 100usize;
     let mut conflicts_since_restart = 0usize;
+    let mut trail: Vec<usize> = Vec::new();
 
     // Initialize activity from clause participation
     for clause in clauses {
@@ -899,7 +918,7 @@ fn dpll(clauses: &[Vec<i32>], assignment: &mut [Option<bool>]) -> bool {
         }
     }
 
-    dpll_inner(clauses, assignment, &mut activity, &mut increment, decay, &mut conflicts_since_restart, restart_threshold)
+    dpll_inner(clauses, assignment, &mut activity, &mut increment, decay, &mut conflicts_since_restart, restart_threshold, &mut trail)
 }
 
 fn dpll_inner(
@@ -910,7 +929,10 @@ fn dpll_inner(
     decay: f64,
     conflicts_since_restart: &mut usize,
     restart_threshold: usize,
+    trail: &mut Vec<usize>,
 ) -> bool {
+    let trail_level = trail.len();
+
     // Unit propagation
     loop {
         let mut changed = false;
@@ -918,7 +940,6 @@ fn dpll_inner(
             match eval_clause(clause, assignment) {
                 ClauseEval::Satisfied => {}
                 ClauseEval::Conflict => {
-                    // Bump activity for variables in the conflicting clause
                     for &lit in clause {
                         let var = lit.unsigned_abs() as usize;
                         if var < activity.len() {
@@ -927,6 +948,11 @@ fn dpll_inner(
                     }
                     *increment /= decay;
                     *conflicts_since_restart += 1;
+                    // Undo propagations at this level
+                    while trail.len() > trail_level {
+                        let var = trail.pop().unwrap();
+                        assignment[var] = None;
+                    }
                     return false;
                 }
                 ClauseEval::Unit(lit) => {
@@ -942,10 +968,16 @@ fn dpll_inner(
                             }
                             *increment /= decay;
                             *conflicts_since_restart += 1;
+                            // Undo propagations at this level
+                            while trail.len() > trail_level {
+                                let v = trail.pop().unwrap();
+                                assignment[v] = None;
+                            }
                             return false;
                         }
                     } else {
                         assignment[var] = Some(value);
+                        trail.push(var);
                         changed = true;
                     }
                 }
@@ -964,14 +996,13 @@ fn dpll_inner(
         return true;
     }
 
-    // Periodic restart: undo non-propagated assignments and retry
+    // Periodic restart: undo all trail assignments and re-propagate
     if *conflicts_since_restart >= restart_threshold {
         *conflicts_since_restart = 0;
-        // Undo decisions (keep unit-propagated by unassigning all and re-propagating)
-        for slot in assignment.iter_mut() {
-            *slot = None;
+        while let Some(var) = trail.pop() {
+            assignment[var] = None;
         }
-        return dpll_inner(clauses, assignment, activity, increment, decay, conflicts_since_restart, restart_threshold);
+        return dpll_inner(clauses, assignment, activity, increment, decay, conflicts_since_restart, restart_threshold, trail);
     }
 
     // VSIDS: pick the unassigned variable with highest activity
@@ -983,16 +1014,32 @@ fn dpll_inner(
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
     let Some(var) = var else {
+        // Undo trail
+        while trail.len() > trail_level {
+            let v = trail.pop().unwrap();
+            assignment[v] = None;
+        }
         return false;
     };
 
     for value in [true, false] {
-        let mut next = assignment.to_vec();
-        next[var] = Some(value);
-        if dpll_inner(clauses, &mut next, activity, increment, decay, conflicts_since_restart, restart_threshold) {
-            assignment.copy_from_slice(&next);
+        let branch_level = trail.len();
+        assignment[var] = Some(value);
+        trail.push(var);
+        if dpll_inner(clauses, assignment, activity, increment, decay, conflicts_since_restart, restart_threshold, trail) {
             return true;
         }
+        // Undo assignments from this branch
+        while trail.len() > branch_level {
+            let v = trail.pop().unwrap();
+            assignment[v] = None;
+        }
+    }
+
+    // Undo trail at this level
+    while trail.len() > trail_level {
+        let v = trail.pop().unwrap();
+        assignment[v] = None;
     }
     false
 }
@@ -1219,17 +1266,31 @@ fn verify_proof(dimacs: &str, proof_path: &Path) -> (bool, String) {
     (verified, "internal-empty-clause-check".to_string())
 }
 
-fn persist_plan(
-    document: &mut RbmemDocument,
-    path: &Path,
-    problem: &PlanningProblem,
-    solve: &SolverResult,
-    steps: &[PlanStep],
-    proof: &ProofReport,
-    plan_path: &str,
-    dimacs: &str,
+struct PersistPlanArgs<'a> {
+    document: &'a mut RbmemDocument,
+    path: &'a Path,
+    problem: &'a PlanningProblem,
+    solve: &'a SolverResult,
+    steps: &'a [PlanStep],
+    proof: &'a ProofReport,
+    plan_path: &'a str,
+    dimacs: &'a str,
     now: DateTime<Utc>,
-) -> Result<(), RbmemError> {
+}
+
+fn persist_plan(args: PersistPlanArgs) -> Result<(), RbmemError> {
+    let PersistPlanArgs {
+        document,
+        path,
+        problem,
+        solve,
+        steps,
+        proof,
+        plan_path,
+        dimacs,
+        now,
+    } = args;
+
     let goal_path = format!("{plan_path}.goal");
     let steps_path = format!("{plan_path}.steps");
     let sat_path = format!("{plan_path}.sat");
@@ -1440,12 +1501,16 @@ fn normalize(text: &str) -> String {
     }
     output.trim().to_string()
 }
-
 fn path_has_any(path: &str, needles: &[&str]) -> bool {
-    let normalized = normalize(path);
-    needles
-        .iter()
-        .any(|needle| normalized.split_whitespace().any(|part| part == *needle))
+    // Path segments are separated by dots and may use underscores.
+    // Avoid the full normalize() allocation by splitting directly.
+    for segment in path.split(|c: char| c == '.' || c == '_' || c == '-') {
+        let lower = segment.to_ascii_lowercase();
+        if needles.iter().any(|needle| lower == *needle) {
+            return true;
+        }
+    }
+    false
 }
 
 fn starts_with_any(value: &str, prefixes: &[&str]) -> bool {

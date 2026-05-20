@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: rbmem-linux-amd64
+            asset_name: rbmem-linux-amd64
+          - os: windows-latest
+            artifact_name: rbmem-windows-amd64.exe
+            asset_name: rbmem-windows-amd64.exe
+          - os: macos-latest
+            artifact_name: rbmem-macos-amd64
+            asset_name: rbmem-macos-amd64
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-release-
+      
+      - name: Build release binary
+        run: cargo build --release --verbose
+      
+      - name: Prepare artifact (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cp target/release/rbmem ${{ matrix.artifact_name }}
+          chmod +x ${{ matrix.artifact_name }}
+      
+      - name: Prepare artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cp target/release/rbmem.exe ${{ matrix.artifact_name }}
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.artifact_name }}
+          retention-days: 7
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Prepare release assets
+        run: |
+          mkdir release-assets
+          find artifacts -type f -exec cp {} release-assets/ \;
+          ls -lh release-assets/
+      
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      
+      - name: Generate release notes
+        id: notes
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            echo "## What's Changed" > release-notes.md
+            echo "" >> release-notes.md
+            echo "See [CHANGELOG.md](CHANGELOG.md) for detailed changes." >> release-notes.md
+            echo "" >> release-notes.md
+          else
+            echo "## Release ${{ steps.version.outputs.version }}" > release-notes.md
+            echo "" >> release-notes.md
+            echo "Automated release for tag ${{ steps.version.outputs.version }}" >> release-notes.md
+          fi
+          
+          echo "## Binaries" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "- **Linux**: \`rbmem-linux-amd64\`" >> release-notes.md
+          echo "- **Windows**: \`rbmem-windows-amd64.exe\`" >> release-notes.md
+          echo "- **macOS**: \`rbmem-macos-amd64\`" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "## Installation" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "Download the appropriate binary for your platform and add it to your PATH." >> release-notes.md
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: RBMEM ${{ steps.version.outputs.version }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

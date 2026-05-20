@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented here.
 
+## [1.4.3] - 2026-05-20
+
+### Added
+
+- Comprehensive encryption edge case tests (27 new tests: empty sections, unicode, large sections, concurrent encryption, wrong-key failures)
+- Concurrent operation tests (10 new tests: multi-threaded reads, writes, queries, graph operations)
+- Planner stress test benchmarks (chain problems, mixed constraints, dense conflicts, cube-and-conquer comparison)
+- CI/CD pipeline with GitHub Actions: automated testing, Python coverage reporting via Codecov, dependency caching
+- Release automation: cross-platform binaries (Windows/Linux/macOS) on version tag push
+- Expanded lib.rs API documentation with module overview and usage examples
+
+### Changed
+
+- Fixed all Clippy warnings: derivable_impls, for_kv_map, sort_by_key, too_many_arguments, dead code
+- Refactored `persist_plan` to use `PersistPlanArgs` struct (eliminates 9-argument function)
+
+### Performance
+
+- **DPLL Trail-based Backtracking**: Replaced assignment cloning with trail stack for precise backtracking, eliminating O(n) allocations per decision branch
+- **Candidate Normalization Caching**: Added `normalized_title` and `normalized_text` fields to `CandidateAction`, pre-computed during `build_problem()` to avoid redundant `normalize()` calls
+- **Path Matching Optimization**: Split directly on delimiters instead of full `normalize()` allocation in constraint checking
+- **Parser CRLF Check**: Check for `\r\n` before replacing to avoid copy for Unix-formatted documents
+- **Index Adjacency Construction**: Incremental path building vs O(n²) slice joins for hierarchical relationships
+- Planner execution: **18% faster** for small problems (2,552µs → 2,093µs), **22% faster** for large problems (99,202µs → 77,372µs)
+- Index build: **10% faster** (286µs → 258µs)
+- Document parsing: **6% faster** (415µs → 390µs)
+
+### Test Results
+
+- Rust: **107 tests passing** (up from 69), 14 test suites
+- Python: **178 tests passing** (mcp-server)
+- Total: **285 tests** across both codebases
+
 ## [1.4.2] - 2026-05-20
 
 ### Added

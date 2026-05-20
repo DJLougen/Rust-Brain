@@ -51,12 +51,43 @@ impl SectionIndex {
             }
         }
 
-        for edge in document.graph_view().edges {
-            adjacency
-                .entry(edge.from.clone())
-                .or_default()
-                .insert(edge.to.clone());
-            adjacency.entry(edge.to).or_default().insert(edge.from);
+        // Build adjacency directly from section paths and graph relations,
+        // avoiding the full graph_view() allocation of GraphEdge structs.
+        for section in &document.sections {
+            let parts: Vec<&str> = section.path.split('.').collect();
+            // Hierarchical "contains" edges - build paths incrementally to avoid O(n²) allocations
+            if parts.len() > 1 {
+                let mut parent = parts[0].to_string();
+                for depth in 1..parts.len() {
+                    let child = if parent.is_empty() {
+                        parts[depth].to_string()
+                    } else {
+                        format!("{}.{}", parent, parts[depth])
+                    };
+                    adjacency
+                        .entry(parent.clone())
+                        .or_default()
+                        .insert(child.clone());
+                    adjacency
+                        .entry(child.clone())
+                        .or_default()
+                        .insert(parent);
+                    parent = child;
+                }
+            }
+            // Explicit graph relations
+            if let Some(graph) = &section.graph {
+                for relation in &graph.relations {
+                    adjacency
+                        .entry(section.path.clone())
+                        .or_default()
+                        .insert(relation.to.clone());
+                    adjacency
+                        .entry(relation.to.clone())
+                        .or_default()
+                        .insert(section.path.clone());
+                }
+            }
         }
 
         paths.sort();

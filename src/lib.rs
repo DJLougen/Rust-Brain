@@ -1,7 +1,65 @@
-//! RBMEM v1.4.0 library surface.
+//! RBMEM v1.4.2 - Structured Memory for AI Agents
 //!
-//! The binary in `main.rs` is intentionally thin.  Most behavior lives here so
-//! parser and document semantics can be tested without spawning a process.
+//! RBMEM (Rust-Brain Memory) is a library for managing structured, temporal, graph-aware
+//! memory for AI agents. It provides a file format and API for organizing agent memory with
+//! stable section paths, protected timestamps, hierarchical organization, and graph relationships.
+//!
+//! # Core Concepts
+//!
+//! - **Sections**: Individual memory units with stable paths like `project.rules`
+//! - **Graph Relations**: Explicit edges between sections (depends_on, related_to, etc.)
+//! - **Temporal Metadata**: Protected created/updated timestamps
+//! - **Compact Output**: Minified context optimized for LLM consumption
+//!
+//! # Quick Example
+//!
+//! ```rust,no_run
+//! use rbmem::{create, update, query_document, CreateOptions, UpdateOptions, SectionType};
+//! use chrono::Utc;
+//!
+//! // Create a new memory file
+//! let doc = create("memory.rbmem", CreateOptions {
+//!     now: Utc::now(),
+//!     created_by: "example".to_string(),
+//!     purpose: "Example memory".to_string(),
+//!     default_expiry_days: None,
+//!     human: true,
+//! }).unwrap();
+//!
+//! // Add a section
+//! update("memory.rbmem", UpdateOptions {
+//!     section: "project.rules".to_string(),
+//!     section_type: SectionType::List,
+//!     content: "- Prefer small, tested changes".to_string(),
+//!     actor: "example".to_string(),
+//!     human: true,
+//!     dry_run: false,
+//!     now: Utc::now(),
+//! }).unwrap();
+//!
+//! // Query for relevant context
+//! let results = query_document(&doc, "project rules", true, 1);
+//! println!("Found {} sections", results.sections.len());
+//! ```
+
+//!
+//! # Module Overview
+//!
+//! The binary in `main.rs` is intentionally thin. Most behavior lives here so parser and
+//! document semantics can be tested without spawning a process.
+//!
+//! - `commands`: High-level CLI operations (create, update, query, context, etc.)
+//! - `document`: Core document model with sections, graph, and temporal metadata
+//! - `parser`: RBMEM file format parser
+//! - `planner`: SAT-based planning with Kissat/CaDiCaL support
+//! - `server`: Axum-based HTTP server for agent runtimes
+//! - `crypto`: AES-256-GCM encryption for sensitive sections
+//! - `diff`: Three-way merge and conflict resolution
+//! - `hermes`: Hermes agent workflow integration
+//! - `markdown`: Import from Markdown with automatic graph inference
+//! - `pack`: Reusable context configurations via `.rbmempacks`
+//! - `index`: Fast section lookups with cached indexing
+//!
 
 pub mod commands;
 pub mod crypto;
