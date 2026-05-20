@@ -364,6 +364,16 @@ pub fn query_document(
     query_document_with_budget(document, query, include_parents, graph_depth, None)
 }
 
+pub fn query_document_with_index(
+    document: &RbmemDocument,
+    query: &str,
+    include_parents: bool,
+    graph_depth: usize,
+    index: &SectionIndex,
+) -> RbmemDocument {
+    query_document_with_budget_and_index(document, query, include_parents, graph_depth, None, index)
+}
+
 pub fn query_document_with_budget(
     document: &RbmemDocument,
     query: &str,
@@ -372,26 +382,31 @@ pub fn query_document_with_budget(
     max_tokens: Option<usize>,
 ) -> RbmemDocument {
     let index = SectionIndex::build(document);
+    query_document_with_budget_and_index(document, query, include_parents, graph_depth, max_tokens, &index)
+}
+
+pub fn query_document_with_budget_and_index(
+    document: &RbmemDocument,
+    query: &str,
+    include_parents: bool,
+    graph_depth: usize,
+    max_tokens: Option<usize>,
+    index: &SectionIndex,
+) -> RbmemDocument {
     let query_terms = query_terms(query);
     let phrase = normalize_for_query(query);
-    let scored_matches = query_matches_indexed(document, &index, &query_terms, &phrase);
+    let now = Utc::now();
+    let scored_matches = query_matches_indexed(document, index, &query_terms, &phrase, now);
     let mut selected: BTreeSet<String> = scored_matches.iter().map(|(p, _)| p.clone()).collect();
 
     if include_parents {
-        include_parent_sections(document, &mut selected);
+        include_parent_sections_indexed(index, &mut selected);
     }
 
     if graph_depth > 0 && !selected.is_empty() {
-        let known_paths: BTreeSet<String> = document
-            .sections
-            .iter()
-            .map(|s| s.path.clone())
-            .collect();
         for path in selected.clone() {
             for neighbor in index.related(&path, graph_depth) {
-                if known_paths.contains(&neighbor) {
-                    selected.insert(neighbor);
-                }
+                selected.insert(neighbor);
             }
         }
     }
@@ -409,10 +424,16 @@ fn truncate_to_token_budget(
     selected: &BTreeSet<String>,
     max_tokens: usize,
 ) -> BTreeSet<String> {
-    // Build score lookup
+    // Build score and token lookups in O(n) instead of O(k*n)
     let score_map: std::collections::HashMap<&str, f64> = scored
         .iter()
         .map(|(p, s)| (p.as_str(), *s))
+        .collect();
+
+    let token_map: std::collections::HashMap<&str, usize> = document
+        .sections
+        .iter()
+        .map(|s| (s.path.as_str(), (s.content.len() / 4).max(1)))
         .collect();
 
     // Sort selected by score descending (unscored sections like parents get 0)
@@ -420,7 +441,7 @@ fn truncate_to_token_budget(
         .iter()
         .map(|path| {
             let score = score_map.get(path.as_str()).copied().unwrap_or(0.0);
-            let tokens = estimate_tokens_for_path(document, path);
+            let tokens = token_map.get(path.as_str()).copied().unwrap_or(1);
             (path.as_str(), score, tokens)
         })
         .collect();
@@ -436,16 +457,6 @@ fn truncate_to_token_budget(
         result.insert(path.to_string());
     }
     result
-}
-
-fn estimate_tokens_for_path(document: &RbmemDocument, path: &str) -> usize {
-    document
-        .sections
-        .iter()
-        .find(|s| s.path == path)
-        .map(|s| s.content.len() / 4) // ~4 chars per token heuristic
-        .unwrap_or(0)
-        .max(1)
 }
 
 pub fn render_context_document(
@@ -619,6 +630,7 @@ fn query_matches_indexed(
     index: &SectionIndex,
     terms: &[String],
     phrase: &str,
+    now: chrono::DateTime<Utc>,
 ) -> Vec<(String, f64)> {
     let candidate_paths: BTreeSet<String> = terms
         .iter()
@@ -643,7 +655,7 @@ fn query_matches_indexed(
     let mut scored = sections_to_score
         .into_iter()
         .filter_map(|section| {
-            let score = query_score(section, terms, phrase);
+            let score = query_score(section, terms, phrase, now);
             (score > 0.0).then_some((section.path.clone(), score))
         })
         .collect::<Vec<_>>();
@@ -658,7 +670,7 @@ fn query_matches_indexed(
     scored
 }
 
-fn query_score(section: &Section, terms: &[String], phrase: &str) -> f64 {
+fn query_score(section: &Section, terms: &[String], phrase: &str, now: chrono::DateTime<Utc>) -> f64 {
     let path = normalize_for_query(&section.path);
     let content = normalize_for_query(&section.content);
     let mut score: f64 = 0.0;
@@ -685,7 +697,6 @@ fn query_score(section: &Section, terms: &[String], phrase: &str) -> f64 {
     }
 
     // Recency bonus: up to 5 points for recently updated sections
-    let now = Utc::now();
     let days_since_update = (now - section.temporal.updated_at).num_days().max(0) as f64;
     if days_since_update < 7.0 {
         score += 5.0;
@@ -704,19 +715,14 @@ fn query_score(section: &Section, terms: &[String], phrase: &str) -> f64 {
     score.max(0.0)
 }
 
-fn include_parent_sections(document: &RbmemDocument, selected: &mut BTreeSet<String>) {
-    let known_paths = document
-        .sections
-        .iter()
-        .map(|section| section.path.as_str())
-        .collect::<BTreeSet<_>>();
+fn include_parent_sections_indexed(index: &SectionIndex, selected: &mut BTreeSet<String>) {
     let matched = selected.iter().cloned().collect::<Vec<_>>();
 
     for path in matched {
         let parts = path.split('.').collect::<Vec<_>>();
         for depth in 1..parts.len() {
             let parent = parts[..depth].join(".");
-            if known_paths.contains(parent.as_str()) {
+            if index.contains_path(&parent) {
                 selected.insert(parent);
             }
         }

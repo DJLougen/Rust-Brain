@@ -579,10 +579,11 @@ fn main() {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
     let iterations = 100;
+    let index = rbmem::SectionIndex::build(&doc);
     let start = Instant::now();
     for _ in 0..iterations {
         for case in &cases {
-            let _ = api::query_document(&doc, case.query, true, 1);
+            let _ = api::query_document_with_index(&doc, case.query, true, 1, &index);
         }
     }
     let rbmem_elapsed = start.elapsed();

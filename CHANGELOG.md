@@ -23,9 +23,15 @@ All notable changes to this project will be documented here.
 
 ### Performance
 
-- Query latency improved through indexed lookups
-- Memory usage reduced by eliminating duplicate section scans
-- Conflict detection now O(n) instead of O(n²)
+- **5.7× query speedup**: 62µs/query (down from 356µs) with cached index support
+- Added `query_document_with_index` and `query_document_with_budget_and_index` for index reuse across queries
+- Pre-compute `Utc::now()` once per query instead of per-section (eliminates n syscalls)
+- Optimized `SectionIndex::build` to avoid `format!` allocation by tokenizing path and content separately
+- Used `HashMap` for token estimation in budget truncation (O(n) vs O(k×n))
+- Added `SectionIndex::contains_path` using allocation-free binary search
+- Replaced `include_parent_sections` with `include_parent_sections_indexed` using index binary search
+- Eliminated redundant `known_paths` BTreeSet rebuild in graph traversal
+- Query latency now only 1.9× slower than plain grep while providing graph-aware, temporally-ranked results
 
 ## [1.4.1] - 2026-05-18
 

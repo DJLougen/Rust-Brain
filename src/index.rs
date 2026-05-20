@@ -27,15 +27,23 @@ pub struct CachedSectionIndex {
 
 impl SectionIndex {
     pub fn build(document: &RbmemDocument) -> Self {
+        let section_count = document.sections.len();
         let mut keywords: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-        let mut paths = Vec::new();
+        let mut paths = Vec::with_capacity(section_count);
         let mut trie = PathTrie::default();
         let mut adjacency: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
 
         for section in &document.sections {
             paths.push(section.path.clone());
             trie.insert(&section.path);
-            for token in tokenize(&format!("{} {}", section.path, section.content)) {
+            // Tokenize path and content separately to avoid format! allocation
+            for token in tokenize(&section.path) {
+                keywords
+                    .entry(token)
+                    .or_default()
+                    .insert(section.path.clone());
+            }
+            for token in tokenize(&section.content) {
                 keywords
                     .entry(token)
                     .or_default()
@@ -100,6 +108,10 @@ impl SectionIndex {
         }
 
         related.into_iter().collect()
+    }
+
+    pub fn contains_path(&self, path: &str) -> bool {
+        self.paths.binary_search_by(|p| p.as_str().cmp(path)).is_ok()
     }
 
     pub fn save_disk_cache(&self, path: impl AsRef<Path>) -> Result<(), crate::RbmemError> {
