@@ -882,17 +882,66 @@ fn solve_internal(problem: &PlanningProblem) -> Result<SolverResult, RbmemError>
 }
 
 fn dpll(clauses: &[Vec<i32>], assignment: &mut [Option<bool>]) -> bool {
+    let num_vars = assignment.len();
+    let mut activity = vec![0.0f64; num_vars];
+    let mut increment = 1.0f64;
+    let decay = 0.95f64;
+    let restart_threshold = 100usize;
+    let mut conflicts_since_restart = 0usize;
+
+    // Initialize activity from clause participation
+    for clause in clauses {
+        for &lit in clause {
+            let var = lit.unsigned_abs() as usize;
+            if var < num_vars {
+                activity[var] += 1.0;
+            }
+        }
+    }
+
+    dpll_inner(clauses, assignment, &mut activity, &mut increment, decay, &mut conflicts_since_restart, restart_threshold)
+}
+
+fn dpll_inner(
+    clauses: &[Vec<i32>],
+    assignment: &mut [Option<bool>],
+    activity: &mut [f64],
+    increment: &mut f64,
+    decay: f64,
+    conflicts_since_restart: &mut usize,
+    restart_threshold: usize,
+) -> bool {
+    // Unit propagation
     loop {
         let mut changed = false;
         for clause in clauses {
             match eval_clause(clause, assignment) {
                 ClauseEval::Satisfied => {}
-                ClauseEval::Conflict => return false,
+                ClauseEval::Conflict => {
+                    // Bump activity for variables in the conflicting clause
+                    for &lit in clause {
+                        let var = lit.unsigned_abs() as usize;
+                        if var < activity.len() {
+                            activity[var] += *increment;
+                        }
+                    }
+                    *increment /= decay;
+                    *conflicts_since_restart += 1;
+                    return false;
+                }
                 ClauseEval::Unit(lit) => {
                     let var = lit.unsigned_abs() as usize;
                     let value = lit > 0;
                     if let Some(existing) = assignment[var] {
                         if existing != value {
+                            for &l in clause {
+                                let v = l.unsigned_abs() as usize;
+                                if v < activity.len() {
+                                    activity[v] += *increment;
+                                }
+                            }
+                            *increment /= decay;
+                            *conflicts_since_restart += 1;
                             return false;
                         }
                     } else {
@@ -915,14 +964,32 @@ fn dpll(clauses: &[Vec<i32>], assignment: &mut [Option<bool>]) -> bool {
         return true;
     }
 
-    let var = assignment.iter().position(Option::is_none);
+    // Periodic restart: undo non-propagated assignments and retry
+    if *conflicts_since_restart >= restart_threshold {
+        *conflicts_since_restart = 0;
+        // Undo decisions (keep unit-propagated by unassigning all and re-propagating)
+        for slot in assignment.iter_mut() {
+            *slot = None;
+        }
+        return dpll_inner(clauses, assignment, activity, increment, decay, conflicts_since_restart, restart_threshold);
+    }
+
+    // VSIDS: pick the unassigned variable with highest activity
+    let var = (1..assignment.len())
+        .filter(|&i| assignment[i].is_none())
+        .max_by(|&a, &b| {
+            activity[a]
+                .partial_cmp(&activity[b])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
     let Some(var) = var else {
         return false;
     };
+
     for value in [true, false] {
         let mut next = assignment.to_vec();
         next[var] = Some(value);
-        if dpll(clauses, &mut next) {
+        if dpll_inner(clauses, &mut next, activity, increment, decay, conflicts_since_restart, restart_threshold) {
             assignment.copy_from_slice(&next);
             return true;
         }

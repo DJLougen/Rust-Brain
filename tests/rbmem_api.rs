@@ -77,6 +77,7 @@ fn public_api_create_update_read_query_and_context() {
             key: None,
             format: OutputFormat::Text,
             policy: TimestampPolicy::Preserve,
+            max_tokens: None,
         },
     )
     .unwrap();
@@ -94,6 +95,7 @@ fn public_api_create_update_read_query_and_context() {
             key: None,
             format: OutputFormat::Json,
             policy: TimestampPolicy::Preserve,
+            max_tokens: None,
         },
     )
     .unwrap();

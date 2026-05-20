@@ -1177,7 +1177,36 @@ fn push_best(
 fn relation_pattern_matches(text: &str, phrase: &str, alias: &str) -> bool {
     let direct = format!("{phrase} {alias}");
     let passive = format!("{alias} {phrase}");
-    text.contains(&direct) || text.contains(&passive)
+    let found = text.contains(&direct) || text.contains(&passive);
+    if !found {
+        return false;
+    }
+    // Check for negation in the surrounding context
+    let match_pos = text.find(&direct).or_else(|| text.find(&passive));
+    if let Some(pos) = match_pos {
+        let window_start = pos.saturating_sub(40);
+        let window_end = (pos + direct.len().max(passive.len())).min(text.len());
+        let window = &text[window_start..window_end];
+        if is_negated(window) {
+            return false;
+        }
+    }
+    true
+}
+
+const NEGATION_WORDS: &[&str] = &[
+    "not", "no", "don't", "doesn't", "didn't", "won't", "can't", "cannot",
+    "never", "avoid", "avoiding", "without", "instead of", "rather than",
+    "neither", "nor", "deny", "denies", "refuse", "refuses",
+];
+
+fn is_negated(window: &str) -> bool {
+    let lower = window.to_ascii_lowercase();
+    NEGATION_WORDS.iter().any(|word| {
+        let needle = format!(" {word} ");
+        let padded = format!(" {lower} ");
+        padded.contains(&needle) || lower.starts_with(&format!("{word} "))
+    })
 }
 
 fn verb_near_alias(text: &str, alias: &str) -> bool {
@@ -1199,6 +1228,13 @@ fn verb_near_alias(text: &str, alias: &str) -> bool {
             .iter()
             .any(|pattern| contains_word_phrase(local_window, pattern.phrase))
         {
+            if local_window.iter().any(|word| {
+                NEGATION_WORDS
+                    .iter()
+                    .any(|neg| word.trim_matches(|c: char| !c.is_ascii_alphanumeric()) == *neg)
+            }) {
+                continue;
+            }
             return true;
         }
     }

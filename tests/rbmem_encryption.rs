@@ -141,6 +141,7 @@ fn encrypted_sections_are_queryable_only_with_decryption() {
             key: None,
             format: OutputFormat::Text,
             policy: TimestampPolicy::Preserve,
+            max_tokens: None,
         },
     )
     .unwrap();
@@ -158,6 +159,7 @@ fn encrypted_sections_are_queryable_only_with_decryption() {
             key: Some(test_key()),
             format: OutputFormat::Text,
             policy: TimestampPolicy::Preserve,
+            max_tokens: None,
         },
     )
     .unwrap();

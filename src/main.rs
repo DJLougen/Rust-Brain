@@ -1,30 +1,30 @@
 use chrono::Utc;
 use clap::{Parser, Subcommand, ValueEnum};
-use notify::{Config as NotifyConfig, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use rbmem::commands as api;
 use rbmem::document::graph_view_to_json;
 #[cfg(test)]
 use rbmem::document::GraphInfo;
 use rbmem::parser::parse_document;
 #[cfg(test)]
+use rbmem::SourceInfo;
+#[cfg(test)]
 use rbmem::GraphRelation;
 use rbmem::{
     CompactMode, DiffFormat, InferenceStrategy, MergeStrategy, OutputFormat, PlanOptions,
-    PlanReport, RbmemDocument, RbmemError, SatBackend, SatStatus, Section, SectionType, SourceInfo,
+    PlanReport, RbmemDocument, RbmemError, SatBackend, SatStatus, SectionType,
     TimestampPolicy,
 };
-use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::BTreeSet;
 use std::error::Error;
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
-use std::process::Command as ProcessCommand;
-use std::str::FromStr;
-use std::sync::mpsc;
+#[cfg(test)]
 use std::time::SystemTime;
 use tracing_subscriber::EnvFilter;
+use rbmem::hermes;
+use rbmem::markdown;
+use rbmem::md_sync;
+use rbmem::pack;
 
 #[derive(Debug, Parser)]
 #[command(name = "rbmem")]
@@ -151,6 +151,8 @@ enum Command {
         format: OutputFormat,
         #[arg(long)]
         decrypt: bool,
+        #[arg(long)]
+        max_tokens: Option<usize>,
     },
     Context {
         file: PathBuf,
@@ -168,6 +170,8 @@ enum Command {
         format: OutputFormat,
         #[arg(long)]
         decrypt: bool,
+        #[arg(long)]
+        max_tokens: Option<usize>,
     },
     Plan {
         goal: Option<String>,
@@ -249,6 +253,8 @@ enum Command {
         minified: bool,
         #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
         format: OutputFormat,
+        #[arg(long)]
+        max_tokens: Option<usize>,
     },
     Sync {
         markdown_folder: PathBuf,
@@ -406,13 +412,13 @@ fn run() -> Result<(), RbmemError> {
                 let document = api::load(&file, TimestampPolicy::Preserve)?;
                 print!(
                     "{}",
-                    hermes_inject_block(&document, resolve, compact, minified)?
+                    hermes::hermes_inject_block(&document, resolve, compact, minified)?
                 );
             } else if hermes {
                 let document = api::load(&file, TimestampPolicy::Preserve)?;
                 println!(
                     "{}",
-                    serde_json::to_string_pretty(&hermes_json(
+                    serde_json::to_string_pretty(&hermes::hermes_json(
                         &document, resolve, compact, minified
                     )?)?
                 );
@@ -543,10 +549,10 @@ fn run() -> Result<(), RbmemError> {
         } => {
             let now = Utc::now();
             let text = fs::read_to_string(&markdown)?;
-            let mut document = convert_markdown_to_rbmem(&text, now);
-            stamp_document_source(
+            let mut document = markdown::convert_markdown_to_rbmem(&text, now);
+            md_sync::stamp_document_source(
                 &mut document,
-                source_info(
+                md_sync::source_info(
                     "markdown",
                     Some(markdown.display().to_string()),
                     "sync",
@@ -580,6 +586,7 @@ fn run() -> Result<(), RbmemError> {
             graph_depth,
             format,
             decrypt,
+            max_tokens,
         } => {
             print!(
                 "{}",
@@ -595,6 +602,7 @@ fn run() -> Result<(), RbmemError> {
                         key: None,
                         format,
                         policy: TimestampPolicy::Preserve,
+                        max_tokens,
                     },
                 )?
             );
@@ -611,6 +619,7 @@ fn run() -> Result<(), RbmemError> {
             graph_depth,
             format,
             decrypt,
+            max_tokens,
         } => {
             print!(
                 "{}",
@@ -626,6 +635,7 @@ fn run() -> Result<(), RbmemError> {
                         key: None,
                         format,
                         policy: TimestampPolicy::Preserve,
+                        max_tokens,
                     },
                 )?
             );
@@ -767,12 +777,14 @@ fn run() -> Result<(), RbmemError> {
             compact,
             minified,
             format,
+            max_tokens,
         } => {
             let document = read_document(&file, TimestampPolicy::Preserve)?;
-            let config_path = pack_file.unwrap_or_else(|| default_pack_file(&file));
+            let config_path = pack_file.unwrap_or_else(|| pack::default_pack_file(&file));
             let config_text = fs::read_to_string(&config_path)?;
-            let pack = parse_pack_config(&config_text, &name)?;
-            let context = pack_document(&document, &pack, resolve);
+            let pack = pack::parse_pack_config(&config_text, &name)?;
+            let effective_max_tokens = max_tokens.or(pack.max_tokens);
+            let context = pack::pack_document(&document, &pack, resolve, effective_max_tokens);
             let compact = compact || (!minified && pack.mode == Some(CompactMode::Compact));
             let minified = minified || pack.mode == Some(CompactMode::Minified);
             print_context_output(
@@ -800,16 +812,16 @@ fn run() -> Result<(), RbmemError> {
             inference_strategy,
             dry_run,
         } => {
-            let options = SyncOptions::from_folder(
+            let options = md_sync::SyncOptions::from_folder(
                 &markdown_folder,
                 infer_relations,
                 min_confidence,
                 inference_strategy,
                 dry_run,
             )?;
-            sync_markdown_folder(&markdown_folder, &output_folder, &options)?;
+            md_sync::sync_markdown_folder(&markdown_folder, &output_folder, &options)?;
             if watch {
-                watch_markdown_folder(markdown_folder, output_folder, options)?;
+                md_sync::watch_markdown_folder(markdown_folder, output_folder, options)?;
             }
         }
         Command::Serve { bind, dir } => {
@@ -827,7 +839,7 @@ fn run() -> Result<(), RbmemError> {
                 let document = read_document(&file, TimestampPolicy::Preserve)?;
                 println!(
                     "{}",
-                    serde_json::to_string_pretty(&hermes_json(
+                    serde_json::to_string_pretty(&hermes::hermes_json(
                         &document, resolve, compact, minified
                     )?)?
                 );
@@ -843,10 +855,10 @@ fn run() -> Result<(), RbmemError> {
                 } else {
                     RbmemDocument::new(now, "hermes")
                 };
-                let payload = read_hermes_payload(json, json_file)?;
-                apply_hermes_payload(&mut document, payload, now)?;
+                let payload = hermes::read_hermes_payload(json, json_file)?;
+                hermes::apply_hermes_payload(&mut document, payload, now)?;
                 write_document(&file, &document, false)?;
-                validate_or_error(&document)?;
+                hermes::validate_or_error(&document)?;
                 println!("saved {}", file.display());
             }
             HermesCommand::Plan {
@@ -881,13 +893,13 @@ fn run() -> Result<(), RbmemError> {
             }
             HermesCommand::Init { project_name } => {
                 let now = Utc::now();
-                let document = hermes_starter_document(&project_name, now);
-                let file = PathBuf::from(format!("{}.rbmem", title_to_path(&project_name)));
+                let document = hermes::hermes_starter_document(&project_name, now);
+                let file = PathBuf::from(format!("{}.rbmem", markdown::title_to_path(&project_name)));
                 write_document(&file, &document, false)?;
                 println!("created {}", file.display());
             }
             HermesCommand::Watch { file } => {
-                watch_hermes_file(file)?;
+                hermes::watch_hermes_file(file)?;
             }
             HermesCommand::Doctor {
                 file,
@@ -897,7 +909,7 @@ fn run() -> Result<(), RbmemError> {
             } => {
                 print!(
                     "{}",
-                    hermes_doctor_report(&file, rbmem_cli.as_deref(), stale_days, format)?
+                    hermes::hermes_doctor_report(&file, rbmem_cli.as_deref(), stale_days, format)?
                 );
             }
         },
@@ -908,7 +920,7 @@ fn run() -> Result<(), RbmemError> {
                     "{}  {}  {}",
                     section.temporal.created_at.to_rfc3339(),
                     section.path,
-                    first_line(&section.content)
+                    markdown::first_line(&section.content)
                 );
             }
         }
@@ -981,206 +993,7 @@ fn render_plan_report(report: &PlanReport) -> String {
     output
 }
 
-fn convert_markdown_to_rbmem(markdown: &str, now: chrono::DateTime<Utc>) -> RbmemDocument {
-    let mut document = RbmemDocument::new(now, "me");
-    let mut heading_stack: Vec<String> = Vec::new();
-    let mut current_path = "meta.markdown".to_string();
-    let mut current_lines = Vec::new();
 
-    for line in markdown.lines() {
-        if let Some((level, title)) = markdown_heading(line) {
-            flush_markdown_section(&mut document, &current_path, &mut current_lines, now);
-            heading_stack.truncate(level.saturating_sub(1));
-            heading_stack.push(title_to_path(title));
-            current_path = heading_stack.join(".");
-        } else {
-            current_lines.push(line.to_string());
-        }
-    }
-
-    flush_markdown_section(&mut document, &current_path, &mut current_lines, now);
-    document
-}
-
-fn flush_markdown_section(
-    document: &mut RbmemDocument,
-    path: &str,
-    lines: &mut Vec<String>,
-    now: chrono::DateTime<Utc>,
-) {
-    let content = lines.join("\n").trim().to_string();
-    if !content.is_empty() {
-        document.upsert_section(path, SectionType::Text, content, now);
-    }
-    lines.clear();
-}
-
-fn markdown_heading(line: &str) -> Option<(usize, &str)> {
-    let trimmed = line.trim_start();
-    let hashes = trimmed.chars().take_while(|ch| *ch == '#').count();
-    if hashes == 0 || hashes > 6 {
-        return None;
-    }
-
-    let after_hashes = trimmed.get(hashes..)?;
-    if !after_hashes.starts_with(' ') {
-        return None;
-    }
-
-    let title = after_hashes.trim();
-    (!title.is_empty()).then_some((hashes, title))
-}
-
-fn title_to_path(title: &str) -> String {
-    let mut slug = String::new();
-    let mut last_was_separator = false;
-
-    for ch in title.chars() {
-        if ch.is_ascii_alphanumeric() {
-            slug.push(ch.to_ascii_lowercase());
-            last_was_separator = false;
-        } else if !last_was_separator && !slug.is_empty() {
-            slug.push('.');
-            last_was_separator = true;
-        }
-    }
-
-    while slug.ends_with('.') {
-        slug.pop();
-    }
-
-    if slug.is_empty() {
-        "document".to_string()
-    } else {
-        slug
-    }
-}
-
-fn first_line(text: &str) -> &str {
-    text.lines().next().unwrap_or("")
-}
-
-fn query_document(
-    document: &RbmemDocument,
-    query: &str,
-    include_parents: bool,
-    graph_depth: usize,
-) -> RbmemDocument {
-    let query_terms = query_terms(query);
-    let phrase = normalize_for_query(query);
-    let mut selected = query_matches(document, &query_terms, &phrase);
-
-    if include_parents {
-        include_parent_sections(document, &mut selected);
-    }
-
-    include_graph_neighbors(document, &mut selected, graph_depth);
-    subset_document(document, selected)
-}
-
-fn query_matches(document: &RbmemDocument, terms: &[String], phrase: &str) -> BTreeSet<String> {
-    let mut scored = document
-        .sections
-        .iter()
-        .filter_map(|section| {
-            let score = query_score(section, terms, phrase);
-            (score > 0).then_some((section.path.clone(), score))
-        })
-        .collect::<Vec<_>>();
-
-    scored.sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
-    scored.into_iter().map(|(path, _)| path).collect()
-}
-
-fn query_score(section: &Section, terms: &[String], phrase: &str) -> usize {
-    let path = normalize_for_query(&section.path);
-    let content = normalize_for_query(&section.content);
-    let mut score = 0;
-
-    if !phrase.is_empty() {
-        if path.contains(phrase) {
-            score += 20;
-        }
-        if content.contains(phrase) {
-            score += 12;
-        }
-    }
-
-    for term in terms {
-        if path.contains(term) {
-            score += 5;
-        }
-        if content.contains(term) {
-            score += 1;
-        }
-    }
-
-    score
-}
-
-fn include_parent_sections(document: &RbmemDocument, selected: &mut BTreeSet<String>) {
-    let known_paths = document
-        .sections
-        .iter()
-        .map(|section| section.path.as_str())
-        .collect::<BTreeSet<_>>();
-    let matched = selected.iter().cloned().collect::<Vec<_>>();
-
-    for path in matched {
-        let parts = path.split('.').collect::<Vec<_>>();
-        for depth in 1..parts.len() {
-            let parent = parts[..depth].join(".");
-            if known_paths.contains(parent.as_str()) {
-                selected.insert(parent);
-            }
-        }
-    }
-}
-
-fn include_graph_neighbors(
-    document: &RbmemDocument,
-    selected: &mut BTreeSet<String>,
-    graph_depth: usize,
-) {
-    if graph_depth == 0 || selected.is_empty() {
-        return;
-    }
-
-    let known_paths = document
-        .sections
-        .iter()
-        .map(|section| section.path.clone())
-        .collect::<BTreeSet<_>>();
-    let graph = document.graph_view();
-    let mut frontier = selected.clone();
-
-    for _ in 0..graph_depth {
-        let mut next = BTreeSet::new();
-        for edge in &graph.edges {
-            if frontier.contains(&edge.from) && known_paths.contains(&edge.to) {
-                next.insert(edge.to.clone());
-            }
-            if frontier.contains(&edge.to) && known_paths.contains(&edge.from) {
-                next.insert(edge.from.clone());
-            }
-        }
-
-        let before = selected.len();
-        selected.extend(next.iter().cloned());
-        if selected.len() == before {
-            break;
-        }
-        frontier = next;
-    }
-}
-
-fn subset_document(document: &RbmemDocument, selected: BTreeSet<String>) -> RbmemDocument {
-    let mut subset = document.clone();
-    subset
-        .sections
-        .retain(|section| selected.contains(&section.path));
-    subset
-}
 
 fn print_context_document(document: &RbmemDocument, resolve: bool, compact: bool, minified: bool) {
     print!(
@@ -1268,69 +1081,6 @@ fn context_json(
     })
 }
 
-fn query_terms(text: &str) -> Vec<String> {
-    normalize_for_query(text)
-        .split_whitespace()
-        .filter(|term| term.len() > 1)
-        .map(ToString::to_string)
-        .collect()
-}
-
-fn normalize_for_query(text: &str) -> String {
-    let mut output = String::new();
-    let mut last_was_space = true;
-
-    for ch in text.chars() {
-        if ch.is_ascii_alphanumeric() {
-            output.push(ch.to_ascii_lowercase());
-            last_was_space = false;
-        } else if !last_was_space {
-            output.push(' ');
-            last_was_space = true;
-        }
-    }
-
-    output.trim().to_string()
-}
-
-fn stamp_document_source(document: &mut RbmemDocument, source: SourceInfo) {
-    for section in &mut document.sections {
-        section.source = Some(source.clone());
-    }
-}
-
-fn source_info(
-    kind: impl Into<String>,
-    path: Option<String>,
-    actor: impl Into<String>,
-    hash_input: Option<&str>,
-) -> SourceInfo {
-    SourceInfo {
-        kind: kind.into(),
-        path,
-        actor: Some(actor.into()),
-        hash: hash_input.map(sha256_hex),
-    }
-}
-
-fn sha256_hex(input: &str) -> String {
-    let digest = ring::digest::digest(&ring::digest::SHA256, input.as_bytes());
-    let mut output = String::from("sha256:");
-    for byte in digest.as_ref() {
-        output.push_str(&format!("{byte:02x}"));
-    }
-    output
-}
-
-fn set_section_source(document: &mut RbmemDocument, path: &str, source: SourceInfo) {
-    if let Some(section) = document
-        .sections
-        .iter_mut()
-        .find(|section| section.path == path)
-    {
-        section.source = Some(source);
-    }
-}
 
 fn review_document(document: &RbmemDocument, mut warnings: Vec<String>) -> String {
     warnings.extend(document.validate());
@@ -1425,79 +1175,6 @@ fn doctor_text_report(file: Option<&Path>, stale_days: u64) -> Result<String, Rb
     Ok(output)
 }
 
-fn hermes_doctor_report(
-    file: &Path,
-    rbmem_cli: Option<&Path>,
-    stale_days: u64,
-    format: OutputFormat,
-) -> Result<String, RbmemError> {
-    match format {
-        OutputFormat::Text => hermes_doctor_text_report(file, rbmem_cli, stale_days),
-        OutputFormat::Json => Ok(format!(
-            "{}\n",
-            serde_json::to_string_pretty(&hermes_doctor_json(file, rbmem_cli, stale_days)?)?
-        )),
-    }
-}
-
-fn hermes_doctor_text_report(
-    file: &Path,
-    rbmem_cli: Option<&Path>,
-    stale_days: u64,
-) -> Result<String, RbmemError> {
-    let mut output = String::new();
-    output.push_str("rbmem hermes doctor\n");
-    output.push_str(&format!(
-        "cli-version: rbmem {}\n",
-        env!("CARGO_PKG_VERSION")
-    ));
-
-    if let Some(rbmem_cli) = rbmem_cli {
-        output.push_str(&format!("configured-rbmem-cli: {}\n", rbmem_cli.display()));
-        output.push_str(&format!(
-            "configured-rbmem-cli-version: {}\n",
-            external_cli_version(rbmem_cli)?
-        ));
-    }
-
-    let document = append_document_diagnostics(&mut output, file)?;
-    let payload = hermes_json(&document, true, false, true)?;
-    let context_len = payload
-        .get("context")
-        .and_then(Value::as_str)
-        .map(str::len)
-        .unwrap_or(0);
-
-    output.push_str("hermes-load: ok\n");
-    output.push_str(&format!("hermes-context-bytes: {context_len}\n"));
-
-    // Health scoring
-    match api::health_report(file, stale_days) {
-        Ok(health) => {
-            output.push_str(&format!("health-score: {:.1}/100\n", health.score));
-            output.push_str(&format!("health-stale-days: {}\n", stale_days));
-            output.push_str(&format!(
-                "health-total-sections: {}\n",
-                health.total_sections
-            ));
-            output.push_str(&format!(
-                "health-stale-sections: {}\n",
-                health.stale_sections
-            ));
-            output.push_str(&format!(
-                "health-orphaned-edges: {}\n",
-                health.orphaned_edges
-            ));
-            output.push_str(&format!("health-conflicts: {}\n", health.conflicts));
-        }
-        Err(e) => {
-            output.push_str(&format!("health-score: error: {e}\n"));
-        }
-    }
-
-    Ok(output)
-}
-
 fn doctor_json(file: Option<&Path>, stale_days: u64) -> Result<Value, RbmemError> {
     let document = if let Some(file) = file {
         Some(document_diagnostics_json(file)?.0)
@@ -1529,50 +1206,6 @@ fn doctor_json(file: Option<&Path>, stale_days: u64) -> Result<Value, RbmemError
     }))
 }
 
-fn hermes_doctor_json(
-    file: &Path,
-    rbmem_cli: Option<&Path>,
-    stale_days: u64,
-) -> Result<Value, RbmemError> {
-    let configured_rbmem_cli = if let Some(rbmem_cli) = rbmem_cli {
-        Some(json!({
-            "path": rbmem_cli.display().to_string(),
-            "version": external_cli_version(rbmem_cli)?,
-        }))
-    } else {
-        None
-    };
-    let (document, rbmem_document) = document_diagnostics_json(file)?;
-    let payload = hermes_json(&rbmem_document, true, false, true)?;
-    let context_bytes = payload
-        .get("context")
-        .and_then(Value::as_str)
-        .map(str::len)
-        .unwrap_or(0);
-
-    let health = api::health_report(file, stale_days).ok().map(|h| {
-        json!({
-            "score": h.score,
-            "stale_days": stale_days,
-            "total_sections": h.total_sections,
-            "stale_sections": h.stale_sections,
-            "orphaned_edges": h.orphaned_edges,
-            "conflicts": h.conflicts,
-        })
-    });
-
-    Ok(json!({
-        "schema": "rbmem.hermes.doctor.v1",
-        "cli_version": format!("rbmem {}", env!("CARGO_PKG_VERSION")),
-        "configured_rbmem_cli": configured_rbmem_cli,
-        "document": document,
-        "hermes_load": {
-            "status": "ok",
-            "context_bytes": context_bytes,
-        },
-        "health": health,
-    }))
-}
 
 fn document_diagnostics_json(file: &Path) -> Result<(Value, RbmemDocument), RbmemError> {
     let file_exists = file.exists();
@@ -1630,425 +1263,8 @@ fn append_document_diagnostics(
     Ok(parsed.document)
 }
 
-fn external_cli_version(path: &Path) -> Result<String, RbmemError> {
-    let output = ProcessCommand::new(path).arg("--version").output()?;
-    if output.status.success() {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        Ok(stdout.trim().to_string())
-    } else {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        Err(RbmemError::Parse(format!(
-            "{} --version failed: {}",
-            path.display(),
-            stderr.trim()
-        )))
-    }
-}
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-struct PackConfig {
-    name: String,
-    include: Vec<String>,
-    query: Option<String>,
-    graph_depth: usize,
-    mode: Option<CompactMode>,
-}
 
-fn default_pack_file(file: &Path) -> PathBuf {
-    file.parent()
-        .map(|parent| parent.join(".rbmempacks"))
-        .unwrap_or_else(|| PathBuf::from(".rbmempacks"))
-}
-
-fn parse_pack_config(text: &str, name: &str) -> Result<PackConfig, RbmemError> {
-    let mut current: Option<PackConfig> = None;
-    let mut in_include = false;
-
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-
-        if let Some(pack_name) = trimmed
-            .strip_prefix("[pack:")
-            .and_then(|value| value.strip_suffix(']'))
-        {
-            if current.as_ref().is_some_and(|pack| pack.name == name) {
-                return Ok(current.unwrap());
-            }
-            current = Some(PackConfig {
-                name: pack_name.trim().to_string(),
-                ..PackConfig::default()
-            });
-            in_include = false;
-            continue;
-        }
-
-        let Some(pack) = current.as_mut() else {
-            continue;
-        };
-        if pack.name != name {
-            continue;
-        }
-
-        if trimmed == "include:" {
-            in_include = true;
-            continue;
-        }
-
-        if in_include && trimmed.starts_with("- ") {
-            pack.include.push(trimmed[2..].trim().to_string());
-            continue;
-        }
-        in_include = false;
-
-        let Some((key, value)) = trimmed.split_once(':') else {
-            continue;
-        };
-        let value = value.trim().trim_matches('"').trim_matches('\'');
-        match key.trim() {
-            "query" | "task" => pack.query = Some(value.to_string()),
-            "graph_depth" => pack.graph_depth = value.parse::<usize>().unwrap_or(0),
-            "mode" => pack.mode = Some(CompactMode::from_str(value)?),
-            _ => {}
-        }
-    }
-
-    current
-        .filter(|pack| pack.name == name)
-        .ok_or_else(|| RbmemError::Parse(format!("pack '{name}' not found")))
-}
-
-fn pack_document(
-    document: &RbmemDocument,
-    pack: &PackConfig,
-    include_parents: bool,
-) -> RbmemDocument {
-    let mut selected = BTreeSet::new();
-
-    for include in &pack.include {
-        for section in &document.sections {
-            if section.path == *include || section.path.starts_with(&format!("{include}.")) {
-                selected.insert(section.path.clone());
-            }
-        }
-    }
-
-    if let Some(query) = &pack.query {
-        selected.extend(
-            query_document(document, query, include_parents, pack.graph_depth)
-                .sections
-                .into_iter()
-                .map(|section| section.path),
-        );
-    }
-
-    if include_parents {
-        include_parent_sections(document, &mut selected);
-    }
-    include_graph_neighbors(document, &mut selected, pack.graph_depth);
-    subset_document(document, selected)
-}
-
-#[derive(Debug, Clone)]
-struct SyncOptions {
-    infer_relations: bool,
-    min_confidence: f64,
-    inference_strategy: InferenceStrategy,
-    dry_run: bool,
-    default_expiry_days: Option<i64>,
-    compact_mode: CompactMode,
-}
-
-impl SyncOptions {
-    fn from_folder(
-        markdown_folder: &Path,
-        infer_relations: bool,
-        min_confidence: f64,
-        inference_strategy: InferenceStrategy,
-        dry_run: bool,
-    ) -> Result<Self, RbmemError> {
-        let mut options = Self {
-            infer_relations,
-            min_confidence: min_confidence.clamp(0.0, 1.0),
-            inference_strategy,
-            dry_run,
-            default_expiry_days: None,
-            compact_mode: CompactMode::Full,
-        };
-
-        let config_path = markdown_folder.join(".rbmemsync");
-        if config_path.exists() {
-            let text = fs::read_to_string(config_path)?;
-            apply_sync_config(&text, &mut options)?;
-        }
-
-        Ok(options)
-    }
-}
-
-fn apply_sync_config(text: &str, options: &mut SyncOptions) -> Result<(), RbmemError> {
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-
-        let Some((key, value)) = trimmed.split_once(':') else {
-            continue;
-        };
-        let key = key.trim();
-        let value = value.trim().trim_matches('"').trim_matches('\'');
-
-        match key {
-            "infer_relations" => {
-                options.infer_relations = matches!(value, "true" | "yes" | "1");
-            }
-            "min_confidence" => {
-                if let Ok(confidence) = value.parse::<f64>() {
-                    options.min_confidence = confidence.clamp(0.0, 1.0);
-                }
-            }
-            "inference_strategy" => {
-                options.inference_strategy = <InferenceStrategy as FromStr>::from_str(value)?;
-            }
-            "default_expiry_days" => {
-                options.default_expiry_days = if value.eq_ignore_ascii_case("null") {
-                    None
-                } else {
-                    Some(value.parse::<i64>().map_err(|_| {
-                        RbmemError::Parse("invalid default_expiry_days in .rbmemsync".to_string())
-                    })?)
-                };
-            }
-            "compact_mode" => {
-                options.compact_mode = CompactMode::from_str(value)?;
-            }
-            _ => {}
-        }
-    }
-
-    Ok(())
-}
-
-fn sync_markdown_folder(
-    markdown_folder: &Path,
-    output_folder: &Path,
-    options: &SyncOptions,
-) -> Result<(), RbmemError> {
-    let markdown_files = find_markdown_files(markdown_folder)?;
-    if markdown_files.is_empty() {
-        println!(
-            "skipped: no Markdown files under {}",
-            markdown_folder.display()
-        );
-        return Ok(());
-    }
-
-    for markdown_file in markdown_files {
-        sync_markdown_file(
-            markdown_folder,
-            output_folder,
-            &markdown_file,
-            options,
-            false,
-        )?;
-    }
-
-    Ok(())
-}
-
-fn sync_markdown_file(
-    markdown_folder: &Path,
-    output_folder: &Path,
-    markdown_file: &Path,
-    options: &SyncOptions,
-    force: bool,
-) -> Result<(), RbmemError> {
-    let output_file = output_path_for_markdown(markdown_folder, output_folder, markdown_file)?;
-    let action = sync_action(markdown_file, &output_file, force)?;
-
-    match action {
-        SyncAction::Skip => {
-            println!("skipped {}", markdown_file.display());
-            return Ok(());
-        }
-        SyncAction::Create if options.dry_run => {
-            println!(
-                "would create {} from {}",
-                output_file.display(),
-                markdown_file.display()
-            );
-            return Ok(());
-        }
-        SyncAction::Update if options.dry_run => {
-            println!(
-                "would update {} from {}",
-                output_file.display(),
-                markdown_file.display()
-            );
-            return Ok(());
-        }
-        SyncAction::Create => println!(
-            "created {} from {}",
-            output_file.display(),
-            markdown_file.display()
-        ),
-        SyncAction::Update => println!(
-            "updated {} from {}",
-            output_file.display(),
-            markdown_file.display()
-        ),
-    }
-
-    let now = Utc::now();
-    let markdown = fs::read_to_string(markdown_file)?;
-    let mut document = convert_markdown_to_rbmem(&markdown, now);
-    document.meta.default_expiry_days = options.default_expiry_days;
-    document.meta.compact_mode = options.compact_mode;
-    let source_path = markdown_file
-        .strip_prefix(markdown_folder)
-        .unwrap_or(markdown_file)
-        .display()
-        .to_string();
-    stamp_document_source(
-        &mut document,
-        source_info("markdown", Some(source_path), "sync", Some(&markdown)),
-    );
-    if options.infer_relations {
-        document.infer_relations_with_strategy(
-            now,
-            options.min_confidence,
-            options.inference_strategy,
-        );
-    }
-
-    if let Some(parent) = output_file.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    write_document(&output_file, &document, false)?;
-    Ok(())
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum SyncAction {
-    Create,
-    Update,
-    Skip,
-}
-
-fn sync_action(
-    markdown_file: &Path,
-    output_file: &Path,
-    force: bool,
-) -> Result<SyncAction, RbmemError> {
-    if !output_file.exists() {
-        return Ok(SyncAction::Create);
-    }
-    if force {
-        return Ok(SyncAction::Update);
-    }
-
-    let markdown_modified = modified_time(markdown_file)?;
-    let output_modified = modified_time(output_file)?;
-    if markdown_modified > output_modified {
-        Ok(SyncAction::Update)
-    } else {
-        Ok(SyncAction::Skip)
-    }
-}
-
-fn modified_time(path: &Path) -> Result<SystemTime, RbmemError> {
-    Ok(fs::metadata(path)?.modified()?)
-}
-
-fn output_path_for_markdown(
-    markdown_folder: &Path,
-    output_folder: &Path,
-    markdown_file: &Path,
-) -> Result<PathBuf, RbmemError> {
-    let relative = markdown_file.strip_prefix(markdown_folder).map_err(|_| {
-        RbmemError::Parse(format!(
-            "{} is not inside {}",
-            markdown_file.display(),
-            markdown_folder.display()
-        ))
-    })?;
-    Ok(output_folder.join(relative).with_extension("rbmem"))
-}
-
-fn find_markdown_files(folder: &Path) -> Result<Vec<PathBuf>, RbmemError> {
-    let mut files = Vec::new();
-    collect_markdown_files(folder, &mut files)?;
-    files.sort();
-    Ok(files)
-}
-
-fn collect_markdown_files(folder: &Path, files: &mut Vec<PathBuf>) -> Result<(), RbmemError> {
-    for entry in fs::read_dir(folder)? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            collect_markdown_files(&path, files)?;
-        } else if path.extension().is_some_and(|extension| extension == "md") {
-            files.push(path);
-        }
-    }
-    Ok(())
-}
-
-fn watch_markdown_folder(
-    markdown_folder: PathBuf,
-    output_folder: PathBuf,
-    options: SyncOptions,
-) -> Result<(), RbmemError> {
-    println!("watching {}", markdown_folder.display());
-    let (tx, rx) = mpsc::channel();
-    let mut watcher = RecommendedWatcher::new(
-        move |result| {
-            let _ = tx.send(result);
-        },
-        NotifyConfig::default(),
-    )
-    .map_err(notify_error)?;
-    watcher
-        .watch(&markdown_folder, RecursiveMode::Recursive)
-        .map_err(notify_error)?;
-
-    loop {
-        match rx.recv() {
-            Ok(Ok(event)) => {
-                if !event_is_relevant(&event.kind) {
-                    continue;
-                }
-                for path in event.paths {
-                    if path.extension().is_some_and(|extension| extension == "md") {
-                        if let Err(error) = sync_markdown_file(
-                            &markdown_folder,
-                            &output_folder,
-                            &path,
-                            &options,
-                            true,
-                        ) {
-                            eprintln!("sync error for {}: {error}", path.display());
-                        }
-                    }
-                }
-            }
-            Ok(Err(error)) => eprintln!("watch error: {error}"),
-            Err(error) => return Err(RbmemError::Io(io::Error::other(error))),
-        }
-    }
-}
-
-fn event_is_relevant(kind: &EventKind) -> bool {
-    matches!(kind, EventKind::Create(_) | EventKind::Modify(_))
-}
-
-fn notify_error(error: notify::Error) -> RbmemError {
-    RbmemError::Io(io::Error::other(error))
-}
 
 fn document_meta_json(document: &RbmemDocument) -> Value {
     json!({
@@ -2096,270 +1312,6 @@ fn sections_json(document: &RbmemDocument, resolve: bool) -> Vec<Value> {
     }
 }
 
-fn hermes_json(
-    document: &RbmemDocument,
-    resolve: bool,
-    compact: bool,
-    minified: bool,
-) -> Result<Value, RbmemError> {
-    let context = if minified {
-        document.to_minified_string(resolve)
-    } else if compact {
-        document.to_compact_string(resolve, Utc::now())
-    } else if resolve {
-        document
-            .resolved_sections()
-            .into_iter()
-            .map(|section| {
-                format!(
-                    "[{}] {}\n{}",
-                    section.path, section.section_type, section.content
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n\n")
-    } else {
-        document.to_rbmem_string()
-    };
-
-    Ok(json!({
-        "schema": "hermes.rbmem.v1",
-        "meta": document_meta_json(document),
-        "context": context,
-        "sections": sections_json(document, resolve),
-        "graph": graph_view_to_json(&document.graph_view()),
-        "timeline": document.timeline().into_iter().map(|section| {
-            json!({
-                "path": section.path,
-                "created_at": section.temporal.created_at,
-                "updated_at": section.temporal.updated_at,
-                "expires_at": section.temporal.expires_at,
-                "content": section.content,
-            })
-        }).collect::<Vec<_>>(),
-    }))
-}
-
-fn hermes_inject_block(
-    document: &RbmemDocument,
-    resolve: bool,
-    compact: bool,
-    minified: bool,
-) -> Result<String, RbmemError> {
-    let payload = hermes_json(document, resolve, compact, minified)?;
-    Ok(format!(
-        "### HERMES RBMEM CONTEXT\n```json\n{}\n```\n### END HERMES RBMEM CONTEXT\n",
-        serde_json::to_string_pretty(&payload)?
-    ))
-}
-
-#[derive(Debug, Deserialize)]
-struct HermesPayload {
-    #[serde(default)]
-    sections: Vec<HermesSectionPatch>,
-}
-
-#[derive(Debug, Deserialize)]
-struct HermesSectionPatch {
-    path: String,
-    #[serde(default = "default_text_type")]
-    r#type: String,
-    #[serde(default)]
-    content: String,
-    #[serde(default)]
-    mode: HermesWriteMode,
-    #[serde(default)]
-    source: Option<SourceInfo>,
-}
-
-#[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-enum HermesWriteMode {
-    #[default]
-    Auto,
-    Append,
-    Replace,
-}
-
-fn default_text_type() -> String {
-    "text".to_string()
-}
-
-fn read_hermes_payload(
-    json: Option<String>,
-    json_file: Option<PathBuf>,
-) -> Result<HermesPayload, RbmemError> {
-    let text = match (json, json_file) {
-        (Some(_), Some(_)) => {
-            return Err(RbmemError::Parse(
-                "use either --json or --json-file, not both".to_string(),
-            ))
-        }
-        (Some(json), None) => json,
-        (None, Some(path)) => fs::read_to_string(path)?,
-        (None, None) => {
-            return Err(RbmemError::Parse(
-                "missing --json or --json-file".to_string(),
-            ))
-        }
-    };
-    Ok(serde_json::from_str(&text)?)
-}
-
-fn apply_hermes_payload(
-    document: &mut RbmemDocument,
-    payload: HermesPayload,
-    now: chrono::DateTime<Utc>,
-) -> Result<(), RbmemError> {
-    for patch in payload.sections {
-        let section_type = <SectionType as std::str::FromStr>::from_str(&patch.r#type)?;
-        if section_type == SectionType::HermesMemory && patch.mode == HermesWriteMode::Replace {
-            return Err(RbmemError::Parse(format!(
-                "hermes:memory section '{}' is append-only; use mode auto or append",
-                patch.path
-            )));
-        }
-        let should_append = patch.mode == HermesWriteMode::Append
-            || (patch.mode == HermesWriteMode::Auto && section_type == SectionType::HermesMemory);
-
-        if should_append {
-            append_or_create_section(document, &patch.path, section_type, &patch.content, now);
-        } else {
-            document.upsert_section(&patch.path, section_type, patch.content, now);
-        }
-        set_section_source(
-            document,
-            &patch.path,
-            patch.source.unwrap_or_else(|| SourceInfo {
-                kind: "hermes".to_string(),
-                path: None,
-                actor: Some("hermes".to_string()),
-                hash: None,
-            }),
-        );
-    }
-    document.enforce_protected_timestamps(now);
-    Ok(())
-}
-
-fn append_or_create_section(
-    document: &mut RbmemDocument,
-    path: &str,
-    section_type: SectionType,
-    content: &str,
-    now: chrono::DateTime<Utc>,
-) {
-    if let Some(section) = document
-        .sections
-        .iter_mut()
-        .find(|section| section.path == path)
-    {
-        if !section.content.contains(content.trim()) {
-            if !section.content.trim().is_empty() {
-                section.content.push('\n');
-            }
-            section.content.push_str(content.trim());
-        }
-        section.section_type = section_type;
-        section.temporal.updated_at = now;
-        document.meta.last_updated = now;
-    } else {
-        document.upsert_section(path, section_type, content.trim().to_string(), now);
-    }
-}
-
-fn validate_or_error(document: &RbmemDocument) -> Result<(), RbmemError> {
-    let warnings = document.validate();
-    if warnings.is_empty() {
-        Ok(())
-    } else {
-        Err(RbmemError::Parse(warnings.join("; ")))
-    }
-}
-
-fn hermes_starter_document(project_name: &str, now: chrono::DateTime<Utc>) -> RbmemDocument {
-    let mut document = RbmemDocument::new(now, "hermes");
-    document.meta.purpose = format!("hermes-agent-memory:{project_name}");
-    document.meta.compact_mode = CompactMode::Minified;
-    document.upsert_section(
-        "goals",
-        SectionType::HermesMemory,
-        format!("- Maintain working context for {project_name}."),
-        now,
-    );
-    document.upsert_section(
-        "rules",
-        SectionType::HermesMemory,
-        "- Preserve user intent.\n- Prefer append-only memory updates unless replacing stale facts."
-            .to_string(),
-        now,
-    );
-    document.upsert_section("memory", SectionType::HermesMemory, String::new(), now);
-    document.upsert_section(
-        "tasks",
-        SectionType::List,
-        "- Initialize Hermes RBMEM memory.".to_string(),
-        now,
-    );
-    document.upsert_section(
-        "architecture",
-        SectionType::Text,
-        "Project architecture notes go here.".to_string(),
-        now,
-    );
-    document.upsert_section(
-        "timeline",
-        SectionType::Timeline,
-        format!("{}: Hermes RBMEM memory initialized.", now.to_rfc3339()),
-        now,
-    );
-    document.upsert_section(
-        "graph",
-        SectionType::Json,
-        "{\n  \"notes\": \"Explicit graph relations can be added per section.\"\n}".to_string(),
-        now,
-    );
-    document
-}
-
-fn watch_hermes_file(file: PathBuf) -> Result<(), RbmemError> {
-    let parent = file
-        .parent()
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| PathBuf::from("."));
-    println!("watching {}", file.display());
-    let (tx, rx) = mpsc::channel();
-    let mut watcher = RecommendedWatcher::new(
-        move |result| {
-            let _ = tx.send(result);
-        },
-        NotifyConfig::default(),
-    )
-    .map_err(notify_error)?;
-    watcher
-        .watch(&parent, RecursiveMode::NonRecursive)
-        .map_err(notify_error)?;
-
-    loop {
-        match rx.recv() {
-            Ok(Ok(event)) => {
-                if !event_is_relevant(&event.kind) {
-                    continue;
-                }
-                if event.paths.iter().any(|path| path == &file) {
-                    match read_document(&file, TimestampPolicy::Preserve)
-                        .and_then(|document| hermes_json(&document, true, true, false))
-                    {
-                        Ok(payload) => println!("{}", serde_json::to_string_pretty(&payload)?),
-                        Err(error) => eprintln!("hermes watch error: {error}"),
-                    }
-                }
-            }
-            Ok(Err(error)) => eprintln!("watch error: {error}"),
-            Err(error) => return Err(RbmemError::Io(io::Error::other(error))),
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -2372,7 +1324,7 @@ mod tests {
 
     #[test]
     fn markdown_converter_preserves_heading_hierarchy() {
-        let document = convert_markdown_to_rbmem(
+        let document = markdown::convert_markdown_to_rbmem(
             r#"# Agents
 Root body.
 
@@ -2407,7 +1359,7 @@ Writer body.
 
     #[test]
     fn markdown_heading_words_stay_inside_one_path_segment() {
-        let document = convert_markdown_to_rbmem(
+        let document = markdown::convert_markdown_to_rbmem(
             r#"# Inhibition of Return
 
 ## How It Works
@@ -2432,7 +1384,7 @@ Body.
 
     #[test]
     fn markdown_converter_preserves_frontmatter_as_meta_section() {
-        let document = convert_markdown_to_rbmem(
+        let document = markdown::convert_markdown_to_rbmem(
             r#"---
 title: Test
 ---
@@ -2466,9 +1418,9 @@ Body.
         fs::write(markdown.join(".rbmemsync"), "compact_mode: minified\n").unwrap();
 
         let options =
-            SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, false)
+            md_sync::SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, false)
                 .unwrap();
-        sync_markdown_folder(&markdown, &output, &options).unwrap();
+        md_sync::sync_markdown_folder(&markdown, &output, &options).unwrap();
 
         let generated = output.join("concepts").join("agent.rbmem");
         assert!(generated.exists());
@@ -2504,9 +1456,9 @@ Body.
         fs::write(markdown.join("note.md"), "# Note\n\nBody.").unwrap();
 
         let options =
-            SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, true)
+            md_sync::SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, true)
                 .unwrap();
-        sync_markdown_folder(&markdown, &output, &options).unwrap();
+        md_sync::sync_markdown_folder(&markdown, &output, &options).unwrap();
 
         assert!(!output.join("note.rbmem").exists());
         let _ = fs::remove_dir_all(root);
@@ -2521,12 +1473,12 @@ Body.
         fs::write(markdown.join("note.md"), "# Note\n\nBody.").unwrap();
 
         let options =
-            SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, false)
+            md_sync::SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, false)
                 .unwrap();
-        sync_markdown_folder(&markdown, &output, &options).unwrap();
+        md_sync::sync_markdown_folder(&markdown, &output, &options).unwrap();
         let generated = output.join("note.rbmem");
         let first_modified = fs::metadata(&generated).unwrap().modified().unwrap();
-        sync_markdown_folder(&markdown, &output, &options).unwrap();
+        md_sync::sync_markdown_folder(&markdown, &output, &options).unwrap();
         let second_modified = fs::metadata(&generated).unwrap().modified().unwrap();
 
         assert_eq!(first_modified, second_modified);
@@ -2535,7 +1487,7 @@ Body.
 
     #[test]
     fn hermes_starter_has_standard_sections() {
-        let document = hermes_starter_document("Demo Project", fixed_time());
+        let document = hermes::hermes_starter_document("Demo Project", fixed_time());
         let paths = document
             .sections
             .iter()
@@ -2557,8 +1509,8 @@ Body.
 
     #[test]
     fn hermes_json_contains_sections_graph_timeline_and_context() {
-        let document = hermes_starter_document("Demo Project", fixed_time());
-        let payload = hermes_json(&document, true, false, true).unwrap();
+        let document = hermes::hermes_starter_document("Demo Project", fixed_time());
+        let payload = hermes::hermes_json(&document, true, false, true).unwrap();
 
         assert_eq!(payload["schema"], "hermes.rbmem.v1");
         assert!(payload["sections"].as_array().unwrap().len() >= 6);
@@ -2607,7 +1559,7 @@ Body.
             }],
         });
 
-        let context = query_document(&document, "pull requests", true, 1);
+        let context = api::query_document(&document, "pull requests", true, 1);
         let paths = context
             .sections
             .iter()
@@ -2680,7 +1632,7 @@ Body.
         let root = temp_test_dir("doctor");
         fs::create_dir_all(&root).unwrap();
         let file = root.join("memory.rbmem");
-        let document = hermes_starter_document("Demo Project", fixed_time());
+        let document = hermes::hermes_starter_document("Demo Project", fixed_time());
         fs::write(&file, document.to_rbmem_string()).unwrap();
 
         let report = doctor_report(Some(&file), 30, OutputFormat::Text).unwrap();
@@ -2701,10 +1653,10 @@ Body.
         let root = temp_test_dir("hermes-doctor");
         fs::create_dir_all(&root).unwrap();
         let file = root.join("memory.rbmem");
-        let document = hermes_starter_document("Demo Project", fixed_time());
+        let document = hermes::hermes_starter_document("Demo Project", fixed_time());
         fs::write(&file, document.to_rbmem_string()).unwrap();
 
-        let report = hermes_doctor_report(&file, None, 30, OutputFormat::Text).unwrap();
+        let report = hermes::hermes_doctor_report(&file, None, 30, OutputFormat::Text).unwrap();
 
         assert!(report.contains("rbmem hermes doctor"));
         assert!(report.contains("parse: ok"));
@@ -2721,7 +1673,7 @@ Body.
         let root = temp_test_dir("doctor-json");
         fs::create_dir_all(&root).unwrap();
         let file = root.join("memory.rbmem");
-        let document = hermes_starter_document("Demo Project", fixed_time());
+        let document = hermes::hermes_starter_document("Demo Project", fixed_time());
         fs::write(&file, document.to_rbmem_string()).unwrap();
 
         let report = doctor_report(Some(&file), 30, OutputFormat::Json).unwrap();
@@ -2747,7 +1699,7 @@ Body.
             now,
         );
 
-        let context = query_document(&document, "pull requests", true, 0);
+        let context = api::query_document(&document, "pull requests", true, 0);
         let value = context_json(
             ContextOutputRequest {
                 operation: "query",
@@ -2791,7 +1743,7 @@ Body.
             now,
         );
 
-        let pack = parse_pack_config(
+        let pack = pack::parse_pack_config(
             r#"[pack: code_review]
 include:
   - rules
@@ -2806,7 +1758,7 @@ include:
             "code_review",
         )
         .unwrap();
-        let context = pack_document(&document, &pack, true);
+        let context = pack::pack_document(&document, &pack, true, None);
         let paths = context
             .sections
             .iter()
@@ -2820,8 +1772,8 @@ include:
     #[test]
     fn hermes_save_payload_appends_hermes_memory() {
         let now = fixed_time();
-        let mut document = hermes_starter_document("Demo Project", now);
-        let payload = read_hermes_payload(
+        let mut document = hermes::hermes_starter_document("Demo Project", now);
+        let payload = hermes::read_hermes_payload(
             Some(
                 r#"{
               "sections": [
@@ -2839,10 +1791,10 @@ include:
         )
         .unwrap();
 
-        apply_hermes_payload(&mut document, payload, now).unwrap();
-        apply_hermes_payload(
+        hermes::apply_hermes_payload(&mut document, payload, now).unwrap();
+        hermes::apply_hermes_payload(
             &mut document,
-            read_hermes_payload(
+            hermes::read_hermes_payload(
                 Some(r#"{"sections":[{"path":"memory","type":"hermes:memory","content":"- User prefers compact context."}]}"#.to_string()),
                 None,
             )
@@ -2869,8 +1821,8 @@ include:
     #[test]
     fn hermes_save_rejects_replace_for_append_only_memory() {
         let now = fixed_time();
-        let mut document = hermes_starter_document("Demo Project", now);
-        let payload = read_hermes_payload(
+        let mut document = hermes::hermes_starter_document("Demo Project", now);
+        let payload = hermes::read_hermes_payload(
             Some(
                 r#"{"sections":[{"path":"memory","type":"hermes:memory","content":"replacement","mode":"replace"}]}"#
                     .to_string(),
@@ -2879,7 +1831,7 @@ include:
         )
         .unwrap();
 
-        let error = apply_hermes_payload(&mut document, payload, now).unwrap_err();
+        let error = hermes::apply_hermes_payload(&mut document, payload, now).unwrap_err();
 
         assert!(error.to_string().contains("append-only"));
     }

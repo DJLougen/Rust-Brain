@@ -1,6 +1,7 @@
 use crate::document::graph_view_to_json;
 use crate::parser::parse_document;
 use crate::{crypto, diff as diff_engine, DiffFormat, EncryptionKey};
+use crate::index::SectionIndex;
 use crate::{
     CompactMode, RbmemDocument, RbmemError, Section, SectionType, SourceInfo, TimestampPolicy,
 };
@@ -109,6 +110,7 @@ pub struct ContextOptions {
     pub key: Option<EncryptionKey>,
     pub format: OutputFormat,
     pub policy: TimestampPolicy,
+    pub max_tokens: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -228,7 +230,13 @@ pub fn query(
     let path = path.as_ref();
     let document = load(path, options.policy)?;
     let document = prepare_encrypted_sections(document, options.decrypt, options.key.as_ref())?;
-    let context = query_document(&document, text, options.resolve, options.graph_depth);
+    let context = query_document_with_budget(
+        &document,
+        text,
+        options.resolve,
+        options.graph_depth,
+        options.max_tokens,
+    );
     render_context_output(
         ContextOutputRequest {
             operation: "query".to_string(),
@@ -254,7 +262,13 @@ pub fn context(
     let path = path.as_ref();
     let document = load(path, options.policy)?;
     let document = prepare_encrypted_sections(document, options.decrypt, options.key.as_ref())?;
-    let context = query_document(&document, task, options.resolve, options.graph_depth);
+    let context = query_document_with_budget(
+        &document,
+        task,
+        options.resolve,
+        options.graph_depth,
+        options.max_tokens,
+    );
     render_context_output(
         ContextOutputRequest {
             operation: "context".to_string(),
@@ -347,16 +361,91 @@ pub fn query_document(
     include_parents: bool,
     graph_depth: usize,
 ) -> RbmemDocument {
+    query_document_with_budget(document, query, include_parents, graph_depth, None)
+}
+
+pub fn query_document_with_budget(
+    document: &RbmemDocument,
+    query: &str,
+    include_parents: bool,
+    graph_depth: usize,
+    max_tokens: Option<usize>,
+) -> RbmemDocument {
+    let index = SectionIndex::build(document);
     let query_terms = query_terms(query);
     let phrase = normalize_for_query(query);
-    let mut selected = query_matches(document, &query_terms, &phrase);
+    let scored_matches = query_matches_indexed(document, &index, &query_terms, &phrase);
+    let mut selected: BTreeSet<String> = scored_matches.iter().map(|(p, _)| p.clone()).collect();
 
     if include_parents {
         include_parent_sections(document, &mut selected);
     }
 
-    include_graph_neighbors(document, &mut selected, graph_depth);
+    if graph_depth > 0 && !selected.is_empty() {
+        let known_paths: BTreeSet<String> = document
+            .sections
+            .iter()
+            .map(|s| s.path.clone())
+            .collect();
+        for path in selected.clone() {
+            for neighbor in index.related(&path, graph_depth) {
+                if known_paths.contains(&neighbor) {
+                    selected.insert(neighbor);
+                }
+            }
+        }
+    }
+
+    if let Some(budget) = max_tokens {
+        selected = truncate_to_token_budget(document, &scored_matches, &selected, budget);
+    }
+
     subset_document(document, selected)
+}
+
+fn truncate_to_token_budget(
+    document: &RbmemDocument,
+    scored: &[(String, f64)],
+    selected: &BTreeSet<String>,
+    max_tokens: usize,
+) -> BTreeSet<String> {
+    // Build score lookup
+    let score_map: std::collections::HashMap<&str, f64> = scored
+        .iter()
+        .map(|(p, s)| (p.as_str(), *s))
+        .collect();
+
+    // Sort selected by score descending (unscored sections like parents get 0)
+    let mut ranked: Vec<(&str, f64, usize)> = selected
+        .iter()
+        .map(|path| {
+            let score = score_map.get(path.as_str()).copied().unwrap_or(0.0);
+            let tokens = estimate_tokens_for_path(document, path);
+            (path.as_str(), score, tokens)
+        })
+        .collect();
+    ranked.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+    let mut result = BTreeSet::new();
+    let mut used = 0usize;
+    for (path, _score, tokens) in ranked {
+        if used + tokens > max_tokens && !result.is_empty() {
+            break;
+        }
+        used += tokens;
+        result.insert(path.to_string());
+    }
+    result
+}
+
+fn estimate_tokens_for_path(document: &RbmemDocument, path: &str) -> usize {
+    document
+        .sections
+        .iter()
+        .find(|s| s.path == path)
+        .map(|s| s.content.len() / 4) // ~4 chars per token heuristic
+        .unwrap_or(0)
+        .max(1)
 }
 
 pub fn render_context_document(
@@ -525,44 +614,94 @@ fn render_resolved_sections(document: &RbmemDocument) -> String {
     output
 }
 
-fn query_matches(document: &RbmemDocument, terms: &[String], phrase: &str) -> BTreeSet<String> {
-    let mut scored = document
-        .sections
+fn query_matches_indexed(
+    document: &RbmemDocument,
+    index: &SectionIndex,
+    terms: &[String],
+    phrase: &str,
+) -> Vec<(String, f64)> {
+    let candidate_paths: BTreeSet<String> = terms
         .iter()
+        .flat_map(|term| index.keyword(term))
+        .chain(
+            phrase
+                .split_whitespace()
+                .flat_map(|word| index.keyword(word)),
+        )
+        .collect();
+
+    let sections_to_score: Vec<&Section> = if candidate_paths.is_empty() {
+        document.sections.iter().collect()
+    } else {
+        document
+            .sections
+            .iter()
+            .filter(|s| candidate_paths.contains(&s.path))
+            .collect()
+    };
+
+    let mut scored = sections_to_score
+        .into_iter()
         .filter_map(|section| {
             let score = query_score(section, terms, phrase);
-            (score > 0).then_some((section.path.clone(), score))
+            (score > 0.0).then_some((section.path.clone(), score))
         })
         .collect::<Vec<_>>();
 
-    scored.sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
-    scored.into_iter().map(|(path, _)| path).collect()
+    scored.sort_by(|left, right| {
+        right
+            .1
+            .partial_cmp(&left.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| left.0.cmp(&right.0))
+    });
+    scored
 }
 
-fn query_score(section: &Section, terms: &[String], phrase: &str) -> usize {
+fn query_score(section: &Section, terms: &[String], phrase: &str) -> f64 {
     let path = normalize_for_query(&section.path);
     let content = normalize_for_query(&section.content);
-    let mut score = 0;
+    let mut score: f64 = 0.0;
+
+    let word_count = content.split_whitespace().count().max(1) as f64;
 
     if !phrase.is_empty() {
         if path.contains(phrase) {
-            score += 20;
+            score += 20.0;
         }
         if content.contains(phrase) {
-            score += 12;
+            score += 12.0 / word_count.sqrt();
         }
     }
 
     for term in terms {
-        if path.contains(term) {
-            score += 5;
+        if path.contains(term.as_str()) {
+            score += 5.0;
         }
-        if content.contains(term) {
-            score += 1;
+        let term_count = content.matches(term.as_str()).count() as f64;
+        if term_count > 0.0 {
+            score += (term_count / word_count.sqrt()) * 3.0;
         }
     }
 
-    score
+    // Recency bonus: up to 5 points for recently updated sections
+    let now = Utc::now();
+    let days_since_update = (now - section.temporal.updated_at).num_days().max(0) as f64;
+    if days_since_update < 7.0 {
+        score += 5.0;
+    } else if days_since_update < 30.0 {
+        score += 3.0;
+    } else if days_since_update < 90.0 {
+        score += 1.0;
+    }
+
+    // Path depth: prefer shallower sections (fewer dots)
+    let depth = section.path.chars().filter(|&c| c == '.').count();
+    if depth > 2 {
+        score -= (depth - 2) as f64;
+    }
+
+    score.max(0.0)
 }
 
 fn include_parent_sections(document: &RbmemDocument, selected: &mut BTreeSet<String>) {
@@ -581,43 +720,6 @@ fn include_parent_sections(document: &RbmemDocument, selected: &mut BTreeSet<Str
                 selected.insert(parent);
             }
         }
-    }
-}
-
-fn include_graph_neighbors(
-    document: &RbmemDocument,
-    selected: &mut BTreeSet<String>,
-    graph_depth: usize,
-) {
-    if graph_depth == 0 || selected.is_empty() {
-        return;
-    }
-
-    let known_paths = document
-        .sections
-        .iter()
-        .map(|section| section.path.clone())
-        .collect::<BTreeSet<_>>();
-    let graph = document.graph_view();
-    let mut frontier = selected.clone();
-
-    for _ in 0..graph_depth {
-        let mut next = BTreeSet::new();
-        for edge in &graph.edges {
-            if frontier.contains(&edge.from) && known_paths.contains(&edge.to) {
-                next.insert(edge.to.clone());
-            }
-            if frontier.contains(&edge.to) && known_paths.contains(&edge.from) {
-                next.insert(edge.from.clone());
-            }
-        }
-
-        let before = selected.len();
-        selected.extend(next.iter().cloned());
-        if selected.len() == before {
-            break;
-        }
-        frontier = next;
     }
 }
 
@@ -827,19 +929,6 @@ pub fn rollback_to_snapshot(path: impl AsRef<Path>, label: &str) -> Result<(), R
         );
     }
 
-    // Restore from backup
-    if !content_file.exists() {
-        return Err(RbmemError::Parse(format!(
-            "snapshot content file not found: {}",
-            content_file.display()
-        )));
-    }
-    if !content_file.exists() {
-        return Err(RbmemError::Parse(format!(
-            "snapshot content file not found: {}",
-            content_file.display()
-        )));
-    }
 
     let backup = fs::read_to_string(&content_file)?;
     fs::write(path, &backup)?;
@@ -906,15 +995,31 @@ fn count_orphaned_edges(document: &RbmemDocument) -> usize {
 }
 
 fn count_conflicts(document: &RbmemDocument) -> usize {
+    use std::collections::HashMap;
+    let mut by_path: HashMap<&str, Vec<&str>> = HashMap::new();
+    for section in &document.sections {
+        by_path
+            .entry(section.path.as_str())
+            .or_default()
+            .push(section.content.as_str());
+    }
+
     let mut conflicts = 0;
-    for i in 0..document.sections.len() {
-        for j in (i + 1)..document.sections.len() {
-            let s1 = &document.sections[i];
-            let s2 = &document.sections[j];
-            if s1.path == s2.path && s1.content != s2.content {
-                conflicts += 1;
-            }
+    for (_path, contents) in &by_path {
+        let n = contents.len();
+        if n < 2 {
+            continue;
         }
+        let total_pairs = n * (n - 1) / 2;
+        let mut same_content_counts: HashMap<&str, usize> = HashMap::new();
+        for content in contents {
+            *same_content_counts.entry(content).or_default() += 1;
+        }
+        let same_pairs: usize = same_content_counts
+            .values()
+            .map(|&count| count * (count - 1) / 2)
+            .sum();
+        conflicts += total_pairs - same_pairs;
     }
     conflicts
 }

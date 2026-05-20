@@ -12,12 +12,17 @@ pub mod index;
 pub mod parser;
 pub mod planner;
 pub mod server;
+pub mod hermes;
+pub mod markdown;
+pub mod pack;
+#[path = "sync.rs"]
+pub mod md_sync;
 pub mod version;
 
 pub use commands::{
     add_guard, context, context_json, create, decrypt_section, delete_section, diff,
     diff_documents, diff_file_with_format, encrypt_section, health_report, list_guards,
-    list_snapshots, load, query, query_document, read, read_content_argument, remove_guard,
+    list_snapshots, load, query, query_document, query_document_with_budget, read, read_content_argument, remove_guard,
     render_context_document, render_context_output, review_commit, review_out,
     rollback_to_snapshot, save, update, ContextOptions, ContextOutputRequest, CreateOptions,
     GuardAction, GuardConstraint, HealthReport, OutputFormat, ReadOptions, SnapshotRecord,
