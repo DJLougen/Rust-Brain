@@ -1,35 +1,54 @@
 ---
 name: Bug report
-about: Report a parsing, CLI, or format behavior problem
-title: "bug: "
+about: Report a bug or unexpected behavior
+title: '[BUG] '
 labels: bug
-assignees: ""
+assignees: ''
 ---
 
-## Description
+## Describe the Bug
 
-What happened?
+A clear and concise description of what the bug is.
 
-## Reproduction
+## To Reproduce
 
-```powershell
-aif ...
-```
+Steps to reproduce the behavior:
+
+1. Run command: `rbmem ...`
+2. With input file: [attach or paste minimal `.rbmem` file]
+3. See error
 
 ## Expected Behavior
 
-What should have happened?
+A clear and concise description of what you expected to happen.
 
 ## Actual Behavior
 
-What happened instead?
+What actually happened, including any error messages.
 
 ## Environment
 
-- OS:
-- Rust version:
-- `aif` version or commit:
+- **RBMEM version**: `rbmem --version`
+- **Rust version**: `rustc --version`
+- **OS**: [e.g., Ubuntu 22.04, macOS 14.0, Windows 11]
+- **Terminal**: [e.g., bash, zsh, PowerShell]
+
+## Minimal Reproduction
+
+Minimal `.rbmem` file that demonstrates the issue:
+
+```rbmem
+# Paste minimal file here
+```
 
 ## Additional Context
 
-Attach a minimal `.aif` or Markdown sample if possible.
+Add any other context about the problem here.
+
+## Logs
+
+If applicable, add logs with `RUST_LOG=debug`:
+
+```bash
+RUST_LOG=debug rbmem <command> 2>&1 | head -50
+```

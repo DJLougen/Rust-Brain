@@ -2,7 +2,48 @@
 
 All notable changes to this project will be documented here.
 
-## Unreleased
+## [1.4.2] - 2026-05-20
+
+### Added
+
+- Extracted `main.rs` business logic into library modules (`hermes.rs`, `sync.rs`, `pack.rs`, `markdown.rs`)
+- Added `--max-tokens` CLI flag for query, context, and pack commands with priority-based truncation
+- Added benchmark suite comparing RBMEM vs Markdown across 5 dimensions
+- Added benchmark infographic showing precision, recall, token efficiency, and graph-aware retrieval
+
+### Changed
+
+- Wired `SectionIndex` into query path for O(1) keyword lookups instead of linear scan
+- Improved query scoring with content-length normalization, recency bonus, and path-depth weighting
+- Enhanced relation inference to reject negated matches (20 negation words)
+- Rewrote DPLL solver with VSIDS variable ordering, decay, and restart heuristics
+- Replaced O(n²) conflict counting with HashMap grouping in health reports
+- Removed dead code (`query_matches`, `include_graph_neighbors` from `commands.rs`)
+- Updated README with professional structure, banner, and architecture diagram
+
+### Performance
+
+- Query latency improved through indexed lookups
+- Memory usage reduced by eliminating duplicate section scans
+- Conflict detection now O(n) instead of O(n²)
+
+## [1.4.1] - 2026-05-18
+
+### Added
+
+- Snapshot JSON serialization with `serde_json::to_string_pretty` for `.snap` metadata
+- Configurable `--stale-days` for health reports (default: 90 days)
+- `HealthScore` export with scoring formula
+- `SectionType::Guards` and `SectionType::Review` variants
+- Review `--dry-run` flag for validation without writes
+- Snapshot listing with `rbmem snapshot list`
+
+### Fixed
+
+- Switched from YAML to JSON for snapshot metadata to handle edge cases (colons, quotes, Unicode)
+- Review dry-run borrow-before-move fix for `warning_count`
+
+## Unreleased (merged into 1.4.2)
 
 ### Added
 
