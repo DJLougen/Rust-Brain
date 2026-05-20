@@ -187,7 +187,6 @@ pub fn plan_memory(options: PlanOptions) -> Result<PlanReport, RbmemError> {
             dimacs: &dimacs,
             now: options.now,
         })?;
-
     }
 
     Ok(PlanReport {
@@ -725,7 +724,11 @@ fn matching_candidates(candidates: &[CandidateAction], phrase: &str) -> Vec<usiz
         .iter()
         .enumerate()
         .filter_map(|(index, candidate)| {
-            let haystack = if candidate.normalized_title.is_empty() { normalize(&candidate.title) } else { candidate.normalized_title.clone() };
+            let haystack = if candidate.normalized_title.is_empty() {
+                normalize(&candidate.title)
+            } else {
+                candidate.normalized_title.clone()
+            };
             let score = if haystack.contains(&phrase) {
                 100
             } else {
@@ -743,7 +746,11 @@ fn matching_candidates(candidates: &[CandidateAction], phrase: &str) -> Vec<usiz
         .iter()
         .enumerate()
         .filter_map(|(index, candidate)| {
-            let haystack = if candidate.normalized_text.is_empty() { normalize(&candidate.text) } else { candidate.normalized_text.clone() };
+            let haystack = if candidate.normalized_text.is_empty() {
+                normalize(&candidate.text)
+            } else {
+                candidate.normalized_text.clone()
+            };
             let score = if haystack.contains(&phrase) {
                 50
             } else {
@@ -918,9 +925,19 @@ fn dpll(clauses: &[Vec<i32>], assignment: &mut [Option<bool>]) -> bool {
         }
     }
 
-    dpll_inner(clauses, assignment, &mut activity, &mut increment, decay, &mut conflicts_since_restart, restart_threshold, &mut trail)
+    dpll_inner(
+        clauses,
+        assignment,
+        &mut activity,
+        &mut increment,
+        decay,
+        &mut conflicts_since_restart,
+        restart_threshold,
+        &mut trail,
+    )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn dpll_inner(
     clauses: &[Vec<i32>],
     assignment: &mut [Option<bool>],
@@ -1002,7 +1019,16 @@ fn dpll_inner(
         while let Some(var) = trail.pop() {
             assignment[var] = None;
         }
-        return dpll_inner(clauses, assignment, activity, increment, decay, conflicts_since_restart, restart_threshold, trail);
+        return dpll_inner(
+            clauses,
+            assignment,
+            activity,
+            increment,
+            decay,
+            conflicts_since_restart,
+            restart_threshold,
+            trail,
+        );
     }
 
     // VSIDS: pick the unassigned variable with highest activity
@@ -1026,7 +1052,16 @@ fn dpll_inner(
         let branch_level = trail.len();
         assignment[var] = Some(value);
         trail.push(var);
-        if dpll_inner(clauses, assignment, activity, increment, decay, conflicts_since_restart, restart_threshold, trail) {
+        if dpll_inner(
+            clauses,
+            assignment,
+            activity,
+            increment,
+            decay,
+            conflicts_since_restart,
+            restart_threshold,
+            trail,
+        ) {
             return true;
         }
         // Undo assignments from this branch
@@ -1504,7 +1539,7 @@ fn normalize(text: &str) -> String {
 fn path_has_any(path: &str, needles: &[&str]) -> bool {
     // Path segments are separated by dots and may use underscores.
     // Avoid the full normalize() allocation by splitting directly.
-    for segment in path.split(|c: char| c == '.' || c == '_' || c == '-') {
+    for segment in path.split(['.', '_', '-']) {
         let lower = segment.to_ascii_lowercase();
         if needles.iter().any(|needle| lower == *needle) {
             return true;

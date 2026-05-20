@@ -1,6 +1,6 @@
+use crate::document::SourceInfo;
 use crate::markdown::convert_markdown_to_rbmem;
 use crate::{CompactMode, InferenceStrategy, RbmemDocument, RbmemError};
-use crate::document::SourceInfo;
 use chrono::Utc;
 use notify::{Config as NotifyConfig, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::fs;
@@ -315,7 +315,12 @@ pub fn stamp_document_source(document: &mut RbmemDocument, source: SourceInfo) {
     }
 }
 
-pub fn source_info(kind: impl Into<String>, path: Option<String>, actor: impl Into<String>, hash_input: Option<&str>) -> SourceInfo {
+pub fn source_info(
+    kind: impl Into<String>,
+    path: Option<String>,
+    actor: impl Into<String>,
+    hash_input: Option<&str>,
+) -> SourceInfo {
     SourceInfo {
         kind: kind.into(),
         path,

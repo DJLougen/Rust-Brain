@@ -58,20 +58,17 @@ impl SectionIndex {
             // Hierarchical "contains" edges - build paths incrementally to avoid O(n²) allocations
             if parts.len() > 1 {
                 let mut parent = parts[0].to_string();
-                for depth in 1..parts.len() {
+                for part in parts.iter().skip(1) {
                     let child = if parent.is_empty() {
-                        parts[depth].to_string()
+                        part.to_string()
                     } else {
-                        format!("{}.{}", parent, parts[depth])
+                        format!("{}.{}", parent, part)
                     };
                     adjacency
                         .entry(parent.clone())
                         .or_default()
                         .insert(child.clone());
-                    adjacency
-                        .entry(child.clone())
-                        .or_default()
-                        .insert(parent);
+                    adjacency.entry(child.clone()).or_default().insert(parent);
                     parent = child;
                 }
             }
@@ -142,7 +139,9 @@ impl SectionIndex {
     }
 
     pub fn contains_path(&self, path: &str) -> bool {
-        self.paths.binary_search_by(|p| p.as_str().cmp(path)).is_ok()
+        self.paths
+            .binary_search_by(|p| p.as_str().cmp(path))
+            .is_ok()
     }
 
     pub fn section_count(&self) -> usize {

@@ -1,7 +1,7 @@
 use crate::document::graph_view_to_json;
+use crate::index::SectionIndex;
 use crate::parser::parse_document;
 use crate::{crypto, diff as diff_engine, DiffFormat, EncryptionKey};
-use crate::index::SectionIndex;
 use crate::{
     CompactMode, RbmemDocument, RbmemError, Section, SectionType, SourceInfo, TimestampPolicy,
 };
@@ -371,7 +371,14 @@ pub fn query_document_with_budget(
     max_tokens: Option<usize>,
 ) -> RbmemDocument {
     let index = SectionIndex::build(document);
-    query_document_with_budget_and_index(document, query, include_parents, graph_depth, max_tokens, &index)
+    query_document_with_budget_and_index(
+        document,
+        query,
+        include_parents,
+        graph_depth,
+        max_tokens,
+        &index,
+    )
 }
 
 pub fn query_document_with_budget_and_index(
@@ -422,10 +429,8 @@ fn truncate_to_token_budget(
     max_tokens: usize,
 ) -> BTreeSet<String> {
     // Build score and token lookups in O(n) instead of O(k*n)
-    let score_map: std::collections::HashMap<&str, f64> = scored
-        .iter()
-        .map(|(p, s)| (p.as_str(), *s))
-        .collect();
+    let score_map: std::collections::HashMap<&str, f64> =
+        scored.iter().map(|(p, s)| (p.as_str(), *s)).collect();
 
     let token_map: std::collections::HashMap<&str, usize> = document
         .sections
@@ -972,7 +977,6 @@ pub fn rollback_to_snapshot(path: impl AsRef<Path>, label: &str) -> Result<(), R
             e
         );
     }
-
 
     let backup = fs::read_to_string(&content_file)?;
     fs::write(path, &backup)?;

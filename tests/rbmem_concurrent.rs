@@ -1,12 +1,12 @@
 use chrono::{TimeZone, Utc};
+use rbmem::parser::parse_document;
 use rbmem::{
     context, create, encrypt_section, query, read, update, ContextOptions, CreateOptions,
-    EncryptionKey, OutputFormat, ReadOptions, RbmemDocument, SectionType, TimestampPolicy,
+    EncryptionKey, OutputFormat, RbmemDocument, ReadOptions, SectionType, TimestampPolicy,
     UpdateOptions,
 };
-use rbmem::parser::parse_document;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
 
@@ -27,7 +27,7 @@ fn test_key() -> EncryptionKey {
 }
 
 /// Helper: create a fresh rbmem file in a subdirectory.
-fn make_file(dir: &PathBuf, name: &str) -> PathBuf {
+fn make_file(dir: &Path, name: &str) -> PathBuf {
     let file = dir.join(format!("{name}.rbmem"));
     create(
         &file,
@@ -62,7 +62,9 @@ fn concurrent_reads_same_file() {
                 actor: "test".to_string(),
                 section: format!("section_{i}"),
                 section_type: SectionType::Text,
-                content: format!("Content for section {i} with some searchable text about topic {i}"),
+                content: format!(
+                    "Content for section {i} with some searchable text about topic {i}"
+                ),
                 human: false,
                 dry_run: false,
                 now,
@@ -412,7 +414,9 @@ fn concurrent_encrypt_separate_files() {
                     actor: "test".to_string(),
                     section: format!("secret_{i}"),
                     section_type: SectionType::Text,
-                    content: format!("Confidential data from thread {i} with padding text for size"),
+                    content: format!(
+                        "Confidential data from thread {i} with padding text for size"
+                    ),
                     human: false,
                     dry_run: false,
                     now,
@@ -474,7 +478,9 @@ fn concurrent_context_operations() {
                 actor: "test".to_string(),
                 section: format!("knowledge.area_{i}"),
                 section_type: SectionType::Text,
-                content: format!("Knowledge area {i} covers important domain concepts for context retrieval"),
+                content: format!(
+                    "Knowledge area {i} covers important domain concepts for context retrieval"
+                ),
                 human: false,
                 dry_run: false,
                 now,
@@ -623,7 +629,10 @@ fn mixed_concurrent_read_query_context() {
 
     for h in handles {
         let result = h.join().unwrap();
-        assert!(!result.is_empty(), "all operations should return non-empty output");
+        assert!(
+            !result.is_empty(),
+            "all operations should return non-empty output"
+        );
     }
 
     let _ = fs::remove_dir_all(root);
@@ -705,7 +714,10 @@ fn concurrent_parse_and_graph_build() {
     let results: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
     // All threads should produce identical results
     for result in &results {
-        assert_eq!(*result, results[0], "concurrent parses should produce identical graphs");
+        assert_eq!(
+            *result, results[0],
+            "concurrent parses should produce identical graphs"
+        );
     }
 
     let _ = fs::remove_dir_all(root);

@@ -1195,9 +1195,26 @@ fn relation_pattern_matches(text: &str, phrase: &str, alias: &str) -> bool {
 }
 
 const NEGATION_WORDS: &[&str] = &[
-    "not", "no", "don't", "doesn't", "didn't", "won't", "can't", "cannot",
-    "never", "avoid", "avoiding", "without", "instead of", "rather than",
-    "neither", "nor", "deny", "denies", "refuse", "refuses",
+    "not",
+    "no",
+    "don't",
+    "doesn't",
+    "didn't",
+    "won't",
+    "can't",
+    "cannot",
+    "never",
+    "avoid",
+    "avoiding",
+    "without",
+    "instead of",
+    "rather than",
+    "neither",
+    "nor",
+    "deny",
+    "denies",
+    "refuse",
+    "refuses",
 ];
 
 fn is_negated(window: &str) -> bool {

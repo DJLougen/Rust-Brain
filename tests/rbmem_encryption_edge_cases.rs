@@ -1,11 +1,11 @@
 use chrono::{TimeZone, Utc};
-use rbmem::{
-    create, decrypt_section, encrypt_section, read, update, CreateOptions, EncryptionKey,
-    EncryptedPayload, ReadOptions, SectionType, TimestampPolicy, UpdateOptions,
-};
 use rbmem::crypto::{decrypt_content, encrypt_content};
+use rbmem::{
+    create, decrypt_section, encrypt_section, read, update, CreateOptions, EncryptedPayload,
+    EncryptionKey, ReadOptions, SectionType, TimestampPolicy, UpdateOptions,
+};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
 
@@ -31,7 +31,7 @@ fn fixed_time() -> chrono::DateTime<Utc> {
 
 /// Helper: create a memory file and add a section with the given content.
 fn create_file_with_section(
-    root: &PathBuf,
+    root: &Path,
     section_path: &str,
     section_type: SectionType,
     content: &str,
@@ -196,11 +196,7 @@ fn encrypt_decrypt_very_large_section_via_api() {
     assert!(!raw.contains("Large section line"));
 
     let doc = decrypt_section(&file, "big_data", &key, now).unwrap();
-    let section = doc
-        .sections
-        .iter()
-        .find(|s| s.path == "big_data")
-        .unwrap();
+    let section = doc.sections.iter().find(|s| s.path == "big_data").unwrap();
     assert_eq!(section.content, content);
 
     let _ = fs::remove_dir_all(root);
@@ -232,7 +228,10 @@ fn encrypt_already_encrypted_section_is_idempotent() {
     let s2 = doc2.sections.iter().find(|s| s.path == "secret").unwrap();
     assert_eq!(s1.section_type, SectionType::Encrypted);
     assert_eq!(s2.section_type, SectionType::Encrypted);
-    assert_eq!(s1.encrypted.as_ref().unwrap().ciphertext, s2.encrypted.as_ref().unwrap().ciphertext);
+    assert_eq!(
+        s1.encrypted.as_ref().unwrap().ciphertext,
+        s2.encrypted.as_ref().unwrap().ciphertext
+    );
 
     let _ = fs::remove_dir_all(root);
 }
@@ -275,10 +274,7 @@ fn encrypt_nonexistent_section_returns_not_found() {
     let result = encrypt_section(&file, "does_not_exist", &key, now);
     assert!(result.is_err());
     let err_msg = result.unwrap_err().to_string();
-    assert!(
-        err_msg.contains("not found"),
-        "unexpected error: {err_msg}"
-    );
+    assert!(err_msg.contains("not found"), "unexpected error: {err_msg}");
 
     let _ = fs::remove_dir_all(root);
 }
@@ -421,7 +417,10 @@ fn encrypt_produces_unique_nonces_for_same_content() {
     let p2 = encrypt_content(content, &key, now).unwrap();
 
     assert_ne!(p1.nonce, p2.nonce, "nonces must be unique per encryption");
-    assert_ne!(p1.ciphertext, p2.ciphertext, "ciphertexts differ due to unique nonces");
+    assert_ne!(
+        p1.ciphertext, p2.ciphertext,
+        "ciphertexts differ due to unique nonces"
+    );
 
     // Both should decrypt to the same plaintext
     assert_eq!(decrypt_content(&p1, &key).unwrap(), content);

@@ -7,7 +7,7 @@
 use chrono::{TimeZone, Utc};
 use rbmem::{plan_memory, PlanOptions, SatBackend};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 fn fixed_time() -> chrono::DateTime<Utc> {
@@ -24,11 +24,7 @@ fn temp_dir(label: &str) -> PathBuf {
 
 /// Generate a memory file with `num_tasks` candidate actions and enough rules
 /// to produce at least `target_clauses` SAT clauses.
-fn generate_planning_problem(
-    dir: &PathBuf,
-    num_tasks: usize,
-    target_clauses: usize,
-) -> PathBuf {
+fn generate_planning_problem(dir: &PathBuf, num_tasks: usize, target_clauses: usize) -> PathBuf {
     fs::create_dir_all(dir).unwrap();
     let file = dir.join("memory.rbmem");
 
@@ -234,8 +230,8 @@ content: |
 
 fn run_bench(
     _label: &str,
-    file: &PathBuf,
-    dir: &PathBuf,
+    file: &Path,
+    dir: &Path,
     goal: &str,
     cube_and_conquer: bool,
     iterations: usize,
@@ -251,8 +247,8 @@ fn run_bench(
         let report = plan_memory(PlanOptions {
             goal: Some(goal.to_string()),
             from_memory: false,
-            file: Some(file.clone()),
-            search_dir: dir.clone(),
+            file: Some(file.to_path_buf()),
+            search_dir: dir.to_path_buf(),
             context_pack: None,
             solver: SatBackend::Internal,
             proof: false,
@@ -294,8 +290,14 @@ fn main() {
         let dir = temp_dir(&format!("chain-{chain_len}"));
         let file = generate_chain_problem(&dir, chain_len);
         let goal = format!("complete step {}", chain_len - 1);
-        let (avg_us, vars, clauses, selected) =
-            run_bench(&format!("chain-{chain_len}"), &file, &dir, &goal, false, iterations);
+        let (avg_us, vars, clauses, selected) = run_bench(
+            &format!("chain-{chain_len}"),
+            &file,
+            &dir,
+            &goal,
+            false,
+            iterations,
+        );
         println!(
             " {:<30} {:>10} {:>10} {:>10} {:>12}",
             format!("chain-{chain_len}"),
@@ -392,8 +394,14 @@ fn main() {
         let file = generate_chain_problem(&dir, chain_len);
         let goal = format!("complete step {}", chain_len - 1);
 
-        let (std_us, vars, clauses, selected) =
-            run_bench(&format!("std-{chain_len}"), &file, &dir, &goal, false, iterations);
+        let (std_us, vars, clauses, selected) = run_bench(
+            &format!("std-{chain_len}"),
+            &file,
+            &dir,
+            &goal,
+            false,
+            iterations,
+        );
         println!(
             " {:<30} {:>10} {:>10} {:>10} {:>12}",
             format!("standard-dpll chain-{chain_len}"),
@@ -403,8 +411,14 @@ fn main() {
             format!("{:.1}ms", std_us / 1000.0)
         );
 
-        let (cnc_us, _, _, _) =
-            run_bench(&format!("cnc-{chain_len}"), &file, &dir, &goal, true, iterations);
+        let (cnc_us, _, _, _) = run_bench(
+            &format!("cnc-{chain_len}"),
+            &file,
+            &dir,
+            &goal,
+            true,
+            iterations,
+        );
         println!(
             " {:<30} {:>10} {:>10} {:>10} {:>12}",
             format!("cube-and-conquer chain-{chain_len}"),

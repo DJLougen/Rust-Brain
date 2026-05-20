@@ -99,10 +99,16 @@ pub fn pack_document(
 
     if let Some(query) = &pack.query {
         selected.extend(
-            query_document_with_budget(document, query, include_parents, pack.graph_depth, max_tokens)
-                .sections
-                .into_iter()
-                .map(|section| section.path),
+            query_document_with_budget(
+                document,
+                query,
+                include_parents,
+                pack.graph_depth,
+                max_tokens,
+            )
+            .sections
+            .into_iter()
+            .map(|section| section.path),
         );
     }
 

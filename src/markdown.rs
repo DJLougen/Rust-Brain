@@ -1,10 +1,7 @@
 use crate::{RbmemDocument, SectionType};
 use chrono::Utc;
 
-pub fn convert_markdown_to_rbmem(
-    markdown: &str,
-    now: chrono::DateTime<Utc>,
-) -> RbmemDocument {
+pub fn convert_markdown_to_rbmem(markdown: &str, now: chrono::DateTime<Utc>) -> RbmemDocument {
     let mut document = RbmemDocument::new(now, "me");
     let mut heading_stack: Vec<String> = Vec::new();
     let mut current_path = "meta.markdown".to_string();

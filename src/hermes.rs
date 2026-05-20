@@ -1,9 +1,7 @@
 use crate::commands::{health_report, OutputFormat};
 use crate::document::graph_view_to_json;
 use crate::parser::parse_document;
-use crate::{
-    CompactMode, RbmemDocument, RbmemError, SectionType, SourceInfo, TimestampPolicy,
-};
+use crate::{CompactMode, RbmemDocument, RbmemError, SectionType, SourceInfo, TimestampPolicy};
 use chrono::{DateTime, Utc};
 use notify::{Config as NotifyConfig, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Deserialize;

@@ -4,15 +4,18 @@ use rbmem::commands as api;
 use rbmem::document::graph_view_to_json;
 #[cfg(test)]
 use rbmem::document::GraphInfo;
+use rbmem::hermes;
+use rbmem::markdown;
+use rbmem::md_sync;
+use rbmem::pack;
 use rbmem::parser::parse_document;
 #[cfg(test)]
-use rbmem::SourceInfo;
-#[cfg(test)]
 use rbmem::GraphRelation;
+#[cfg(test)]
+use rbmem::SourceInfo;
 use rbmem::{
     CompactMode, DiffFormat, InferenceStrategy, MergeStrategy, OutputFormat, PlanOptions,
-    PlanReport, RbmemDocument, RbmemError, SatBackend, SatStatus, SectionType,
-    TimestampPolicy,
+    PlanReport, RbmemDocument, RbmemError, SatBackend, SatStatus, SectionType, TimestampPolicy,
 };
 use serde_json::{json, Value};
 use std::error::Error;
@@ -21,10 +24,6 @@ use std::path::{Path, PathBuf};
 #[cfg(test)]
 use std::time::SystemTime;
 use tracing_subscriber::EnvFilter;
-use rbmem::hermes;
-use rbmem::markdown;
-use rbmem::md_sync;
-use rbmem::pack;
 
 #[derive(Debug, Parser)]
 #[command(name = "rbmem")]
@@ -894,7 +893,8 @@ fn run() -> Result<(), RbmemError> {
             HermesCommand::Init { project_name } => {
                 let now = Utc::now();
                 let document = hermes::hermes_starter_document(&project_name, now);
-                let file = PathBuf::from(format!("{}.rbmem", markdown::title_to_path(&project_name)));
+                let file =
+                    PathBuf::from(format!("{}.rbmem", markdown::title_to_path(&project_name)));
                 write_document(&file, &document, false)?;
                 println!("created {}", file.display());
             }
@@ -993,8 +993,6 @@ fn render_plan_report(report: &PlanReport) -> String {
     output
 }
 
-
-
 fn print_context_document(document: &RbmemDocument, resolve: bool, compact: bool, minified: bool) {
     print!(
         "{}",
@@ -1080,7 +1078,6 @@ fn context_json(
         "graph": graph_view_to_json(&context.graph_view()),
     })
 }
-
 
 fn review_document(document: &RbmemDocument, mut warnings: Vec<String>) -> String {
     warnings.extend(document.validate());
@@ -1206,7 +1203,6 @@ fn doctor_json(file: Option<&Path>, stale_days: u64) -> Result<Value, RbmemError
     }))
 }
 
-
 fn document_diagnostics_json(file: &Path) -> Result<(Value, RbmemDocument), RbmemError> {
     let file_exists = file.exists();
     let text = fs::read_to_string(file)?;
@@ -1263,9 +1259,6 @@ fn append_document_diagnostics(
     Ok(parsed.document)
 }
 
-
-
-
 fn document_meta_json(document: &RbmemDocument) -> Value {
     json!({
         "version": document.meta.version,
@@ -1311,7 +1304,6 @@ fn sections_json(document: &RbmemDocument, resolve: bool) -> Vec<Value> {
             .collect()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1417,9 +1409,14 @@ Body.
         .unwrap();
         fs::write(markdown.join(".rbmemsync"), "compact_mode: minified\n").unwrap();
 
-        let options =
-            md_sync::SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, false)
-                .unwrap();
+        let options = md_sync::SyncOptions::from_folder(
+            &markdown,
+            false,
+            0.6,
+            InferenceStrategy::Balanced,
+            false,
+        )
+        .unwrap();
         md_sync::sync_markdown_folder(&markdown, &output, &options).unwrap();
 
         let generated = output.join("concepts").join("agent.rbmem");
@@ -1455,9 +1452,14 @@ Body.
         fs::create_dir_all(&markdown).unwrap();
         fs::write(markdown.join("note.md"), "# Note\n\nBody.").unwrap();
 
-        let options =
-            md_sync::SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, true)
-                .unwrap();
+        let options = md_sync::SyncOptions::from_folder(
+            &markdown,
+            false,
+            0.6,
+            InferenceStrategy::Balanced,
+            true,
+        )
+        .unwrap();
         md_sync::sync_markdown_folder(&markdown, &output, &options).unwrap();
 
         assert!(!output.join("note.rbmem").exists());
@@ -1472,9 +1474,14 @@ Body.
         fs::create_dir_all(&markdown).unwrap();
         fs::write(markdown.join("note.md"), "# Note\n\nBody.").unwrap();
 
-        let options =
-            md_sync::SyncOptions::from_folder(&markdown, false, 0.6, InferenceStrategy::Balanced, false)
-                .unwrap();
+        let options = md_sync::SyncOptions::from_folder(
+            &markdown,
+            false,
+            0.6,
+            InferenceStrategy::Balanced,
+            false,
+        )
+        .unwrap();
         md_sync::sync_markdown_folder(&markdown, &output, &options).unwrap();
         let generated = output.join("note.rbmem");
         let first_modified = fs::metadata(&generated).unwrap().modified().unwrap();
