@@ -71,12 +71,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev]
-          pip install pytest-cov
+          pip install pytest-cov coverage
       
       - name: Run tests with coverage
         working-directory: ./mcp-server
         run: |
-          pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+          pytest tests/ -v --cov --cov-report=xml --cov-report=term-missing --no-cov-on-fail
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

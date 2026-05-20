@@ -37,3 +37,14 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.10"
 strict = true
 warn_unused_ignores = false
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "src/rbforge_core/mcp_server.py",
+    "src/rbforge_mcp/*",
+]
+
+[tool.coverage.report]
+fail_under = 0
+show_missing = true
