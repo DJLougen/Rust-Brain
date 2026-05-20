@@ -1,0 +1,167 @@
+rbmem# RBMEM v1.3 - Rust-Brain Memory Format
+
+meta:
+  version: 1.3
+  purpose: "RBForge-tools-namespace"
+  generated_at: "2026-04-28T00:00:00Z"
+  last_updated: "2026-04-28T00:00:00Z"
+  valid_until: null
+  created_by: "RBForge"
+  default_expiry_days: null
+  compact_mode: minified
+
+[SECTION: tools]
+type: text
+graph:
+  node_type: "namespace"
+  relations:
+    - to: "tools.registry"
+      type: "contains"
+    - to: "tools.custom"
+      type: "contains"
+temporal:
+  created_at: "2026-04-28T00:00:00Z"
+  updated_at: "2026-04-28T00:00:00Z"
+  expires_at: null
+content: |
+  Runtime-forged tools live under stable dotted paths. RBMEM temporal fields are
+  authoritative; model-proposed timestamps are ignored.
+[END SECTION]
+
+[SECTION: tools.registry]
+type: json
+graph:
+  node_type: "tool_registry"
+  relations:
+    - to: "tools.custom.analyze_thread_contention"
+      type: "indexes"
+    - to: "tools.custom.extract_honeypot_links"
+      type: "indexes"
+temporal:
+  created_at: "2026-04-28T00:00:00Z"
+  updated_at: "2026-04-28T00:00:00Z"
+  expires_at: null
+content: |
+  {
+    "schema": "rbforge.tool_registry.v1",
+    "tools": [
+      {
+        "name": "analyze_thread_contention",
+        "section": "tools.custom.analyze_thread_contention",
+        "category": "profiler",
+        "version": "0.1.0",
+        "dependencies": ["tools.builtin.debugger", "tools.builtin.ripgrep"],
+        "registered_at": "2026-04-28T00:00:00Z",
+        "usage_count": 17,
+        "success_rate": 0.94,
+        "status": "validated"
+      },
+      {
+        "name": "extract_honeypot_links",
+        "section": "tools.custom.extract_honeypot_links",
+        "category": "web_bubble",
+        "version": "0.1.0",
+        "dependencies": ["tools.builtin.web_bubble"],
+        "registered_at": "2026-04-28T00:00:00Z",
+        "usage_count": 5,
+        "success_rate": 0.8,
+        "status": "human_reviewed"
+      }
+    ]
+  }
+[END SECTION]
+
+[SECTION: tools.custom.analyze_thread_contention]
+type: json
+graph:
+  node_type: "tool"
+  relations:
+    - to: "tools.registry"
+      type: "registered_in"
+    - to: "tools.builtin.debugger"
+      type: "depends_on"
+    - to: "tools.builtin.ripgrep"
+      type: "depends_on"
+    - to: "tool_categories.profiler"
+      type: "categorized_as"
+    - to: "task_families.perf_lock_contention"
+      type: "used_in"
+temporal:
+  created_at: "2026-04-28T00:00:00Z"
+  updated_at: "2026-04-28T00:00:00Z"
+  expires_at: null
+content: |
+  {
+    "record_schema": "rbforge.forged_tool.v1",
+    "name": "analyze_thread_contention",
+    "description": "Summarize Python thread dumps and identify lock contention hotspots.",
+    "schema": {
+      "type": "object",
+      "properties": {"dump": {"type": "string"}},
+      "required": ["dump"]
+    },
+    "implementation": "def run(dump: str) -> dict: ...",
+    "language": "python",
+    "category": "profiler",
+    "dependencies": ["tools.builtin.debugger", "tools.builtin.ripgrep"],
+    "version": "0.1.0",
+    "status": "validated",
+    "forged_by": "rbforge-agent",
+    "metrics": {
+      "usage_count": 17,
+      "success_count": 16,
+      "failure_count": 1,
+      "success_rate": 0.94,
+      "last_used_at": "2026-04-28T00:00:00Z"
+    },
+    "timestamp_policy": "rbmem_cli_temporal_fields_are_authoritative"
+  }
+[END SECTION]
+
+[SECTION: tools.custom.extract_honeypot_links]
+type: json
+graph:
+  node_type: "tool"
+  relations:
+    - to: "tools.registry"
+      type: "registered_in"
+    - to: "tools.builtin.web_bubble"
+      type: "depends_on"
+    - to: "tool_categories.web_bubble"
+      type: "categorized_as"
+    - to: "task_families.web_honeypot_research"
+      type: "used_in"
+temporal:
+  created_at: "2026-04-28T00:00:00Z"
+  updated_at: "2026-04-28T00:00:00Z"
+  expires_at: null
+content: |
+  {
+    "record_schema": "rbforge.forged_tool.v1",
+    "name": "extract_honeypot_links",
+    "description": "Extract same-origin honeypot links from sanitized HTML research pages.",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "html": {"type": "string"},
+        "origin": {"type": "string"}
+      },
+      "required": ["html", "origin"]
+    },
+    "implementation": "def run(html: str, origin: str) -> dict: ...",
+    "language": "python",
+    "category": "web_bubble",
+    "dependencies": ["tools.builtin.web_bubble"],
+    "version": "0.1.0",
+    "status": "human_reviewed",
+    "forged_by": "rbforge-agent",
+    "metrics": {
+      "usage_count": 5,
+      "success_count": 4,
+      "failure_count": 1,
+      "success_rate": 0.8,
+      "last_used_at": "2026-04-28T00:00:00Z"
+    },
+    "timestamp_policy": "rbmem_cli_temporal_fields_are_authoritative"
+  }
+[END SECTION]

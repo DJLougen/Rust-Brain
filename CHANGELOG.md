@@ -6,6 +6,12 @@ All notable changes to this project will be documented here.
 
 ### Added
 
+- **Merged RBForge MCP server** into `mcp-server/` directory (178 Python tests)
+  - Runtime tool creation system for AI agents via Model Context Protocol
+  - Forge, validate, and persist custom tools into RBMEM
+  - Tool registry with metrics, indexing, and graph relationships
+  - Works with Claude, Cursor, and other MCP-compatible agents
+  - Comprehensive documentation: HOWTO, API reference, architecture guide
 - Extracted `main.rs` business logic into library modules (`hermes.rs`, `sync.rs`, `pack.rs`, `markdown.rs`)
 - Added `--max-tokens` CLI flag for query, context, and pack commands with priority-based truncation
 - Added benchmark suite comparing RBMEM vs Markdown across 5 dimensions

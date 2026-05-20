@@ -1,0 +1,67 @@
+{
+  "model": "rbforge-agent",
+  "task_family": "traceback_root_cause",
+  "task": "Fix a failing cache test by using debugger output before patching.",
+  "trajectory": [
+    {
+      "phase": "debugger_first",
+      "event": "debugger.used",
+      "tool_call": {
+        "name": "debugger_summary",
+        "arguments": {
+          "text": "FAILED tests/test_cache.py::test_lock_timeout\nTraceback (most recent call last):\n  File \"app/cache.py\", line 42, in get\nTimeoutError: lock wait exceeded"
+        }
+      },
+      "observation": {
+        "traceback_count": 1,
+        "top_exception": "TimeoutError",
+        "suspect_files": {
+          "app/cache.py": 1
+        },
+        "failing_tests": [
+          "tests/test_cache.py::test_lock_timeout"
+        ],
+        "debugger_signal_score": 0.52
+      }
+    },
+    {
+      "phase": "forge_reusable_debugger",
+      "tool_call": {
+        "name": "forge_tool",
+        "arguments": {
+          "name": "rank_timeout_traces",
+          "description": "Rank timeout tracebacks by suspect file and exception type.",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "log": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "log"
+            ]
+          },
+          "category": "debugger",
+          "dependencies": [
+            "tools.builtin.debugger"
+          ]
+        }
+      }
+    },
+    {
+      "phase": "outcome",
+      "patch": "Move cache lock acquisition closer to the shared map write and add timeout-safe cleanup.",
+      "tests": [
+        "pytest tests/test_cache.py::test_lock_timeout -q"
+      ],
+      "reward_signals": {
+        "debugger_used_before_patch": true,
+        "root_cause_extracted": true,
+        "forged_reusable_debugger": true,
+        "task_success": 1.0,
+        "debugger_reuse_candidate": true
+      }
+    }
+  ]
+}

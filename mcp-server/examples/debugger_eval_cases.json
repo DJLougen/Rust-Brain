@@ -1,0 +1,291 @@
+{
+  "schema": "rbforge.eval.debugger_cases.v1",
+  "description": "Broad replay benchmark for debugger-first vs no-debugger trajectories.",
+  "cases": [
+    {
+      "id": "cache-lock-timeout",
+      "family": "traceback_root_cause",
+      "log": "FAILED tests/test_cache.py::test_lock_timeout\nTraceback (most recent call last):\n  File \"app/cache.py\", line 42, in get\nTimeoutError: lock wait exceeded\nAssertionError: expected cache hit",
+      "expected": {
+        "exception": "TimeoutError",
+        "file": "app/cache.py",
+        "test": "tests/test_cache.py::test_lock_timeout"
+      },
+      "baseline": {
+        "turns": 7,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 4,
+        "reusable_debugger_created": true
+      }
+    },
+    {
+      "id": "json-report-parse",
+      "family": "failing_test_triage",
+      "log": "ERROR tests/test_reports.py::test_json_summary\nTraceback (most recent call last):\n  File \"rbforge/reports.py\", line 18, in parse\nJSONDecodeError: Expecting value\nValueError: invalid report payload",
+      "expected": {
+        "exception": "JSONDecodeError",
+        "file": "rbforge/reports.py",
+        "test": "tests/test_reports.py::test_json_summary"
+      },
+      "baseline": {
+        "turns": 6,
+        "root_cause_hit": true
+      },
+      "debugger": {
+        "used": true,
+        "turns": 3,
+        "reusable_debugger_created": false
+      }
+    },
+    {
+      "id": "worker-deadlock",
+      "family": "lock_contention_debugging",
+      "log": "FAILED tests/test_workers.py::test_no_deadlock\nThread-A waiting on lock cache_index\nThread-B waiting on lock cache_index\nTraceback (most recent call last):\n  File \"workers/pool.py\", line 88, in join\nDeadlockError: worker pool did not drain",
+      "expected": {
+        "exception": "DeadlockError",
+        "file": "workers/pool.py",
+        "test": "tests/test_workers.py::test_no_deadlock"
+      },
+      "baseline": {
+        "turns": 8,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 5,
+        "reusable_debugger_created": true
+      }
+    },
+    {
+      "id": "missing-env-token",
+      "family": "config_env_debugging",
+      "log": "ERROR tests/test_env.py::test_load_required_token\nTraceback (most recent call last):\n  File \"config/env.py\", line 27, in require\nKeyError: HERMES_API_TOKEN\nRuntimeError: missing required environment token",
+      "expected": {
+        "exception": "KeyError",
+        "file": "config/env.py",
+        "test": "tests/test_env.py::test_load_required_token"
+      },
+      "baseline": {
+        "turns": 5,
+        "root_cause_hit": true
+      },
+      "debugger": {
+        "used": true,
+        "turns": 3,
+        "reusable_debugger_created": false
+      }
+    },
+    {
+      "id": "nullable-schema-field",
+      "family": "data_pipeline_debugging",
+      "log": "FAILED tests/test_schema.py::test_nullable_field\nTraceback (most recent call last):\n  File \"ingestion/schema.py\", line 74, in coerce\nTypeError: expected string, got NoneType\nAssertionError: nullable field should be preserved",
+      "expected": {
+        "exception": "TypeError",
+        "file": "ingestion/schema.py",
+        "test": "tests/test_schema.py::test_nullable_field"
+      },
+      "baseline": {
+        "turns": 8,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 4,
+        "reusable_debugger_created": true
+      }
+    },
+    {
+      "id": "api-rate-limit",
+      "family": "api_integration_debugging",
+      "log": "ERROR tests/test_github.py::test_retry_after_header\nTraceback (most recent call last):\n  File \"clients/github.py\", line 112, in request\nHTTPError: 429 Too Many Requests\nAssertionError: retry-after header was ignored",
+      "expected": {
+        "exception": "HTTPError",
+        "file": "clients/github.py",
+        "test": "tests/test_github.py::test_retry_after_header"
+      },
+      "baseline": {
+        "turns": 7,
+        "root_cause_hit": true
+      },
+      "debugger": {
+        "used": true,
+        "turns": 4,
+        "reusable_debugger_created": false
+      }
+    },
+    {
+      "id": "windows-path-normalization",
+      "family": "cross_platform_debugging",
+      "log": "FAILED tests/test_paths.py::test_windows_path_roundtrip\nTraceback (most recent call last):\n  File \"paths/normalize.py\", line 36, in normalize\nFileNotFoundError: C:\\\\tmp\\\\rbforge\\\\memory.rbmem\nAssertionError: path should not be treated as relative",
+      "expected": {
+        "exception": "FileNotFoundError",
+        "file": "paths/normalize.py",
+        "test": "tests/test_paths.py::test_windows_path_roundtrip"
+      },
+      "baseline": {
+        "turns": 6,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 3,
+        "reusable_debugger_created": true
+      }
+    },
+    {
+      "id": "async-task-cancelled",
+      "family": "async_debugging",
+      "log": "ERROR tests/test_async_queue.py::test_cancel_drains_queue\nTraceback (most recent call last):\n  File \"runtime/queue.py\", line 91, in drain\nCancelledError: task cancelled before queue flush\nAssertionError: pending item leaked",
+      "expected": {
+        "exception": "CancelledError",
+        "file": "runtime/queue.py",
+        "test": "tests/test_async_queue.py::test_cancel_drains_queue"
+      },
+      "baseline": {
+        "turns": 9,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 5,
+        "reusable_debugger_created": true
+      }
+    },
+    {
+      "id": "fixture-state-leak",
+      "family": "test_isolation_debugging",
+      "log": "FAILED tests/test_sessions.py::test_clean_session_state\nTraceback (most recent call last):\n  File \"tests/fixtures/session.py\", line 51, in reset\nAssertionError: session cache was not cleared\nStateLeakError: previous test mutated shared fixture",
+      "expected": {
+        "exception": "AssertionError",
+        "file": "tests/fixtures/session.py",
+        "test": "tests/test_sessions.py::test_clean_session_state"
+      },
+      "baseline": {
+        "turns": 8,
+        "root_cause_hit": true
+      },
+      "debugger": {
+        "used": true,
+        "turns": 4,
+        "reusable_debugger_created": false
+      }
+    },
+    {
+      "id": "cli-argparse-flag",
+      "family": "cli_debugging",
+      "log": "ERROR tests/test_cli.py::test_format_json_flag\nTraceback (most recent call last):\n  File \"rbforge_core/cli.py\", line 29, in main\nSystemExit: 2\nAssertionError: --format json should be accepted",
+      "expected": {
+        "exception": "SystemExit",
+        "file": "rbforge_core/cli.py",
+        "test": "tests/test_cli.py::test_format_json_flag"
+      },
+      "baseline": {
+        "turns": 5,
+        "root_cause_hit": true
+      },
+      "debugger": {
+        "used": true,
+        "turns": 3,
+        "reusable_debugger_created": false
+      }
+    },
+    {
+      "id": "unicode-log-decoding",
+      "family": "data_pipeline_debugging",
+      "log": "FAILED tests/test_logs.py::test_utf8_decode\nTraceback (most recent call last):\n  File \"ingestion/logs.py\", line 63, in decode\nUnicodeDecodeError: invalid continuation byte\nAssertionError: log decoder should preserve replacement characters",
+      "expected": {
+        "exception": "UnicodeDecodeError",
+        "file": "ingestion/logs.py",
+        "test": "tests/test_logs.py::test_utf8_decode"
+      },
+      "baseline": {
+        "turns": 7,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 4,
+        "reusable_debugger_created": true
+      }
+    },
+    {
+      "id": "stale-cache-index",
+      "family": "state_cache_debugging",
+      "log": "ERROR tests/test_index.py::test_refresh_invalidates_cache\nTraceback (most recent call last):\n  File \"search/index.py\", line 143, in lookup\nLookupError: stale cache entry returned\nAssertionError: refresh should invalidate index",
+      "expected": {
+        "exception": "LookupError",
+        "file": "search/index.py",
+        "test": "tests/test_index.py::test_refresh_invalidates_cache"
+      },
+      "baseline": {
+        "turns": 8,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 5,
+        "reusable_debugger_created": true
+      }
+    },
+    {
+      "id": "permission-denied-artifact",
+      "family": "filesystem_debugging",
+      "log": "FAILED tests/test_artifacts.py::test_write_report\nTraceback (most recent call last):\n  File \"artifacts/writer.py\", line 58, in write\nPermissionError: access denied writing report.json\nAssertionError: artifact writer should use workspace output dir",
+      "expected": {
+        "exception": "PermissionError",
+        "file": "artifacts/writer.py",
+        "test": "tests/test_artifacts.py::test_write_report"
+      },
+      "baseline": {
+        "turns": 6,
+        "root_cause_hit": true
+      },
+      "debugger": {
+        "used": true,
+        "turns": 3,
+        "reusable_debugger_created": false
+      }
+    },
+    {
+      "id": "retry-backoff-overflow",
+      "family": "api_integration_debugging",
+      "log": "ERROR tests/test_retry.py::test_backoff_cap\nTraceback (most recent call last):\n  File \"clients/retry.py\", line 77, in sleep_for\nOverflowError: backoff duration exceeded cap\nAssertionError: retries should cap exponential delay",
+      "expected": {
+        "exception": "OverflowError",
+        "file": "clients/retry.py",
+        "test": "tests/test_retry.py::test_backoff_cap"
+      },
+      "baseline": {
+        "turns": 7,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 4,
+        "reusable_debugger_created": true
+      }
+    },
+    {
+      "id": "graph-edge-missing",
+      "family": "rbmem_graph_debugging",
+      "log": "FAILED tests/test_graph.py::test_registered_tool_edge\nTraceback (most recent call last):\n  File \"rbmem/graph.py\", line 205, in edge_for\nGraphEdgeError: missing registered_in edge\nAssertionError: registered tools should link to tools.registry",
+      "expected": {
+        "exception": "GraphEdgeError",
+        "file": "rbmem/graph.py",
+        "test": "tests/test_graph.py::test_registered_tool_edge"
+      },
+      "baseline": {
+        "turns": 9,
+        "root_cause_hit": false
+      },
+      "debugger": {
+        "used": true,
+        "turns": 5,
+        "reusable_debugger_created": true
+      }
+    }
+  ]
+}

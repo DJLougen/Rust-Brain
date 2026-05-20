@@ -1,5 +1,18 @@
+# Rust build artifacts
 /target/
-/graphify-out/
+*.pdb
+*.profraw
+
+# Python artifacts (mcp-server)
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+*.egg-info/
 
 # Local environment and editor state
 .env
@@ -20,6 +33,5 @@ Desktop.ini
 *.tmp
 *.bak
 
-# Rust build artifacts that may escape target/
-*.pdb
-*.profraw
+# Generated content
+/graphify-out/

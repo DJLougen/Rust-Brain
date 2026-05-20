@@ -1,0 +1,123 @@
+project: RBForge
+base_model: DJLougen/RBForge-Hermes-3.6-27b-SABER
+fallback_base_model: DJLougen/RBForge-Hermes-3.6-35b-SABER
+chat_template: hermes
+reasoning_format:
+  think_open: "<think>"
+  think_close: "</think>"
+  tool_call_style: hermes_json
+
+datasets:
+  sft:
+    path: data/traces/RBForge_sft.jsonl
+    required_events:
+      - forge_tool.requested
+      - forge_tool.candidate_persisted
+      - forge_tool.sandbox_finished
+      - forge_tool.registered
+      - forge_tool.used
+      - debugger.used
+    ddm_filters:
+      require_registered_tool: true
+      require_downstream_success: true
+      min_success_rate: 0.75
+      reject_timeout: true
+      reject_validation_fail: true
+  grpo:
+    path: data/traces/RBForge_rl.jsonl
+    heldout_task_families:
+      - perf_lock_contention
+      - cross_file_refactor
+      - web_honeypot_research
+      - ml_training_bugs
+      - failing_test_triage
+      - traceback_root_cause
+      - lock_contention_debugging
+
+sft:
+  framework: unsloth
+  max_seq_length: 8192
+  load_in_4bit: true
+  lora_rank: 32
+  lora_alpha: 64
+  lora_dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  learning_rate: 0.00002
+  warmup_ratio: 0.03
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  epochs: 2
+  packing: true
+  save_strategy: steps
+  save_steps: 250
+
+grpo:
+  framework: trl
+  trainer: GRPO
+  reference_model: frozen_sft_checkpoint
+  max_prompt_length: 8192
+  max_completion_length: 4096
+  num_generations: 4
+  temperature: 0.7
+  top_p: 0.95
+  learning_rate: 0.000005
+  beta: 0.04
+  reward_weights:
+    tool_invention_reward: 1.5
+    task_success_reward: 1.0
+    debugger_use_reward: 0.75
+    format_reward: 0.25
+  tool_invention_reward:
+    success_bonus: 0.45
+    reuse_bonus: 0.35
+    generalization_bonus: 0.45
+    clean_code_bonus: 0.30
+    penalties:
+      timeout: -0.60
+      validation_fail: -0.80
+      sandbox_escape_attempt: -1.00
+      duplicate_low_value_tool: -0.30
+      excessive_dependencies: -0.20
+  task_success_reward:
+    bug_fixed: 0.45
+    perf_improvement: 0.30
+    steps_reduction: 0.25
+    regression_penalty: -0.75
+  debugger_use_reward:
+    used_before_patch_bonus: 0.25
+    extracted_root_cause_bonus: 0.30
+    reused_existing_debugger_bonus: 0.20
+    forged_reusable_debugger_bonus: 0.25
+    penalties:
+      skipped_available_debugger: -0.25
+      debug_output_not_used: -0.30
+      forged_duplicate_debugger: -0.20
+  format_reward:
+    valid_think_tags: 0.08
+    valid_hermes_tool_call_json: 0.10
+    valid_forge_tool_schema: 0.07
+    malformed_xml_penalty: -0.15
+    hidden_tool_output_penalty: -0.25
+
+evaluation:
+  metrics:
+    - forged_tool_test_pass_rate
+    - rbmem_validation_rate
+    - heldout_reuse_success_rate
+    - downstream_task_success
+    - average_turn_reduction
+    - debugger_use_rate
+    - debugger_root_cause_accuracy
+    - debugger_reuse_success_rate
+  gates:
+    min_rbmem_validation_rate: 0.99
+    min_tool_test_pass_rate: 0.90
+    min_heldout_reuse_success_rate: 0.65
+    min_debugger_use_rate: 0.70

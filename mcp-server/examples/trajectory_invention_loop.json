@@ -1,0 +1,58 @@
+{
+  "model": "rbforge-agent",
+  "task": "Fix intermittent training deadlock caused by dataloader workers waiting on a shared cache lock.",
+  "trajectory": [
+    {
+      "phase": "detect_limitation",
+      "think": "Existing debugger and ripgrep tools can find stack traces, but I need a reusable contention summarizer for thread dumps."
+    },
+    {
+      "phase": "forge_tool",
+      "tool_call": {
+        "name": "forge_tool",
+        "arguments": {
+          "name": "analyze_thread_contention",
+          "description": "Summarize Python thread dumps and identify lock contention hotspots.",
+          "schema": {
+            "type": "object",
+            "properties": {"dump": {"type": "string"}},
+            "required": ["dump"]
+          },
+          "category": "profiler",
+          "dependencies": ["tools.builtin.debugger", "tools.builtin.ripgrep"]
+        }
+      }
+    },
+    {
+      "phase": "backend_validation",
+      "events": [
+        "rbmem update memory.rbmem --section tools.custom.analyze_thread_contention --type json",
+        "sandbox: docker python:3.11-slim, network none, unittest smoke pass",
+        "rbmem update memory.rbmem --section tools.registry --type json",
+        "graph edges: depends_on debugger, depends_on ripgrep, categorized_as profiler"
+      ]
+    },
+    {
+      "phase": "immediate_use",
+      "tool_call": {
+        "name": "analyze_thread_contention",
+        "arguments": {
+          "dump": "Thread-A waiting on lock cache_index\nThread-B waiting on lock cache_index"
+        }
+      },
+      "observation": {"wait_count": 2, "hotspots": [["cache_index", 2]]}
+    },
+    {
+      "phase": "outcome",
+      "patch": "Move cache population outside worker lock and use per-key lock striping.",
+      "tests": ["pytest tests/test_dataloader_cache.py -q"],
+      "reward_signals": {
+        "tool_correctness": 1.0,
+        "task_success": 1.0,
+        "step_reduction": 0.42,
+        "generalization_candidate": true,
+        "dependency_penalty": 0.0
+      }
+    }
+  ]
+}

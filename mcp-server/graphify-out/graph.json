@@ -1,0 +1,5236 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "examples_forge_thread_tool_py",
+      "label": "forge_thread_tool",
+      "source_file": ".\\examples\\forge_thread_tool.py",
+      "node_type": "file",
+      "community": 23
+    },
+    {
+      "id": "examples_forge_thread_tool_py_import_rbforge_core_forge_tool",
+      "label": "rbforge_core.forge_tool",
+      "source_file": ".\\examples\\forge_thread_tool.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 23
+    },
+    {
+      "id": "examples_starter_harness_py",
+      "label": "starter_harness",
+      "source_file": ".\\examples\\starter_harness.py",
+      "node_type": "file",
+      "community": 18
+    },
+    {
+      "id": "examples_starter_harness_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\examples\\starter_harness.py",
+      "source_location": "L10",
+      "node_type": "module",
+      "community": 18
+    },
+    {
+      "id": "examples_starter_harness_py_import_rbforge_core_forge_tool",
+      "label": "rbforge_core.forge_tool",
+      "source_file": ".\\examples\\starter_harness.py",
+      "source_location": "L12",
+      "node_type": "module",
+      "community": 18
+    },
+    {
+      "id": "examples_starter_harness_py_import_rbforge_core_harness_toolharness",
+      "label": "rbforge_core.harness.ToolHarness",
+      "source_file": ".\\examples\\starter_harness.py",
+      "source_location": "L13",
+      "node_type": "module",
+      "community": 18
+    },
+    {
+      "id": "examples_starter_harness_py_main",
+      "label": "main()",
+      "source_file": ".\\examples\\starter_harness.py",
+      "source_location": "L16",
+      "node_type": "function",
+      "community": 18
+    },
+    {
+      "id": "scripts_demo_before_after_py",
+      "label": "demo_before_after",
+      "source_file": ".\\scripts\\demo_before_after.py",
+      "node_type": "file",
+      "community": 21
+    },
+    {
+      "id": "scripts_demo_before_after_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\scripts\\demo_before_after.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 21
+    },
+    {
+      "id": "scripts_demo_before_after_py_main",
+      "label": "main()",
+      "source_file": ".\\scripts\\demo_before_after.py",
+      "source_location": "L8",
+      "node_type": "function",
+      "community": 21
+    },
+    {
+      "id": "scripts_demo_invention_loop_py",
+      "label": "demo_invention_loop",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "node_type": "file",
+      "community": 10
+    },
+    {
+      "id": "scripts_demo_invention_loop_py_import_json",
+      "label": "json",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L14",
+      "node_type": "module",
+      "community": 10
+    },
+    {
+      "id": "scripts_demo_invention_loop_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L15",
+      "node_type": "module",
+      "community": 10
+    },
+    {
+      "id": "scripts_demo_invention_loop_py_import_rbforge_forge_tool",
+      "label": "RBForge.forge_tool",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L17",
+      "node_type": "module",
+      "community": 10
+    },
+    {
+      "id": "scripts_demo_invention_loop_py_import_rbforge_run_forged_tool",
+      "label": "RBForge.run_forged_tool",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L17",
+      "node_type": "module",
+      "community": 10
+    },
+    {
+      "id": "scripts_demo_invention_loop_py_main",
+      "label": "main()",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L65",
+      "node_type": "function",
+      "community": 10
+    },
+    {
+      "id": "scripts_demo_invention_loop_py_extract_tool_call",
+      "label": "_extract_tool_call()",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L108",
+      "node_type": "function",
+      "community": 10
+    },
+    {
+      "id": "scripts_demo_invention_loop_py_extract_think",
+      "label": "_extract_think()",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L114",
+      "node_type": "function",
+      "community": 10
+    },
+    {
+      "id": "scripts_demo_invention_loop_py_compact_forge_result",
+      "label": "_compact_forge_result()",
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L120",
+      "node_type": "function",
+      "community": 10
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py",
+      "label": "install_hermes_bridge",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "node_type": "file",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_import_json",
+      "label": "json",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L12",
+      "node_type": "module",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_import_os",
+      "label": "os",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L13",
+      "node_type": "module",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_import_re",
+      "label": "re",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L14",
+      "node_type": "module",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_import_shutil",
+      "label": "shutil",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L15",
+      "node_type": "module",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_import_subprocess",
+      "label": "subprocess",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L16",
+      "node_type": "module",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L17",
+      "node_type": "module",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_import_yaml",
+      "label": "yaml",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L19",
+      "node_type": "module",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_main",
+      "label": "main()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L28",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_update_yaml_config",
+      "label": "update_yaml_config()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L47",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_bridge_config",
+      "label": "bridge_config()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L60",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_update_rbmem",
+      "label": "update_rbmem()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L71",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_autonomy_lines",
+      "label": "autonomy_lines()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L109",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_find_rbmem_cli",
+      "label": "find_rbmem_cli()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L135",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_remove_legacy_rbmem_sections",
+      "label": "remove_legacy_rbmem_sections()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L150",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_update_wsl_config",
+      "label": "update_wsl_config()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L164",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_windows_to_wsl_path",
+      "label": "windows_to_wsl_path()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L251",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "scripts_install_hermes_bridge_py_wsl_rbmem_cli",
+      "label": "wsl_rbmem_cli()",
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L263",
+      "node_type": "function",
+      "community": 1
+    },
+    {
+      "id": "src_rbforge_core_demo_py",
+      "label": "demo",
+      "source_file": ".\\src\\rbforge_core\\demo.py",
+      "node_type": "file",
+      "community": 20
+    },
+    {
+      "id": "src_rbforge_core_demo_py_import_rbforge_core_forge_forge_tool",
+      "label": "rbforge_core.forge.forge_tool",
+      "source_file": ".\\src\\rbforge_core\\demo.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 20
+    },
+    {
+      "id": "src_rbforge_core_demo_py_main",
+      "label": "main()",
+      "source_file": ".\\src\\rbforge_core\\demo.py",
+      "source_location": "L8",
+      "node_type": "function",
+      "community": 20
+    },
+    {
+      "id": "src_rbforge_core_forge_py",
+      "label": "forge",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "node_type": "file",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_import_typing_any",
+      "label": "typing.Any",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_import_rbforge_core_models_forgeresult",
+      "label": "rbforge_core.models.ForgeResult",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L8",
+      "node_type": "module",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_import_rbforge_core_models_toolspec",
+      "label": "rbforge_core.models.ToolSpec",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L8",
+      "node_type": "module",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_import_rbforge_core_rbmem_rbmemstore",
+      "label": "rbforge_core.rbmem.RbmemStore",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L9",
+      "node_type": "module",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_import_rbforge_core_sandbox_sandboxexecutor",
+      "label": "rbforge_core.sandbox.SandboxExecutor",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L10",
+      "node_type": "module",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_import_rbforge_core_trajectory_trajectorylogger",
+      "label": "rbforge_core.trajectory.TrajectoryLogger",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L11",
+      "node_type": "module",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_import_rbforge_core_validation_validate_tool_spec",
+      "label": "rbforge_core.validation.validate_tool_spec",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L12",
+      "node_type": "module",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_forge_tool",
+      "label": "forge_tool()",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L15",
+      "node_type": "function",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_forge_py_message",
+      "label": "_message()",
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L115",
+      "node_type": "function",
+      "community": 8
+    },
+    {
+      "id": "src_rbforge_core_harness_py",
+      "label": "harness",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "node_type": "file",
+      "community": 13
+    },
+    {
+      "id": "src_rbforge_core_harness_py_import_json",
+      "label": "json",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 13
+    },
+    {
+      "id": "src_rbforge_core_harness_py_import_re",
+      "label": "re",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 13
+    },
+    {
+      "id": "src_rbforge_core_harness_py_import_subprocess",
+      "label": "subprocess",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 13
+    },
+    {
+      "id": "src_rbforge_core_harness_py_import_tempfile",
+      "label": "tempfile",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L8",
+      "node_type": "module",
+      "community": 13
+    },
+    {
+      "id": "src_rbforge_core_harness_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L9",
+      "node_type": "module",
+      "community": 13
+    },
+    {
+      "id": "src_rbforge_core_harness_py_import_typing_any",
+      "label": "typing.Any",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L10",
+      "node_type": "module",
+      "community": 13
+    },
+    {
+      "id": "src_rbforge_core_harness_py_import_rbforge_core_rbmem_rbmemstore",
+      "label": "rbforge_core.rbmem.RbmemStore",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L12",
+      "node_type": "module",
+      "community": 13
+    },
+    {
+      "id": "src_rbforge_core_harness_py_toolharness",
+      "label": "ToolHarness",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L15",
+      "node_type": "class",
+      "community": 17
+    },
+    {
+      "id": "src_rbforge_core_harness_py_toolharness_init",
+      "label": ".__init__()",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L16",
+      "node_type": "method",
+      "community": 17
+    },
+    {
+      "id": "src_rbforge_core_harness_py_toolharness_ripgrep",
+      "label": ".ripgrep()",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L23",
+      "node_type": "method",
+      "community": 17
+    },
+    {
+      "id": "src_rbforge_core_harness_py_toolharness_debugger_summary",
+      "label": ".debugger_summary()",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L30",
+      "node_type": "method",
+      "community": 17
+    },
+    {
+      "id": "src_rbforge_core_harness_py_toolharness_call_forged",
+      "label": ".call_forged()",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L38",
+      "node_type": "method",
+      "community": 17
+    },
+    {
+      "id": "src_rbforge_core_harness_py_toolharness_load_tool_record",
+      "label": "._load_tool_record()",
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L72",
+      "node_type": "method",
+      "community": 17
+    },
+    {
+      "id": "src_rbforge_core_models_py",
+      "label": "models",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "node_type": "file",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_import_dataclasses_dataclass",
+      "label": "dataclasses.dataclass",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_import_dataclasses_field",
+      "label": "dataclasses.field",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_import_datetime_timezone",
+      "label": "datetime.timezone",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_import_typing_any",
+      "label": "typing.Any",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_import_typing_literal",
+      "label": "typing.Literal",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_utc_now_iso",
+      "label": "utc_now_iso()",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L12",
+      "node_type": "function",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_toolspec",
+      "label": "ToolSpec",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L17",
+      "node_type": "class",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_toolspec_section_path",
+      "label": ".section_path()",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L31",
+      "node_type": "method",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_sandboxresult",
+      "label": "SandboxResult",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L36",
+      "node_type": "class",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_models_py_forgeresult",
+      "label": "ForgeResult",
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L47",
+      "node_type": "class",
+      "community": 7
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py",
+      "label": "rbmem",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "node_type": "file",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_json",
+      "label": "json",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_os",
+      "label": "os",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_re",
+      "label": "re",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_shutil",
+      "label": "shutil",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L8",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_subprocess",
+      "label": "subprocess",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L9",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_tempfile",
+      "label": "tempfile",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L10",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L11",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_typing_any",
+      "label": "typing.Any",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L12",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_rbforge_core_models_toolspec",
+      "label": "rbforge_core.models.ToolSpec",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L14",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_import_rbforge_core_models_utc_now_iso",
+      "label": "rbforge_core.models.utc_now_iso",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L14",
+      "node_type": "module",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemerror",
+      "label": "RbmemError",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L17",
+      "node_type": "class",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_find_rbmem_cli",
+      "label": "find_rbmem_cli()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L21",
+      "node_type": "function",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore",
+      "label": "RbmemStore",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L31",
+      "node_type": "class",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_init",
+      "label": ".__init__()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L32",
+      "node_type": "method",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_ensure",
+      "label": ".ensure()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L36",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_persist_candidate",
+      "label": ".persist_candidate()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L52",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "label": ".register_validated_tool()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L62",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_read_registry",
+      "label": ".read_registry()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L88",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_update_section",
+      "label": ".update_section()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L100",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_read_minified",
+      "label": ".read_minified()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L130",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_hermes_load",
+      "label": ".hermes_load()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L138",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_hermes_save",
+      "label": ".hermes_save()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L148",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_validate",
+      "label": ".validate()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L162",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_apply_graph",
+      "label": ".apply_graph()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L166",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_rbmemstore_run",
+      "label": "._run()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L192",
+      "node_type": "method",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_tool_record",
+      "label": "tool_record()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L209",
+      "node_type": "function",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_tool_relations",
+      "label": "_tool_relations()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L230",
+      "node_type": "function",
+      "community": 5
+    },
+    {
+      "id": "src_rbforge_core_rbmem_py_render_graph_block",
+      "label": "_render_graph_block()",
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L239",
+      "node_type": "function",
+      "community": 4
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py",
+      "label": "sandbox",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "node_type": "file",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_import_ast",
+      "label": "ast",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_import_json",
+      "label": "json",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_import_shutil",
+      "label": "shutil",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_import_subprocess",
+      "label": "subprocess",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L8",
+      "node_type": "module",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_import_tempfile",
+      "label": "tempfile",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L9",
+      "node_type": "module",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L10",
+      "node_type": "module",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_import_rbforge_core_models_sandboxresult",
+      "label": "rbforge_core.models.SandboxResult",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L12",
+      "node_type": "module",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_import_rbforge_core_models_toolspec",
+      "label": "rbforge_core.models.ToolSpec",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L12",
+      "node_type": "module",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_sandboxexecutor",
+      "label": "SandboxExecutor",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L15",
+      "node_type": "class",
+      "community": 14
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_sandboxexecutor_init",
+      "label": ".__init__()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L16",
+      "node_type": "method",
+      "community": 14
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_sandboxexecutor_validate",
+      "label": ".validate()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L20",
+      "node_type": "method",
+      "community": 14
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_sandboxexecutor_run_docker",
+      "label": "._run_docker()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L43",
+      "node_type": "method",
+      "community": 14
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_sandboxexecutor_run_local",
+      "label": "._run_local()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L74",
+      "node_type": "method",
+      "community": 14
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_static_warnings",
+      "label": "static_warnings()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L91",
+      "node_type": "function",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_generate_python_unittest",
+      "label": "generate_python_unittest()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L104",
+      "node_type": "function",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_sample_args",
+      "label": "_sample_args()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L139",
+      "node_type": "function",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_call_name",
+      "label": "_call_name()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L168",
+      "node_type": "function",
+      "community": 6
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_run",
+      "label": "_run()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L176",
+      "node_type": "function",
+      "community": 14
+    },
+    {
+      "id": "src_rbforge_core_sandbox_py_docker_is_ready",
+      "label": "_docker_is_ready()",
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L214",
+      "node_type": "function",
+      "community": 14
+    },
+    {
+      "id": "src_rbforge_core_trajectory_py",
+      "label": "trajectory",
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "node_type": "file",
+      "community": 12
+    },
+    {
+      "id": "src_rbforge_core_trajectory_py_import_json",
+      "label": "json",
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 12
+    },
+    {
+      "id": "src_rbforge_core_trajectory_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 12
+    },
+    {
+      "id": "src_rbforge_core_trajectory_py_import_typing_any",
+      "label": "typing.Any",
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 12
+    },
+    {
+      "id": "src_rbforge_core_trajectory_py_import_rbforge_core_models_utc_now_iso",
+      "label": "rbforge_core.models.utc_now_iso",
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L9",
+      "node_type": "module",
+      "community": 12
+    },
+    {
+      "id": "src_rbforge_core_trajectory_py_trajectorylogger",
+      "label": "TrajectoryLogger",
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L12",
+      "node_type": "class",
+      "community": 12
+    },
+    {
+      "id": "src_rbforge_core_trajectory_py_trajectorylogger_init",
+      "label": ".__init__()",
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L13",
+      "node_type": "method",
+      "community": 12
+    },
+    {
+      "id": "src_rbforge_core_trajectory_py_trajectorylogger_record",
+      "label": ".record()",
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L17",
+      "node_type": "method",
+      "community": 12
+    },
+    {
+      "id": "src_rbforge_core_validation_py",
+      "label": "validation",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "node_type": "file",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_validation_py_import_ast",
+      "label": "ast",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_validation_py_import_re",
+      "label": "re",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_validation_py_import_typing_any",
+      "label": "typing.Any",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_validation_py_import_rbforge_core_models_toolspec",
+      "label": "rbforge_core.models.ToolSpec",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L9",
+      "node_type": "module",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_validation_py_toolspecerror",
+      "label": "ToolSpecError",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L15",
+      "node_type": "class",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_validation_py_validate_tool_spec",
+      "label": "validate_tool_spec()",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L19",
+      "node_type": "function",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_validation_py_validate_schema_shape",
+      "label": "_validate_schema_shape()",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L31",
+      "node_type": "function",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_validation_py_validate_python_source",
+      "label": "_validate_python_source()",
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L50",
+      "node_type": "function",
+      "community": 9
+    },
+    {
+      "id": "src_rbforge_core_init_py",
+      "label": "__init__",
+      "source_file": ".\\src\\rbforge_core\\__init__.py",
+      "node_type": "file",
+      "community": 19
+    },
+    {
+      "id": "src_rbforge_core_init_py_import_rbforge_core_forge_forge_tool",
+      "label": "rbforge_core.forge.forge_tool",
+      "source_file": ".\\src\\rbforge_core\\__init__.py",
+      "source_location": "L3",
+      "node_type": "module",
+      "community": 19
+    },
+    {
+      "id": "src_rbforge_core_init_py_import_rbforge_core_models_forgeresult",
+      "label": "rbforge_core.models.ForgeResult",
+      "source_file": ".\\src\\rbforge_core\\__init__.py",
+      "source_location": "L4",
+      "node_type": "module",
+      "community": 19
+    },
+    {
+      "id": "src_rbforge_core_init_py_import_rbforge_core_models_toolspec",
+      "label": "rbforge_core.models.ToolSpec",
+      "source_file": ".\\src\\rbforge_core\\__init__.py",
+      "source_location": "L4",
+      "node_type": "module",
+      "community": 19
+    },
+    {
+      "id": "src_rbforge_forge_tool_py",
+      "label": "forge_tool",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "node_type": "file",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_ast",
+      "label": "ast",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L29",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_json",
+      "label": "json",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L30",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_os",
+      "label": "os",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L31",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_re",
+      "label": "re",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L32",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_shutil",
+      "label": "shutil",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L33",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_subprocess",
+      "label": "subprocess",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L34",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_sys",
+      "label": "sys",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L35",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_tempfile",
+      "label": "tempfile",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L36",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_dataclasses_asdict",
+      "label": "dataclasses.asdict",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L37",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_dataclasses_dataclass",
+      "label": "dataclasses.dataclass",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L37",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_dataclasses_field",
+      "label": "dataclasses.field",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L37",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_datetime_timezone",
+      "label": "datetime.timezone",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L38",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L39",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_typing_any",
+      "label": "typing.Any",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L40",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_typing_literal",
+      "label": "typing.Literal",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L40",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_jsonschema_draft202012validator",
+      "label": "jsonschema.Draft202012Validator",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L42",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_import_jsonschema_validationerror",
+      "label": "jsonschema.ValidationError",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L42",
+      "node_type": "module",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_toolspec",
+      "label": "ToolSpec",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L111",
+      "node_type": "class",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_toolspec_section_path",
+      "label": ".section_path()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L128",
+      "node_type": "method",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_sandboxreport",
+      "label": "SandboxReport",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L133",
+      "node_type": "class",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_forge_tool",
+      "label": "forge_tool()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L145",
+      "node_type": "function",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_run_forged_tool",
+      "label": "run_forged_tool()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L256",
+      "node_type": "function",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbforgeerror",
+      "label": "RBForgeError",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L311",
+      "node_type": "class",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_tracelogger",
+      "label": "TraceLogger",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L315",
+      "node_type": "class",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_tracelogger_init",
+      "label": ".__init__()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L318",
+      "node_type": "method",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_tracelogger_record",
+      "label": ".record()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L323",
+      "node_type": "method",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore",
+      "label": "RbmemStore",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L331",
+      "node_type": "class",
+      "community": 11
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_init",
+      "label": ".__init__()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L334",
+      "node_type": "method",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_ensure",
+      "label": ".ensure()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L338",
+      "node_type": "method",
+      "community": 11
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_update_section",
+      "label": ".update_section()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L354",
+      "node_type": "method",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_register_tool",
+      "label": ".register_tool()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L377",
+      "node_type": "method",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_read_registry",
+      "label": ".read_registry()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L409",
+      "node_type": "method",
+      "community": 11
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_load_tool_record",
+      "label": ".load_tool_record()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L421",
+      "node_type": "method",
+      "community": 11
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_read_minified",
+      "label": ".read_minified()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L429",
+      "node_type": "method",
+      "community": 11
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_hermes_load",
+      "label": ".hermes_load()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L436",
+      "node_type": "method",
+      "community": 11
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_hermes_save",
+      "label": ".hermes_save()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L445",
+      "node_type": "method",
+      "community": 11
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_apply_graph",
+      "label": ".apply_graph()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L458",
+      "node_type": "method",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "label": ".validate()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L469",
+      "node_type": "method",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_rbmemstore_run",
+      "label": "._run()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L472",
+      "node_type": "method",
+      "community": 11
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_validate_spec",
+      "label": "validate_spec()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L480",
+      "node_type": "function",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_validate_python_source",
+      "label": "validate_python_source()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L506",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_sandbox_validate",
+      "label": "sandbox_validate()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L527",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_run_docker",
+      "label": "run_docker()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L540",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_run_local_subprocess",
+      "label": "run_local_subprocess()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L572",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_execute_python_tool",
+      "label": "execute_python_tool()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L605",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_run_command",
+      "label": "run_command()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L642",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_generated_unittest",
+      "label": "generated_unittest()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L684",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_sample_args",
+      "label": "sample_args()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L720",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_patch_section_graph",
+      "label": "patch_section_graph()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L748",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_remove_graph_blocks",
+      "label": "remove_graph_blocks()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L776",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_render_graph_block",
+      "label": "render_graph_block()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L794",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_docker_ready",
+      "label": "docker_ready()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L807",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_resource_limiter",
+      "label": "resource_limiter()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L823",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_find_or_build_rbmem",
+      "label": "find_or_build_rbmem()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L835",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_static_warnings",
+      "label": "static_warnings()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L861",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_validate_import",
+      "label": "_validate_import()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L872",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_call_name",
+      "label": "_call_name()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L883",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_tool_record",
+      "label": "_tool_record()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L891",
+      "node_type": "function",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_relations",
+      "label": "_relations()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L923",
+      "node_type": "function",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_relations_from_record",
+      "label": "_relations_from_record()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L934",
+      "node_type": "function",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_update_metrics",
+      "label": "_update_metrics()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L945",
+      "node_type": "function",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_failure",
+      "label": "_failure()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L959",
+      "node_type": "function",
+      "community": 0
+    },
+    {
+      "id": "src_rbforge_forge_tool_py_utc_now",
+      "label": "utc_now()",
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L963",
+      "node_type": "function",
+      "community": 3
+    },
+    {
+      "id": "src_rbforge_init_py",
+      "label": "__init__",
+      "source_file": ".\\src\\RBForge\\__init__.py",
+      "node_type": "file",
+      "community": 22
+    },
+    {
+      "id": "src_rbforge_init_py_import_rbforge_forge_tool_forge_tool",
+      "label": "RBForge.forge_tool.forge_tool",
+      "source_file": ".\\src\\RBForge\\__init__.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 22
+    },
+    {
+      "id": "src_rbforge_init_py_import_rbforge_forge_tool_run_forged_tool",
+      "label": "RBForge.forge_tool.run_forged_tool",
+      "source_file": ".\\src\\RBForge\\__init__.py",
+      "source_location": "L7",
+      "node_type": "module",
+      "community": 22
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py",
+      "label": "test_rbforge_public_api",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "node_type": "file",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_importlib",
+      "label": "importlib",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L3",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L4",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_rbforgeerror",
+      "label": "RBForge.forge_tool.RBForgeError",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_rbmemstore",
+      "label": "RBForge.forge_tool.RbmemStore",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_toolspec",
+      "label": "RBForge.forge_tool.ToolSpec",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_patch_section_graph",
+      "label": "RBForge.forge_tool.patch_section_graph",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_run_forged_tool",
+      "label": "RBForge.forge_tool.run_forged_tool",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_sample_args",
+      "label": "RBForge.forge_tool.sample_args",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_validate_spec",
+      "label": "RBForge.forge_tool.validate_spec",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "node_type": "module",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_test_public_validate_spec_uses_jsonschema",
+      "label": "test_public_validate_spec_uses_jsonschema()",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L17",
+      "node_type": "function",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_test_patch_section_graph_replaces_duplicate_graph_blocks",
+      "label": "test_patch_section_graph_replaces_duplicate_graph_blocks()",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L35",
+      "node_type": "function",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_test_run_forged_tool_updates_metrics",
+      "label": "test_run_forged_tool_updates_metrics()",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L71",
+      "node_type": "function",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_test_web_bubble_tools_can_import_http_clients",
+      "label": "test_web_bubble_tools_can_import_http_clients()",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L140",
+      "node_type": "function",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_test_non_web_tools_still_reject_http_clients",
+      "label": "test_non_web_tools_still_reject_http_clients()",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L161",
+      "node_type": "function",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbforge_public_api_py_test_shell_tools_can_import_subprocess_but_other_tools_cannot",
+      "label": "test_shell_tools_can_import_subprocess_but_other_tools_cannot()",
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L186",
+      "node_type": "function",
+      "community": 2
+    },
+    {
+      "id": "tests_test_rbmem_graph_patch_py",
+      "label": "test_rbmem_graph_patch",
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "node_type": "file",
+      "community": 15
+    },
+    {
+      "id": "tests_test_rbmem_graph_patch_py_import_pathlib_path",
+      "label": "pathlib.Path",
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L3",
+      "node_type": "module",
+      "community": 15
+    },
+    {
+      "id": "tests_test_rbmem_graph_patch_py_import_rbforge_core_rbmem_rbmemstore",
+      "label": "rbforge_core.rbmem.RbmemStore",
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 15
+    },
+    {
+      "id": "tests_test_rbmem_graph_patch_py_nooprbmemstore",
+      "label": "NoopRbmemStore",
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L8",
+      "node_type": "class",
+      "community": 15
+    },
+    {
+      "id": "tests_test_rbmem_graph_patch_py_nooprbmemstore_init",
+      "label": ".__init__()",
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L9",
+      "node_type": "method",
+      "community": 15
+    },
+    {
+      "id": "tests_test_rbmem_graph_patch_py_nooprbmemstore_validate",
+      "label": ".validate()",
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L13",
+      "node_type": "method",
+      "community": 15
+    },
+    {
+      "id": "tests_test_rbmem_graph_patch_py_test_apply_graph_inserts_relations_without_touching_temporal",
+      "label": "test_apply_graph_inserts_relations_without_touching_temporal()",
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L17",
+      "node_type": "function",
+      "community": 15
+    },
+    {
+      "id": "tests_test_validation_and_sandbox_py",
+      "label": "test_validation_and_sandbox",
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "node_type": "file",
+      "community": 16
+    },
+    {
+      "id": "tests_test_validation_and_sandbox_py_import_rbforge_core_models_toolspec",
+      "label": "rbforge_core.models.ToolSpec",
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L3",
+      "node_type": "module",
+      "community": 16
+    },
+    {
+      "id": "tests_test_validation_and_sandbox_py_import_rbforge_core_sandbox_sandboxexecutor",
+      "label": "rbforge_core.sandbox.SandboxExecutor",
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L4",
+      "node_type": "module",
+      "community": 16
+    },
+    {
+      "id": "tests_test_validation_and_sandbox_py_import_rbforge_core_validation_toolspecerror",
+      "label": "rbforge_core.validation.ToolSpecError",
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 16
+    },
+    {
+      "id": "tests_test_validation_and_sandbox_py_import_rbforge_core_validation_validate_tool_spec",
+      "label": "rbforge_core.validation.validate_tool_spec",
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L5",
+      "node_type": "module",
+      "community": 16
+    },
+    {
+      "id": "tests_test_validation_and_sandbox_py_test_valid_python_tool_passes_local_sandbox",
+      "label": "test_valid_python_tool_passes_local_sandbox()",
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L8",
+      "node_type": "function",
+      "community": 16
+    },
+    {
+      "id": "tests_test_validation_and_sandbox_py_test_validation_rejects_bad_name",
+      "label": "test_validation_rejects_bad_name()",
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L29",
+      "node_type": "function",
+      "community": 16
+    }
+  ],
+  "links": [
+    {
+      "source": "examples_forge_thread_tool_py",
+      "target": "examples_forge_thread_tool_py_import_rbforge_core_forge_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\examples\\forge_thread_tool.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_starter_harness_py",
+      "target": "examples_starter_harness_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\examples\\starter_harness.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_starter_harness_py",
+      "target": "examples_starter_harness_py_import_rbforge_core_forge_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\examples\\starter_harness.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_starter_harness_py",
+      "target": "examples_starter_harness_py_import_rbforge_core_harness_toolharness",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\examples\\starter_harness.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_starter_harness_py",
+      "target": "examples_starter_harness_py_main",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\examples\\starter_harness.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_before_after_py",
+      "target": "scripts_demo_before_after_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_before_after.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_before_after_py",
+      "target": "scripts_demo_before_after_py_main",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_before_after.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py",
+      "target": "scripts_demo_invention_loop_py_import_json",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py",
+      "target": "scripts_demo_invention_loop_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py",
+      "target": "scripts_demo_invention_loop_py_import_rbforge_forge_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py",
+      "target": "scripts_demo_invention_loop_py_import_rbforge_run_forged_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py",
+      "target": "scripts_demo_invention_loop_py_main",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py",
+      "target": "scripts_demo_invention_loop_py_extract_tool_call",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py",
+      "target": "scripts_demo_invention_loop_py_extract_think",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py",
+      "target": "scripts_demo_invention_loop_py_compact_forge_result",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py_main",
+      "target": "scripts_demo_invention_loop_py_extract_think",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py_main",
+      "target": "scripts_demo_invention_loop_py_compact_forge_result",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_demo_invention_loop_py_main",
+      "target": "scripts_demo_invention_loop_py_extract_tool_call",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\demo_invention_loop.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_import_json",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_import_os",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_import_re",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_import_shutil",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_import_subprocess",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_import_yaml",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_main",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_update_yaml_config",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_bridge_config",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_update_rbmem",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_autonomy_lines",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_find_rbmem_cli",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_remove_legacy_rbmem_sections",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_update_wsl_config",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_windows_to_wsl_path",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L251",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py",
+      "target": "scripts_install_hermes_bridge_py_wsl_rbmem_cli",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_main",
+      "target": "scripts_install_hermes_bridge_py_update_rbmem",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_main",
+      "target": "scripts_install_hermes_bridge_py_update_wsl_config",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_main",
+      "target": "scripts_install_hermes_bridge_py_update_yaml_config",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_update_yaml_config",
+      "target": "scripts_install_hermes_bridge_py_bridge_config",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_update_yaml_config",
+      "target": "scripts_install_hermes_bridge_py_find_rbmem_cli",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_update_rbmem",
+      "target": "scripts_install_hermes_bridge_py_autonomy_lines",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_update_rbmem",
+      "target": "scripts_install_hermes_bridge_py_remove_legacy_rbmem_sections",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_update_rbmem",
+      "target": "scripts_install_hermes_bridge_py_find_rbmem_cli",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_update_wsl_config",
+      "target": "scripts_install_hermes_bridge_py_windows_to_wsl_path",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_update_wsl_config",
+      "target": "scripts_install_hermes_bridge_py_wsl_rbmem_cli",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_update_wsl_config",
+      "target": "scripts_install_hermes_bridge_py_find_rbmem_cli",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_install_hermes_bridge_py_wsl_rbmem_cli",
+      "target": "scripts_install_hermes_bridge_py_windows_to_wsl_path",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\scripts\\install_hermes_bridge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_demo_py",
+      "target": "src_rbforge_core_demo_py_import_rbforge_core_forge_forge_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\demo.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_demo_py",
+      "target": "src_rbforge_core_demo_py_main",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\demo.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_import_typing_any",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_import_rbforge_core_models_forgeresult",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_import_rbforge_core_models_toolspec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_import_rbforge_core_rbmem_rbmemstore",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_import_rbforge_core_sandbox_sandboxexecutor",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_import_rbforge_core_trajectory_trajectorylogger",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_import_rbforge_core_validation_validate_tool_spec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_forge_tool",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py",
+      "target": "src_rbforge_core_forge_py_message",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_forge_py_forge_tool",
+      "target": "src_rbforge_core_forge_py_message",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\forge.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py",
+      "target": "src_rbforge_core_harness_py_import_json",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py",
+      "target": "src_rbforge_core_harness_py_import_re",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py",
+      "target": "src_rbforge_core_harness_py_import_subprocess",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py",
+      "target": "src_rbforge_core_harness_py_import_tempfile",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py",
+      "target": "src_rbforge_core_harness_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py",
+      "target": "src_rbforge_core_harness_py_import_typing_any",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py",
+      "target": "src_rbforge_core_harness_py_import_rbforge_core_rbmem_rbmemstore",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py",
+      "target": "src_rbforge_core_harness_py_toolharness",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py_toolharness",
+      "target": "src_rbforge_core_harness_py_toolharness_init",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py_toolharness",
+      "target": "src_rbforge_core_harness_py_toolharness_ripgrep",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py_toolharness",
+      "target": "src_rbforge_core_harness_py_toolharness_debugger_summary",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py_toolharness",
+      "target": "src_rbforge_core_harness_py_toolharness_call_forged",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py_toolharness",
+      "target": "src_rbforge_core_harness_py_toolharness_load_tool_record",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_harness_py_toolharness_call_forged",
+      "target": "src_rbforge_core_harness_py_toolharness_load_tool_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\harness.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_import_dataclasses_dataclass",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_import_dataclasses_field",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_import_datetime_timezone",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_import_typing_any",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_import_typing_literal",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_utc_now_iso",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_toolspec",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py_toolspec",
+      "target": "src_rbforge_core_models_py_toolspec_section_path",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_sandboxresult",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_models_py",
+      "target": "src_rbforge_core_models_py_forgeresult",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\models.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_json",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_os",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_re",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_shutil",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_subprocess",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_tempfile",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_typing_any",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_rbforge_core_models_toolspec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_import_rbforge_core_models_utc_now_iso",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_rbmemerror",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_find_rbmem_cli",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_init",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_ensure",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_persist_candidate",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_read_registry",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_update_section",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_read_minified",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_hermes_load",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_hermes_save",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_validate",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_apply_graph",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_run",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L192",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_tool_record",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_tool_relations",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L230",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py",
+      "target": "src_rbforge_core_rbmem_py_render_graph_block",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "source_location": "L239",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_init",
+      "target": "src_rbforge_core_rbmem_py_find_rbmem_cli",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_ensure",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_persist_candidate",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_ensure",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_persist_candidate",
+      "target": "src_rbforge_core_rbmem_py_tool_relations",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_persist_candidate",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_apply_graph",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_persist_candidate",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_update_section",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_persist_candidate",
+      "target": "src_rbforge_core_rbmem_py_tool_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_ensure",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "target": "src_rbforge_core_rbmem_py_tool_relations",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_apply_graph",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_update_section",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "target": "src_rbforge_core_rbmem_py_tool_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_register_validated_tool",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_read_registry",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_read_registry",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_read_minified",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_update_section",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_update_section",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_read_minified",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_ensure",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_read_minified",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_hermes_load",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_ensure",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_hermes_load",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_hermes_save",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_ensure",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_hermes_save",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_hermes_save",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_validate",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_apply_graph",
+      "target": "src_rbforge_core_rbmem_py_render_graph_block",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_rbmem_py_rbmemstore_apply_graph",
+      "target": "src_rbforge_core_rbmem_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\rbmem.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_import_ast",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_import_json",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_import_shutil",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_import_subprocess",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_import_tempfile",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_import_rbforge_core_models_sandboxresult",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_import_rbforge_core_models_toolspec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_sandboxexecutor",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor",
+      "target": "src_rbforge_core_sandbox_py_sandboxexecutor_init",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor",
+      "target": "src_rbforge_core_sandbox_py_sandboxexecutor_validate",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor",
+      "target": "src_rbforge_core_sandbox_py_sandboxexecutor_run_docker",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor",
+      "target": "src_rbforge_core_sandbox_py_sandboxexecutor_run_local",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_static_warnings",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_generate_python_unittest",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_sample_args",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L139",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_call_name",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L168",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_run",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L176",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py",
+      "target": "src_rbforge_core_sandbox_py_docker_is_ready",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "source_location": "L214",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor_validate",
+      "target": "src_rbforge_core_sandbox_py_generate_python_unittest",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor_validate",
+      "target": "src_rbforge_core_sandbox_py_static_warnings",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor_validate",
+      "target": "src_rbforge_core_sandbox_py_sandboxexecutor_run_local",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor_validate",
+      "target": "src_rbforge_core_sandbox_py_sandboxexecutor_run_docker",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor_validate",
+      "target": "src_rbforge_core_sandbox_py_docker_is_ready",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor_run_docker",
+      "target": "src_rbforge_core_sandbox_py_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_sandboxexecutor_run_local",
+      "target": "src_rbforge_core_sandbox_py_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_static_warnings",
+      "target": "src_rbforge_core_sandbox_py_call_name",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_sandbox_py_generate_python_unittest",
+      "target": "src_rbforge_core_sandbox_py_sample_args",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\sandbox.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_trajectory_py",
+      "target": "src_rbforge_core_trajectory_py_import_json",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_trajectory_py",
+      "target": "src_rbforge_core_trajectory_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_trajectory_py",
+      "target": "src_rbforge_core_trajectory_py_import_typing_any",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_trajectory_py",
+      "target": "src_rbforge_core_trajectory_py_import_rbforge_core_models_utc_now_iso",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_trajectory_py",
+      "target": "src_rbforge_core_trajectory_py_trajectorylogger",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_trajectory_py_trajectorylogger",
+      "target": "src_rbforge_core_trajectory_py_trajectorylogger_init",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_trajectory_py_trajectorylogger",
+      "target": "src_rbforge_core_trajectory_py_trajectorylogger_record",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\trajectory.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py",
+      "target": "src_rbforge_core_validation_py_import_ast",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py",
+      "target": "src_rbforge_core_validation_py_import_re",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py",
+      "target": "src_rbforge_core_validation_py_import_typing_any",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py",
+      "target": "src_rbforge_core_validation_py_import_rbforge_core_models_toolspec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py",
+      "target": "src_rbforge_core_validation_py_toolspecerror",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py",
+      "target": "src_rbforge_core_validation_py_validate_tool_spec",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py",
+      "target": "src_rbforge_core_validation_py_validate_schema_shape",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py",
+      "target": "src_rbforge_core_validation_py_validate_python_source",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py_validate_tool_spec",
+      "target": "src_rbforge_core_validation_py_validate_schema_shape",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_validation_py_validate_tool_spec",
+      "target": "src_rbforge_core_validation_py_validate_python_source",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\rbforge_core\\validation.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_init_py",
+      "target": "src_rbforge_core_init_py_import_rbforge_core_forge_forge_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\__init__.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_init_py",
+      "target": "src_rbforge_core_init_py_import_rbforge_core_models_forgeresult",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\__init__.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_core_init_py",
+      "target": "src_rbforge_core_init_py_import_rbforge_core_models_toolspec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\rbforge_core\\__init__.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_ast",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_json",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_os",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_re",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_shutil",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_subprocess",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_sys",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_tempfile",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_dataclasses_asdict",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_dataclasses_dataclass",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_dataclasses_field",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_datetime_timezone",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_typing_any",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_typing_literal",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_jsonschema_draft202012validator",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_import_jsonschema_validationerror",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_toolspec",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_toolspec",
+      "target": "src_rbforge_forge_tool_py_toolspec_section_path",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L128",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_sandboxreport",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_forge_tool",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L145",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_run_forged_tool",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_rbforgeerror",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L311",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_tracelogger",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L315",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_tracelogger",
+      "target": "src_rbforge_forge_tool_py_tracelogger_init",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_tracelogger",
+      "target": "src_rbforge_forge_tool_py_tracelogger_record",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L323",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_rbmemstore",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L331",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_init",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L334",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_ensure",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L338",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_update_section",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L354",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_register_tool",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_read_registry",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L409",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_load_tool_record",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L421",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_read_minified",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L429",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_hermes_load",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L436",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_hermes_save",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L445",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_apply_graph",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L458",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L469",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_run",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L472",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_validate_spec",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L480",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_validate_python_source",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_sandbox_validate",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L527",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_run_docker",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L540",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_run_local_subprocess",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L572",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_execute_python_tool",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L605",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_run_command",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L642",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_generated_unittest",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L684",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_sample_args",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L720",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_patch_section_graph",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L748",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_remove_graph_blocks",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L776",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_render_graph_block",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L794",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_docker_ready",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L807",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_resource_limiter",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L823",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_find_or_build_rbmem",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L835",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_static_warnings",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L861",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_validate_import",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L872",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_call_name",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L883",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_tool_record",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L891",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_relations",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L923",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_relations_from_record",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L934",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_update_metrics",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L945",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_failure",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L959",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py",
+      "target": "src_rbforge_forge_tool_py_utc_now",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "source_location": "L963",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_register_tool",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_utc_now",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_apply_graph",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_tracelogger_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_read_minified",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_update_section",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_tool_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_validate_spec",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_relations",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_read_registry",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_sandbox_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_ensure",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_forge_tool",
+      "target": "src_rbforge_forge_tool_py_failure",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_register_tool",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_apply_graph",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_tracelogger_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_load_tool_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_update_section",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_tool_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_execute_python_tool",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_relations_from_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_forged_tool",
+      "target": "src_rbforge_forge_tool_py_update_metrics",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_tracelogger_record",
+      "target": "src_rbforge_forge_tool_py_utc_now",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_init",
+      "target": "src_rbforge_forge_tool_py_find_or_build_rbmem",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_ensure",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_update_section",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_update_section",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_update_section",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_ensure",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_register_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_apply_graph",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_register_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_update_section",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_register_tool",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_read_registry",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_read_registry",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_hermes_load",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_load_tool_record",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_hermes_load",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_read_minified",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_hermes_load",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_hermes_save",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_hermes_save",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_apply_graph",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_apply_graph",
+      "target": "src_rbforge_forge_tool_py_patch_section_graph",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_run",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_validate_spec",
+      "target": "src_rbforge_forge_tool_py_rbmemstore_validate",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_validate_spec",
+      "target": "src_rbforge_forge_tool_py_validate_python_source",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_validate_spec",
+      "target": "src_rbforge_forge_tool_py_sample_args",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_validate_python_source",
+      "target": "src_rbforge_forge_tool_py_call_name",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_validate_python_source",
+      "target": "src_rbforge_forge_tool_py_validate_import",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_sandbox_validate",
+      "target": "src_rbforge_forge_tool_py_static_warnings",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_sandbox_validate",
+      "target": "src_rbforge_forge_tool_py_run_local_subprocess",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_sandbox_validate",
+      "target": "src_rbforge_forge_tool_py_run_docker",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_sandbox_validate",
+      "target": "src_rbforge_forge_tool_py_generated_unittest",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_sandbox_validate",
+      "target": "src_rbforge_forge_tool_py_docker_ready",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_docker",
+      "target": "src_rbforge_forge_tool_py_run_command",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_local_subprocess",
+      "target": "src_rbforge_forge_tool_py_resource_limiter",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_run_local_subprocess",
+      "target": "src_rbforge_forge_tool_py_run_command",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_generated_unittest",
+      "target": "src_rbforge_forge_tool_py_sample_args",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_patch_section_graph",
+      "target": "src_rbforge_forge_tool_py_render_graph_block",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_patch_section_graph",
+      "target": "src_rbforge_forge_tool_py_remove_graph_blocks",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_static_warnings",
+      "target": "src_rbforge_forge_tool_py_call_name",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_tool_record",
+      "target": "src_rbforge_forge_tool_py_utc_now",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_relations",
+      "target": "src_rbforge_forge_tool_py_tracelogger_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_relations",
+      "target": "src_rbforge_forge_tool_py_relations_from_record",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_forge_tool_py_update_metrics",
+      "target": "src_rbforge_forge_tool_py_utc_now",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": ".\\src\\RBForge\\forge_tool.py",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_init_py",
+      "target": "src_rbforge_init_py_import_rbforge_forge_tool_forge_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\__init__.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_rbforge_init_py",
+      "target": "src_rbforge_init_py_import_rbforge_forge_tool_run_forged_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\src\\RBForge\\__init__.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_importlib",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_rbforgeerror",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_rbmemstore",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_toolspec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_patch_section_graph",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_run_forged_tool",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_sample_args",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_import_rbforge_forge_tool_validate_spec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_test_public_validate_spec_uses_jsonschema",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_test_patch_section_graph_replaces_duplicate_graph_blocks",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_test_run_forged_tool_updates_metrics",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_test_web_bubble_tools_can_import_http_clients",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_test_non_web_tools_still_reject_http_clients",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L161",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbforge_public_api_py",
+      "target": "tests_test_rbforge_public_api_py_test_shell_tools_can_import_subprocess_but_other_tools_cannot",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbforge_public_api.py",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbmem_graph_patch_py",
+      "target": "tests_test_rbmem_graph_patch_py_import_pathlib_path",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbmem_graph_patch_py",
+      "target": "tests_test_rbmem_graph_patch_py_import_rbforge_core_rbmem_rbmemstore",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbmem_graph_patch_py",
+      "target": "tests_test_rbmem_graph_patch_py_nooprbmemstore",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbmem_graph_patch_py_nooprbmemstore",
+      "target": "tests_test_rbmem_graph_patch_py_nooprbmemstore_init",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbmem_graph_patch_py_nooprbmemstore",
+      "target": "tests_test_rbmem_graph_patch_py_nooprbmemstore_validate",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_rbmem_graph_patch_py",
+      "target": "tests_test_rbmem_graph_patch_py_test_apply_graph_inserts_relations_without_touching_temporal",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_rbmem_graph_patch.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_validation_and_sandbox_py",
+      "target": "tests_test_validation_and_sandbox_py_import_rbforge_core_models_toolspec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_validation_and_sandbox_py",
+      "target": "tests_test_validation_and_sandbox_py_import_rbforge_core_sandbox_sandboxexecutor",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_validation_and_sandbox_py",
+      "target": "tests_test_validation_and_sandbox_py_import_rbforge_core_validation_toolspecerror",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_validation_and_sandbox_py",
+      "target": "tests_test_validation_and_sandbox_py_import_rbforge_core_validation_validate_tool_spec",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_validation_and_sandbox_py",
+      "target": "tests_test_validation_and_sandbox_py_test_valid_python_tool_passes_local_sandbox",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_validation_and_sandbox_py",
+      "target": "tests_test_validation_and_sandbox_py_test_validation_rejects_bad_name",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".\\tests\\test_validation_and_sandbox.py",
+      "source_location": "L29",
+      "weight": 1.0
+    }
+  ]
+}

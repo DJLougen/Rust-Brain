@@ -116,7 +116,29 @@ mode: minified
 
 # Load the pack
 rbmem pack memory.rbmem code_review --resolve
+
+## MCP Server
+
+RBForge is an MCP (Model Context Protocol) server that exposes RBMEM as a tool to AI agents. It enables runtime tool creation, validation, and persistent storage through the `rbmem` CLI.
+
+**Key capabilities:**
+
+- **Runtime tool creation** — Agents can forge, validate, and save custom tools into RBMEM
+- **MCP integration** — Works with Claude, Cursor, and other MCP-compatible agents
+- **Tool registry** — Index, metrics, and graph relationships for all forged tools
+- **178 passing tests** — Comprehensive test suite for reliability
+
+**Quick start:**
+
+```bash
+cd mcp-server
+python -m pip install -e .[dev]
+export RBMEM_CLI=/path/to/rbmem
+rbforge doctor memory.rbmem
 ```
+
+See [mcp-server/README.md](mcp-server/README.md) for full documentation and examples.
+
 
 ## Architecture
 
