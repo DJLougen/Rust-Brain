@@ -5,15 +5,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/DJLougen/Rust-Brain/actions"><img src="https://img.shields.io/github/actions/workflow/status/DJLougen/Rust-Brain/ci.yml?branch=main&style=flat-square" alt="CI"></a>
-  <a href="https://github.com/DJLougen/Rust-Brain/releases"><img src="https://img.shields.io/github/v/release/DJLougen/Rust-Brain?style=flat-square" alt="Release"></a>
+  <a href="https://github.com/DJLougen/Rust-Brain/actions"><img src="https://img.shields.io/github/actions/workflow/status/DJLougen/Rust-Brain/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
+  <a href="https://github.com/DJLougen/Rust-Brain/releases"><img src="https://img.shields.io/badge/release-v1.4.4-blue?style=flat-square" alt="Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/DJLougen/Rust-Brain?style=flat-square" alt="License"></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-2021-orange?style=flat-square" alt="Rust"></a>
+  <a href="https://github.com/DJLougen/Rust-Brain/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/tests-285%20passing-brightgreen?style=flat-square" alt="Tests"></a>
 </p>
 
 **Structured, temporal, graph-aware memory for AI agents.**
 
-RBMEM is a file format and Rust library for managing agent memory with stable section paths, protected timestamps, hierarchical organization, graph relationships, and compact context output optimized for LLM consumption.
+RBMEM is a file format and Rust library for managing agent memory with stable section paths, protected timestamps, hierarchical organization, graph relationships, and IDF-weighted context retrieval optimized for LLM consumption.
 
 ## Why RBMEM?
 
@@ -25,12 +26,14 @@ Markdown is human-readable but lacks structure. Agents need:
 - **Hierarchical inheritance** — Parent sections provide context to children
 - **Compact output** — Minified views for context windows without losing metadata on disk
 - **Provenance tracking** — Know where each section came from and when it was updated
+- **Precision retrieval** — IDF-weighted scoring finds the right sections in 38µs, not the whole file
 
 ## Features
 
+- **IDF-weighted query precision** — Rare terms score higher, common terms score lower; 3.8× more precise than Markdown
 - **Section-level operations** — Query, update, delete, encrypt individual sections
-- **Graph-aware retrieval** — Follow relationships to find related context
-- **SAT planning** — Built-in planner with Kissat/CaDiCaL support and DPLL fallback
+- **Graph-aware retrieval** — Follow relationships to find related context (100% neighbor recall)
+- **SAT planning** — Built-in planner with Kissat/CaDiCaL support and DPLL fallback with VSIDS
 - **AES-256-GCM encryption** — Per-section encryption for sensitive data
 - **Hermes integration** — Native support for Hermes agent workflows
 - **Markdown conversion** — Import from Markdown with automatic graph inference
@@ -38,6 +41,7 @@ Markdown is human-readable but lacks structure. Agents need:
 - **HTTP server** — Axum-based REST API for agent runtimes
 - **Multiple output modes** — Canonical, compact, minified, JSON, YAML
 - **Three-way merge** — Section-level conflict resolution
+- **MCP server (RBForge)** — Runtime tool creation for agents via Model Context Protocol
 
 ## Benchmark Results
 
@@ -150,9 +154,12 @@ See [mcp-server/README.md](mcp-server/README.md) for full documentation and exam
 RBMEM is organized as a Rust library with a CLI wrapper:
 
 - **CLI** (`main.rs`) — Command parsing and user interaction
-- **Library modules** — Core functionality (hermes, planner, sync, pack, markdown)
+- **Library modules** — Hermes integration, SAT planner, Markdown sync, context packs, conversion
 - **Core** (`document.rs`) — Document model, sections, graph, temporal metadata
-- **Storage** — `.rbmem` files, section index, HTTP server
+- **Query engine** (`commands.rs` + `index.rs`) — IDF-weighted scoring, section index, graph traversal
+- **Infrastructure** — Parser (`parser.rs`), encryption (`crypto.rs`), diff/merge (`diff.rs`), HTTP server (`server/`)
+- **Storage** — `.rbmem` files, section index, AES-256-GCM encrypted sections
+- **MCP server** (`mcp-server/`) — RBForge runtime tool creation for agents
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed design.
 
@@ -375,6 +382,12 @@ cargo fmt --check
 
 # Benchmark
 cargo bench --bench rbmem_vs_markdown -- --nocapture
+
+**Test coverage**: 107 Rust tests (14 suites) + 178 Python tests (MCP server) = **285 tests** total.
+
+```bash
+# MCP server tests
+cd mcp-server && python -m pytest
 ```
 
 ## Contributing
@@ -387,12 +400,17 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Roadmap
 
+- [x] CI/CD pipeline with GitHub Actions (testing, coverage, cross-platform releases)
+- [x] MCP server integration (RBForge runtime tool creation)
+- [x] SAT planning with DPLL + VSIDS heuristics
+- [x] Per-section AES-256-GCM encryption
+- [x] Three-way merge with conflict detection
+- [x] IDF-weighted query precision
 - [ ] Publish to crates.io
 - [ ] Python bindings
 - [ ] WebAssembly build
 - [ ] Vector embeddings for semantic search
 - [ ] Distributed sync protocol
-
 ## Acknowledgments
 
 Built with [Rust](https://www.rust-lang.org/), [Clap](https://github.com/clap-rs/clap), [Axum](https://github.com/tokio-rs/axum), and [Petgraph](https://github.com/petgraph/petgraph).

@@ -67,20 +67,27 @@ Include the following in your PR description:
 Rust-Brain/
 ├── src/
 │   ├── main.rs          # CLI entry point
-│   ├── lib.rs           # Library exports
-│   ├── document.rs      # Core document model
-│   ├── parser.rs        # RBMEM parser
-│   ├── commands.rs      # Command implementations
-│   ├── hermes.rs        # Hermes integration
-│   ├── planner/         # SAT planning engine
-│   ├── sync.rs          # Markdown sync
-│   ├── pack.rs          # Context packs
-│   ├── markdown.rs      # Markdown conversion
-│   └── server/          # HTTP server
-├── tests/               # Integration tests
-├── benches/             # Benchmarks
-├── examples/            # Example files
-└── docs/                # Documentation
+│   ├── lib.rs           # Library exports and public API
+│   ├── document.rs      # Core document model, sections, graph, temporal
+│   ├── parser.rs        # Forgiving Nom parser for RBMEM syntax
+│   ├── commands.rs      # Command implementations (query, context, IDF scoring)
+│   ├── index.rs         # SectionIndex for fast keyword and graph lookups
+│   ├── hermes.rs        # Hermes agent integration
+│   ├── planner/         # SAT planning engine (DPLL + VSIDS)
+│   ├── sync.rs          # Markdown folder sync with watch mode
+│   ├── pack.rs          # Context pack assembly
+│   ├── markdown.rs      # Markdown to RBMEM conversion
+│   ├── crypto.rs        # AES-256-GCM encryption/decryption
+│   ├── diff.rs          # Typed diff and three-way merge
+│   ├── export.rs        # Graph export (DOT, Mermaid, Cytoscape, GEXF)
+│   ├── version.rs       # Format version constants
+│   └── server/          # Axum HTTP server with REST API
+├── mcp-server/          # RBForge MCP server (Python, 178 tests)
+├── tests/               # Integration tests (14 suites)
+├── benches/             # Benchmarks (RBMEM vs Markdown, planner stress)
+├── examples/            # Example .rbmem files and context packs
+├── docs/                # Architecture and API documentation
+└── .github/             # CI/CD workflows (test, release)
 ```
 
 ## Key Design Principles
@@ -90,6 +97,7 @@ Rust-Brain/
 3. **Graph-Aware**: Relationships between sections are first-class citizens
 4. **Compact Output**: Minified views for LLM context without losing metadata
 5. **Provenance Tracking**: Know where each section came from
+6. **Precision Retrieval**: IDF-weighted scoring and cutoffs return the right sections, not everything
 
 ## Reporting Issues
 
