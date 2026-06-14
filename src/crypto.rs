@@ -23,10 +23,18 @@ impl EncryptionKey {
 
     pub fn from_env_value(value: &str) -> Result<Self, RbmemError> {
         let trimmed = value.trim();
-        if let Ok(decoded) = STANDARD.decode(trimmed) {
-            return Self::from_slice(&decoded);
+        // A raw key is exactly 32 bytes; anything else must be base64 of 32
+        // bytes. Branching on length avoids misreading a 32-byte raw key that
+        // happens to be valid base64 (which would decode to the wrong length).
+        if trimmed.len() == 32 {
+            return Self::from_slice(trimmed.as_bytes());
         }
-        Self::from_slice(trimmed.as_bytes())
+        let decoded = STANDARD.decode(trimmed).map_err(|error| {
+            RbmemError::Crypto(format!(
+                "encryption key must be 32 raw bytes or base64-encoded 32 bytes: {error}"
+            ))
+        })?;
+        Self::from_slice(&decoded)
     }
 
     pub fn resolve() -> Result<Self, RbmemError> {
@@ -127,4 +135,34 @@ fn default_key_path() -> Option<PathBuf> {
         .or_else(|| std::env::var_os("HOME"))
         .map(PathBuf::from)
         .map(|home| home.join(".rbmem").join("key"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn raw_32_byte_key_is_accepted_even_when_base64_shaped() {
+        // 32 ASCII chars that are also valid base64 (would decode to 24 bytes).
+        let raw = "abcdefghabcdefghabcdefghabcdefgh";
+        assert_eq!(raw.len(), 32);
+        let key = EncryptionKey::from_env_value(raw).unwrap();
+        assert_eq!(key.as_bytes(), raw.as_bytes());
+    }
+
+    #[test]
+    fn base64_encoded_32_bytes_round_trips() {
+        let bytes = [7u8; 32];
+        let encoded = STANDARD.encode(bytes);
+        assert_ne!(encoded.len(), 32);
+        let key = EncryptionKey::from_env_value(&encoded).unwrap();
+        assert_eq!(key.as_bytes(), &bytes);
+    }
+
+    #[test]
+    fn wrong_length_base64_key_is_rejected() {
+        // Valid base64 ("YWJj" -> 3 bytes) but not 32 decoded bytes.
+        let err = EncryptionKey::from_env_value("YWJj").unwrap_err();
+        assert!(matches!(err, RbmemError::Crypto(_)));
+    }
 }

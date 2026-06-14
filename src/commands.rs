@@ -892,8 +892,11 @@ pub fn create_snapshot(path: impl AsRef<Path>, label: &str) -> Result<SnapshotRe
         .join(".rbmem");
     fs::create_dir_all(&snapshot_dir).ok();
 
-    // Store metadata as JSON (robust against labels with colons/quotes)
-    // Generate unique filename to avoid collisions: label + 4-char hash suffix
+    // Snapshot files are named `<label>-<labelhash>.{snap,rbmem}`. The hash is a
+    // deterministic function of the label, so re-snapshotting the same label
+    // overwrites in place: named snapshots are latest-wins, which is what
+    // rollback-by-label relies on. Metadata is JSON so labels with colons or
+    // quotes survive the round-trip.
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     std::hash::Hash::hash(&label, &mut hasher);
     let label_hash = format!("{:04x}", hasher.finish() & 0xFFFF);
@@ -1007,13 +1010,19 @@ pub fn health_report(path: impl AsRef<Path>, stale_days: u64) -> Result<HealthSc
     let orphaned_edges = count_orphaned_edges(&document);
     let conflicts = count_conflicts(&document);
 
+    // Penalty weights = points deducted at 100% incidence of each issue. The
+    // combined maximum is 75, so a fully degraded document floors at 25/100.
+    const STALE_WEIGHT: f64 = 30.0;
+    const ORPHAN_WEIGHT: f64 = 20.0;
+    const CONFLICT_WEIGHT: f64 = 25.0;
+
     let total = document.sections.len() as f64;
     let score = if total == 0.0 {
         100.0
     } else {
-        let penalty = (stale_sections as f64 / total) * 30.0
-            + (orphaned_edges as f64 / total.max(1.0)) * 20.0
-            + (conflicts as f64 / total.max(1.0)) * 25.0;
+        let penalty = (stale_sections as f64 / total) * STALE_WEIGHT
+            + (orphaned_edges as f64 / total) * ORPHAN_WEIGHT
+            + (conflicts as f64 / total) * CONFLICT_WEIGHT;
         (100.0 - penalty).clamp(0.0, 100.0)
     };
 
@@ -1455,6 +1464,47 @@ modified content after rollback
         assert!(result.unwrap_err().to_string().contains("not found"));
 
         // Cleanup
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn health_report_scores_clean_and_stale_documents() {
+        let real_now = Utc::now();
+        let mut document = RbmemDocument::new(real_now, "me");
+        document.upsert_section("a", SectionType::Text, "alpha".to_string(), real_now);
+        document.upsert_section("b", SectionType::Text, "beta".to_string(), real_now);
+
+        let dir = std::env::temp_dir().join(format!(
+            "rbmem_health_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).ok();
+        let path = dir.join("memory.rbmem");
+        save(&path, &document, false).unwrap();
+
+        // Recent sections with a generous window score perfectly.
+        let healthy = health_report(&path, 3650).unwrap();
+        assert_eq!(healthy.total_sections, 2);
+        assert_eq!(healthy.stale_sections, 0);
+        assert_eq!(healthy.score, 100.0);
+
+        // Age both sections, tighten the window: 100% stale deducts the full
+        // stale weight (30) and nothing else, so the score is exactly 70.
+        for section in &mut document.sections {
+            section.temporal.updated_at = real_now - chrono::Duration::days(400);
+        }
+        save(&path, &document, false).unwrap();
+        let stale = health_report(&path, 30).unwrap();
+        assert_eq!(stale.stale_sections, 2);
+        assert_eq!(stale.score, 70.0);
+        assert!(
+            stale.score >= 25.0,
+            "score must never fall below the documented floor"
+        );
+
         let _ = std::fs::remove_dir_all(dir);
     }
 }

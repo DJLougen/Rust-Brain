@@ -11,7 +11,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -82,13 +82,30 @@ impl AppState {
         }
     }
 
-    fn memory_path(&self, name: &str) -> PathBuf {
-        let filename = if name.ends_with(".rbmem") {
-            name.to_string()
+    /// Resolve a memory name to a path inside `self.dir`, rejecting any name
+    /// that is not a single safe filename. This blocks path traversal: `../`,
+    /// absolute paths, and drive/UNC prefixes cannot escape the configured
+    /// directory.
+    fn memory_path(&self, name: &str) -> Result<PathBuf, RbmemError> {
+        let trimmed = name.trim();
+        if trimmed.is_empty() {
+            return Err(RbmemError::Parse("memory name must not be empty".into()));
+        }
+        // The name must resolve to exactly one normal path component.
+        let mut components = Path::new(trimmed).components();
+        let single_normal =
+            matches!(components.next(), Some(Component::Normal(_))) && components.next().is_none();
+        if !single_normal {
+            return Err(RbmemError::Parse(format!(
+                "invalid memory name '{name}': must be a single filename without path separators"
+            )));
+        }
+        let filename = if trimmed.ends_with(".rbmem") {
+            trimmed.to_string()
         } else {
-            format!("{name}.rbmem")
+            format!("{trimmed}.rbmem")
         };
-        self.dir.join(filename)
+        Ok(self.dir.join(filename))
     }
 }
 
@@ -132,7 +149,8 @@ async fn create_memory(
     if let Some(purpose) = request.purpose {
         document.meta.purpose = purpose;
     }
-    crate::save(state.memory_path(&request.name), &document, false).map_err(server_error)?;
+    let path = state.memory_path(&request.name).map_err(server_error)?;
+    crate::save(path, &document, false).map_err(server_error)?;
     state
         .memories
         .write()
@@ -153,7 +171,8 @@ async fn put_memory(
     AxumPath(name): AxumPath<String>,
     Json(document): Json<RbmemDocument>,
 ) -> Result<Json<RbmemDocument>, (StatusCode, Json<ErrorResponse>)> {
-    crate::save(state.memory_path(&name), &document, false).map_err(server_error)?;
+    let path = state.memory_path(&name).map_err(server_error)?;
+    crate::save(path, &document, false).map_err(server_error)?;
     state.memories.write().await.insert(name, document.clone());
     Ok(Json(document))
 }
@@ -163,7 +182,7 @@ async fn delete_memory(
     AxumPath(name): AxumPath<String>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
     state.memories.write().await.remove(&name);
-    let path = state.memory_path(&name);
+    let path = state.memory_path(&name).map_err(server_error)?;
     if path.exists() {
         std::fs::remove_file(path)
             .map_err(RbmemError::from)
@@ -197,7 +216,8 @@ async fn put_section(
         .parse::<SectionType>()
         .map_err(server_error)?;
     document.upsert_section(&path, section_type, request.content, now);
-    crate::save(state.memory_path(&name), &document, false).map_err(server_error)?;
+    let file_path = state.memory_path(&name).map_err(server_error)?;
+    crate::save(file_path, &document, false).map_err(server_error)?;
     state.memories.write().await.insert(name, document.clone());
     Ok(Json(document))
 }
@@ -208,7 +228,8 @@ async fn delete_section(
 ) -> Result<Json<RbmemDocument>, (StatusCode, Json<ErrorResponse>)> {
     let mut document = load_memory(&state, &name).await?;
     document.sections.retain(|section| section.path != path);
-    crate::save(state.memory_path(&name), &document, false).map_err(server_error)?;
+    let file_path = state.memory_path(&name).map_err(server_error)?;
+    crate::save(file_path, &document, false).map_err(server_error)?;
     state.memories.write().await.insert(name, document.clone());
     Ok(Json(document))
 }
@@ -225,10 +246,11 @@ async fn query_memory(
         request.resolve,
         request.graph_depth,
     );
+    let file = state.memory_path(&name).map_err(server_error)?;
     Ok(Json(context_json(
         ContextOutputRequest {
             operation: "query".into(),
-            file: state.memory_path(&name).display().to_string(),
+            file: file.display().to_string(),
             selector_name: "text".into(),
             selector_value: request.text,
             resolve: request.resolve,
@@ -306,8 +328,8 @@ async fn load_memory(
     if let Some(document) = state.memories.read().await.get(name).cloned() {
         return Ok(document);
     }
-    let document =
-        crate::load(state.memory_path(name), TimestampPolicy::Preserve).map_err(server_error)?;
+    let path = state.memory_path(name).map_err(server_error)?;
+    let document = crate::load(path, TimestampPolicy::Preserve).map_err(server_error)?;
     state
         .memories
         .write()

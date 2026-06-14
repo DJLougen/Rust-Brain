@@ -49,10 +49,11 @@ fn default_text_type() -> String {
 }
 
 // ---------------------------------------------------------------------------
-// JSON helpers (duplicated from commands.rs — kept in sync with main.rs)
+// JSON helpers for the shared rbmem document shape (Hermes `load` output and the
+// CLI `context_json` view). Owned here so the two consumers cannot drift apart.
 // ---------------------------------------------------------------------------
 
-fn document_meta_json(document: &RbmemDocument) -> Value {
+pub fn document_meta_json(document: &RbmemDocument) -> Value {
     json!({
         "version": document.meta.version,
         "source_version": document.meta.source_version,
@@ -62,7 +63,7 @@ fn document_meta_json(document: &RbmemDocument) -> Value {
     })
 }
 
-fn sections_json(document: &RbmemDocument, resolve: bool) -> Vec<Value> {
+pub fn sections_json(document: &RbmemDocument, resolve: bool) -> Vec<Value> {
     if resolve {
         document
             .resolved_sections()
@@ -176,19 +177,35 @@ pub fn apply_hermes_payload(
 ) -> Result<(), RbmemError> {
     for patch in payload.sections {
         let section_type = <SectionType as std::str::FromStr>::from_str(&patch.r#type)?;
-        if section_type == SectionType::HermesMemory && patch.mode == HermesWriteMode::Replace {
+        // Append-only protection must key off the *existing* section's type, not
+        // just the incoming patch type. Otherwise a `{type:"text",mode:"replace"}`
+        // patch could silently overwrite a stored hermes:memory section.
+        let existing_type = document
+            .sections
+            .iter()
+            .find(|section| section.path == patch.path)
+            .map(|section| section.section_type);
+        let is_hermes_memory = section_type == SectionType::HermesMemory
+            || existing_type == Some(SectionType::HermesMemory);
+        if is_hermes_memory && patch.mode == HermesWriteMode::Replace {
             return Err(RbmemError::Parse(format!(
                 "hermes:memory section '{}' is append-only; use mode auto or append",
                 patch.path
             )));
         }
+        // Preserve the protected type so a non-memory patch cannot downgrade it.
+        let effective_type = if existing_type == Some(SectionType::HermesMemory) {
+            SectionType::HermesMemory
+        } else {
+            section_type
+        };
         let should_append = patch.mode == HermesWriteMode::Append
-            || (patch.mode == HermesWriteMode::Auto && section_type == SectionType::HermesMemory);
+            || (patch.mode == HermesWriteMode::Auto && is_hermes_memory);
 
         if should_append {
-            append_or_create_section(document, &patch.path, section_type, &patch.content, now);
+            append_or_create_section(document, &patch.path, effective_type, &patch.content, now);
         } else {
-            document.upsert_section(&patch.path, section_type, patch.content, now);
+            document.upsert_section(&patch.path, effective_type, patch.content, now);
         }
         set_section_source(
             document,

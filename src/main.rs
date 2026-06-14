@@ -1064,7 +1064,7 @@ fn context_json(
             "graph_depth": request.graph_depth,
         },
         "source": {
-            "meta": document_meta_json(source),
+            "meta": hermes::document_meta_json(source),
             "section_count": source.sections.len(),
         },
         "context": render_context_document(
@@ -1073,8 +1073,8 @@ fn context_json(
             request.compact,
             request.minified,
         ),
-        "context_meta": document_meta_json(context),
-        "sections": sections_json(context, request.resolve),
+        "context_meta": hermes::document_meta_json(context),
+        "sections": hermes::sections_json(context, request.resolve),
         "graph": graph_view_to_json(&context.graph_view()),
     })
 }
@@ -1257,52 +1257,6 @@ fn append_document_diagnostics(
     }
 
     Ok(parsed.document)
-}
-
-fn document_meta_json(document: &RbmemDocument) -> Value {
-    json!({
-        "version": document.meta.version,
-        "source_version": document.meta.source_version,
-        "purpose": document.meta.purpose,
-        "compact_mode": document.meta.compact_mode.to_string(),
-        "last_updated": document.meta.last_updated,
-    })
-}
-
-fn sections_json(document: &RbmemDocument, resolve: bool) -> Vec<Value> {
-    if resolve {
-        document
-            .resolved_sections()
-            .into_iter()
-            .map(|section| {
-                json!({
-                    "path": section.path,
-                    "type": section.section_type.to_string(),
-                    "content": section.content,
-                    "resolved": true,
-                    "temporal": section.temporal,
-                    "source": section.source,
-                    "graph": section.graph,
-                })
-            })
-            .collect()
-    } else {
-        document
-            .sections
-            .iter()
-            .map(|section| {
-                json!({
-                    "path": section.path,
-                    "type": section.section_type.to_string(),
-                    "content": section.content,
-                    "resolved": false,
-                    "temporal": section.temporal,
-                    "source": section.source.clone(),
-                    "graph": section.graph,
-                })
-            })
-            .collect()
-    }
 }
 
 #[cfg(test)]
@@ -1841,6 +1795,51 @@ include:
         let error = hermes::apply_hermes_payload(&mut document, payload, now).unwrap_err();
 
         assert!(error.to_string().contains("append-only"));
+    }
+
+    #[test]
+    fn hermes_save_rejects_text_replace_over_memory() {
+        // Bypass guard: an incoming `text` patch must not be able to replace an
+        // existing hermes:memory section just because the patch type differs.
+        let now = fixed_time();
+        let mut document = hermes::hermes_starter_document("Demo Project", now);
+        let payload = hermes::read_hermes_payload(
+            Some(
+                r#"{"sections":[{"path":"goals","type":"text","content":"hijacked","mode":"replace"}]}"#
+                    .to_string(),
+            ),
+            None,
+        )
+        .unwrap();
+
+        let error = hermes::apply_hermes_payload(&mut document, payload, now).unwrap_err();
+
+        assert!(error.to_string().contains("append-only"));
+    }
+
+    #[test]
+    fn hermes_save_text_patch_appends_and_preserves_memory_type() {
+        let now = fixed_time();
+        let mut document = hermes::hermes_starter_document("Demo Project", now);
+        let payload = hermes::read_hermes_payload(
+            Some(
+                r#"{"sections":[{"path":"goals","type":"text","content":"- Added fact."}]}"#
+                    .to_string(),
+            ),
+            None,
+        )
+        .unwrap();
+
+        hermes::apply_hermes_payload(&mut document, payload, now).unwrap();
+
+        let goals = document
+            .sections
+            .iter()
+            .find(|section| section.path == "goals")
+            .unwrap();
+        assert_eq!(goals.section_type, SectionType::HermesMemory);
+        assert!(goals.content.contains("Maintain working context"));
+        assert!(goals.content.contains("Added fact"));
     }
 
     fn temp_test_dir(name: &str) -> PathBuf {

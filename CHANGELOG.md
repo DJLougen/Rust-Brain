@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented here.
 
+## [Unreleased]
+
+### Security
+
+- **HTTP server path traversal fix**: `serve` now rejects any memory name that is not a single safe filename (no path separators, `..`, absolute paths, or drive/UNC prefixes). This closes arbitrary file read/write through the `name` URL/body field and the `other`/`base`/`remote` fields of the `diff`/`merge` request bodies.
+
+### Fixed
+
+- `hermes save` append-only protection now keys off the **existing** section type, not just the incoming patch type. A `{"type":"text","mode":"replace"}` patch can no longer overwrite a stored `hermes:memory` section, and the protected type is preserved across non-memory patches.
+- Encryption key resolution disambiguates raw 32-byte keys from base64: a 32-byte raw key that is also valid base64 is no longer decoded to the wrong length and rejected.
+
+### Changed
+
+- Health-report penalty weights extracted to named constants (`STALE_WEIGHT`, `ORPHAN_WEIGHT`, `CONFLICT_WEIGHT`) with the 25/100 floor documented; removed the redundant `total.max(1.0)` guard.
+- Consolidated the duplicated `document_meta_json` / `sections_json` JSON helpers: `main.rs` now reuses the canonical versions in `hermes.rs` instead of maintaining a byte-identical copy.
+- Corrected the misleading snapshot-filename comment: same-label snapshots intentionally overwrite (latest-wins), which rollback-by-label relies on.
+
+### Tests
+
+- Added server traversal-rejection and valid-name round-trip tests, hermes append-only bypass and type-preservation tests, encryption key disambiguation tests, and a health-scoring regression test (117 passing, up from 107).
+
 ## [1.4.4] - 2026-05-20
 
 ### Changed
